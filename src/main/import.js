@@ -179,5 +179,22 @@ async function parseImportFile(filePath, maxRows = 10000) {
   };
 }
 
-module.exports = { parseImportFile, cellText, sniffSeparator, decodeBuffer };
+/** Parse raw text (satu link per baris) menjadi tasks + hitungan. */
+function parseLinksText(text) {
+  const tasks = [];
+  let emptyRows = 0;
+  let invalidUrls = 0;
+  const lines = String(text || '').split(/\r?\n/);
+  for (const line of lines) {
+    const raw = line.trim();
+    if (!raw) { emptyRows++; continue; }
+    const target = util.normalizeTargetUrl(raw);
+    if (!target) { invalidUrls++; continue; }
+    const username = util.usernameFromPostUrl(target.platform, target.url);
+    tasks.push({ url: target.url, platform: target.platform, username, tema: null });
+  }
+  return { tasks, empty_rows: emptyRows, invalid_urls: invalidUrls };
+}
+
+module.exports = { parseImportFile, parseLinksText, cellText, sniffSeparator, decodeBuffer };
 module.exports._hints = { URL_HEADER_HINTS, USER_HEADER_HINTS, USER_HEADER_EXCLUDE, TEMA_HEADER_HINTS };

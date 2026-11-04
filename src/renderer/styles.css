@@ -210,6 +210,7 @@ body {
 .field { margin-bottom: 12px; }
 .field label { display: block; font-size: var(--fs-label); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 4px; }
 .field .input, .field .select { width: 100%; }
+.field textarea.input { resize: vertical; min-height: 90px; font-family: inherit; line-height: 1.5; }
 
 /* ---------- toast ---------- */
 #toast-root { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }

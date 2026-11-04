@@ -394,18 +394,50 @@ function renderAudits() {
 }
 
 function openNewAudit() {
-  openModal(`<div class="modal-head"><h3>Audit baru</h3></div><div class="modal-body">
-    <div class="field"><label>Nama audit</label><input id="new-name" class="input" placeholder="mis. Kampanye November"></div>
+  const auditOptions = `<option value="">— Audit baru —</option>`
+    + (state.audits || []).map((a) => `<option value="${a.id}">Tambah ke: ${esc(a.name)}</option>`).join('');
+  openModal(`<div class="modal-head"><h3>Import data link</h3></div><div class="modal-body">
+    <div class="field"><label>Nama audit (untuk audit baru)</label><input id="new-name" class="input" placeholder="mis. Kampanye November"></div>
     <div class="field"><label>Ulang (hari, 0 = manual)</label><input id="new-repeat" class="input" type="number" min="0" max="365" value="0"></div>
-    <p class="muted">Pilih file CSV/XLSX (kolom Link/URL). Maksimal 10.000 baris.</p>
-  </div><div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" id="confirm-new">Pilih file…</button></div>`);
-  $('#confirm-new').addEventListener('click', async () => {
-    const res = await api.createAudit({ name: $('#new-name').value, repeat_days: Number($('#new-repeat').value) });
+    <div class="field"><label>Tujuan</label><select id="new-audit" class="select">${auditOptions}</select></div>
+    <div class="field"><label>Tempel link postingan — satu per baris (IG /p/, /reel/, /tv/ · TikTok /video/, /photo/)</label>
+      <textarea id="new-links" class="input" placeholder="https://www.instagram.com/p/CODE/&#10;https://www.tiktok.com/@user/video/7123456789"></textarea></div>
+    <p class="muted">Atau import dari file <b>Excel/CSV</b> (kolom Link/URL), maksimal 10.000 baris.</p>
+  </div><div class="modal-foot">
+    <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+    <button class="btn btn-ghost" id="confirm-file">Import file…</button>
+    <button class="btn btn-primary" id="confirm-links">Import link</button>
+  </div>`);
+
+  const getOpts = () => ({
+    name: $('#new-name').value,
+    repeat_days: Number($('#new-repeat').value),
+    auditId: $('#new-audit').value ? Number($('#new-audit').value) : null,
+  });
+
+  $('#confirm-file').addEventListener('click', async () => {
+    const opts = getOpts();
+    let res;
+    if (opts.auditId) res = await api.appendTargets({ auditId: opts.auditId });
+    else res = await api.createAudit({ name: opts.name, repeat_days: opts.repeat_days });
     closeModal();
     if (res.canceled) return;
     if (res.error) toast(res.error, 'error');
-    else toast(`${fmt(res.inserted)} target ditambahkan (${fmt(res.duplicates)} duplikat, ${fmt(res.skipped)} dilewati).`, 'ok');
+    else toast(`Import ${fmt(res.inserted)} target (${fmt(res.duplicates)} duplikat, ${fmt(res.skipped)} dilewati).`, 'ok');
     await loadAudits();
+    await refreshDashboard();
+  });
+
+  $('#confirm-links').addEventListener('click', async () => {
+    const text = $('#new-links').value || '';
+    if (!text.trim()) { toast('Tempel link dulu, atau pakai "Import file…".', 'error'); return; }
+    const opts = getOpts();
+    const res = await api.importLinks({ text, name: opts.name, repeat_days: opts.repeat_days, auditId: opts.auditId });
+    closeModal();
+    if (res.error) toast(res.error, 'error');
+    else toast(`Import ${fmt(res.inserted)} target (${fmt(res.duplicates)} duplikat, ${fmt(res.skipped)} dilewati).`, 'ok');
+    await loadAudits();
+    await refreshDashboard();
   });
 }
 

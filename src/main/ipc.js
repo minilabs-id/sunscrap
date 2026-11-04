@@ -65,7 +65,7 @@ function registerIpc({ db, worker, scraper, broadcast }) {
     if (!parsed) return { error: "Kolom 'Link'/'URL' tidak ditemukan." };
     const name = (opts.name || '').trim() || path.basename(filePath, path.extname(filePath)).replace(/_/g, ' ').trim() || 'Audit baru';
     const result = db.createAuditWithTasks(parsed.tasks, {
-      name, repeatDays: opts.repeatDays, period: opts.period, sourceFilename: path.basename(filePath),
+      name, repeatDays: opts.repeat_days, period: opts.period, sourceFilename: path.basename(filePath),
     });
     dataChanged();
     return { ...result, skipped: parsed.empty_rows + parsed.invalid_urls, invalid_urls: parsed.invalid_urls, empty_rows: parsed.empty_rows, truncated: parsed.truncated };
@@ -84,6 +84,29 @@ function registerIpc({ db, worker, scraper, broadcast }) {
     } catch (e) {
       return { error: 'Audit yang dipilih tidak ditemukan.' };
     }
+  });
+
+  ipcMain.handle('data:importLinks', (event, opts = {}) => {
+    const parsed = require('./import').parseLinksText(opts.text);
+    if (!parsed.tasks.length) {
+      return { error: `Tidak ada link valid. ${parsed.invalid_urls || 0} baris tidak dikenali sebagai postingan IG/TikTok.` };
+    }
+    const auditId = opts.auditId ? Number(opts.auditId) : null;
+    let result;
+    if (auditId) {
+      try {
+        result = db.appendTargetsToAudit(auditId, parsed.tasks, { sourceFilename: 'tempel-link' });
+      } catch (e) {
+        return { error: 'Audit tujuan tidak ditemukan.' };
+      }
+      if (!result) return { error: 'Audit tujuan tidak ditemukan.' };
+    } else {
+      const name = (opts.name || '').trim() || 'Audit tempel link';
+      const repeatDays = opts.repeat_days;
+      result = db.createAuditWithTasks(parsed.tasks, { name, repeatDays, period: opts.period, sourceFilename: 'tempel-link' });
+    }
+    dataChanged();
+    return { ...result, invalid_urls: parsed.invalid_urls, empty_rows: parsed.empty_rows, skipped: parsed.invalid_urls };
   });
 
   // ---- data tulis ----

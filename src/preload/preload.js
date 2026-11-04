@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('sunscraping', {
   // data (tulis)
   createAudit: (opts) => invoke('data:createAudit', opts),
   appendTargets: (opts) => invoke('data:appendTargets', opts),
+  importLinks: (opts) => invoke('data:importLinks', opts),
   rerunAudit: (auditId, full) => invoke('data:rerun', { auditId, full }),
   retryFailed: (auditId) => invoke('data:retryFailed', auditId),
   retryTargets: (auditId, ids) => invoke('data:retryTargets', { auditId, ids }),
