@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>sunscraping</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-sun">☀</span> sunscraping</div>
+    <nav class="nav">
+      <a class="nav-link active" data-tab="dashboard">Dashboard</a>
+      <a class="nav-link" data-tab="targets">Data · Target</a>
+      <a class="nav-link" data-tab="accounts">Data · Akun</a>
+      <a class="nav-link" data-tab="proses">Proses</a>
+      <a class="nav-link" data-tab="settings">Pengaturan</a>
+    </nav>
+    <div class="worker-widget">
+      <div class="worker-widget-head">
+        <span class="dot" id="worker-dot"></span>
+        <span id="worker-label">Siaga</span>
+      </div>
+      <button id="worker-toggle" class="btn btn-primary btn-block">Mulai worker</button>
+      <div class="worker-sub" id="worker-sub"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <section class="tab active" id="tab-dashboard">
+      <header class="page-head">
+        <h1>Dashboard</h1>
+        <div class="page-actions">
+          <select id="global-audit" class="select"></select>
+          <button class="btn btn-ghost" id="btn-new-audit">+ Audit baru</button>
+        </div>
+      </header>
+      <div class="kpi-strip" id="kpi-strip"></div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-title">Post teratas (views)</div>
+          <div id="top-views"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Post teratas (ER)</div>
+          <div id="top-er"></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-title">Per platform</div>
+          <table class="table" id="platform-table"></table>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Perlu tinjauan</div>
+          <div id="risk-accounts"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Kualitas data</div>
+        <div id="quality"></div>
+      </div>
+    </section>
+
+    <!-- TARGET -->
+    <section class="tab" id="tab-targets">
+      <header class="page-head">
+        <h1>Target</h1>
+        <div class="page-actions">
+          <span class="muted" id="targets-total"></span>
+        </div>
+      </header>
+      <div class="toolbar">
+        <input id="target-q" class="input" placeholder="Cari username / link / tema" />
+        <select id="target-status" class="select">
+          <option value="">Semua status</option>
+          <option value="done">Selesai (OK + sebagian)</option>
+          <option value="ok">OK</option>
+          <option value="partial">Sebagian</option>
+          <option value="failed">Gagal</option>
+          <option value="pending">Menunggu</option>
+        </select>
+        <select id="target-platform" class="select">
+          <option value="">Semua platform</option>
+          <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+        </select>
+        <select id="target-sort" class="select">
+          <option value="recent">Terbaru</option>
+          <option value="followers">Followers</option>
+          <option value="likes">Likes</option>
+          <option value="comments">Komentar</option>
+          <option value="views">Views</option>
+          <option value="er">ER</option>
+          <option value="username">Username</option>
+        </select>
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost" id="btn-retry-failed">Ulangi gagal</button>
+          <button class="btn btn-ghost" id="btn-export">Export</button>
+          <button class="btn btn-primary" id="btn-retry-selected" disabled>Ulangi terpilih</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="targets-table"></table>
+      </div>
+      <div class="pager">
+        <button class="btn btn-ghost" id="targets-prev">‹ Prev</button>
+        <span class="muted" id="targets-page">1</span>
+        <button class="btn btn-ghost" id="targets-next">Next ›</button>
+      </div>
+    </section>
+
+    <!-- ACCOUNTS -->
+    <section class="tab" id="tab-accounts">
+      <header class="page-head">
+        <h1>Akun</h1>
+        <div class="page-actions"><span class="muted" id="accounts-total"></span></div>
+      </header>
+      <div class="toolbar">
+        <input id="account-q" class="input" placeholder="Cari akun / nama / bio" />
+        <select id="account-level" class="select">
+          <option value="">Semua level</option>
+          <option value="curiga">Curiga</option>
+          <option value="pola_kembar">Pola kembar</option>
+          <option value="pola_ternak">Pola ternak</option>
+          <option value="amati">Amati</option>
+          <option value="bersih">Bersih</option>
+        </select>
+        <select id="account-band" class="select">
+          <option value="">Semua ukuran</option>
+          <option value="ternak">5K–20K</option>
+          <option value="kecil">< 5K</option>
+          <option value="besar">> 20K</option>
+        </select>
+        <div class="legend" id="account-legend"></div>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="accounts-table"></table>
+      </div>
+    </section>
+
+    <!-- PROSES -->
+    <section class="tab" id="tab-proses">
+      <header class="page-head"><h1>Proses</h1></header>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-title">Antrean</div>
+          <div id="queue-stats"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Worker</div>
+          <div id="worker-detail"></div>
+          <div class="row-gap">
+            <button class="btn btn-ghost" id="btn-login-ig">Login Instagram</button>
+            <button class="btn btn-ghost" id="btn-login-tk">Login TikTok</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Aktivitas terbaru</div>
+        <table class="table" id="latest-table"></table>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="tab" id="tab-settings">
+      <header class="page-head"><h1>Pengaturan</h1></header>
+      <div class="panel">
+        <div class="panel-title">Audit</div>
+        <div class="table-wrap">
+          <table class="table" id="audits-table"></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Database</div>
+        <div id="db-info" class="row-gap"></div>
+        <div class="row-gap">
+          <button class="btn btn-ghost" id="btn-backup">Cadangkan database</button>
+          <button class="btn btn-danger" id="btn-clear">Hapus semua data</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal-root" class="modal-root"></div>
+  <div id="toast-root"></div>
+  <script src="app.js"></script>
+</body>
+</html>

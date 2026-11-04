@@ -1,0 +1,52 @@
+'use strict';
+/**
+ * sunscraping — preload
+ * Jembatan aman renderer ↔ proses utama via contextBridge. Renderer tidak pernah
+ * menyentuh Node/ipcRenderer langsung.
+ */
+
+const { contextBridge, ipcRenderer } = require('electron');
+
+const invoke = (channel, payload) => ipcRenderer.invoke(channel, payload);
+
+contextBridge.exposeInMainWorld('sunscraping', {
+  // worker
+  workerStart: () => invoke('worker:start'),
+  workerStop: () => invoke('worker:stop'),
+  workerStatus: () => invoke('worker:status'),
+  openLogin: (platform) => invoke('worker:login', platform),
+
+  // data (baca)
+  getSummary: (auditId) => invoke('data:summary', auditId),
+  getAudits: () => invoke('data:audits'),
+  getTargets: (params) => invoke('data:targets', params),
+  getAccounts: (params) => invoke('data:accounts', params),
+  getAccountDetail: (platform, username) => invoke('data:accountDetail', { platform, username }),
+  getTargetHistory: (targetId) => invoke('data:targetHistory', targetId),
+  getLatest: (params) => invoke('data:latest', params),
+  getCompare: (params) => invoke('data:compare', params),
+  search: (q) => invoke('data:search', q),
+
+  // data (tulis)
+  createAudit: (opts) => invoke('data:createAudit', opts),
+  appendTargets: (opts) => invoke('data:appendTargets', opts),
+  rerunAudit: (auditId, full) => invoke('data:rerun', { auditId, full }),
+  retryFailed: (auditId) => invoke('data:retryFailed', auditId),
+  retryTargets: (auditId, ids) => invoke('data:retryTargets', { auditId, ids }),
+  enqueueProfileVisits: (auditId) => invoke('data:profileVisits', auditId),
+  updateAudit: (auditId, patch) => invoke('data:updateAudit', { auditId, patch }),
+  deleteAudit: (auditId) => invoke('data:deleteAudit', auditId),
+  clearAll: () => invoke('data:clearAll'),
+  exportExcel: (opts) => invoke('data:export', opts),
+
+  // database
+  dbInfo: () => invoke('db:info'),
+  dbBackup: () => invoke('db:backup'),
+
+  // events push
+  onEvent: (callback) => {
+    const handler = (event, data) => callback(data);
+    ipcRenderer.on('evt', handler);
+    return () => ipcRenderer.removeListener('evt', handler);
+  },
+});
