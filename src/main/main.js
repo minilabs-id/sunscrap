@@ -46,7 +46,10 @@ function createStorage(filePath) {
       Object.assign(data, values || {});
       try {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        fs.writeFileSync(filePath, JSON.stringify(data));
+        // Tulis atomik: tulis .tmp lalu rename, agar crash di tengah tulis tidak merusak state.
+        const tmp = filePath + '.tmp';
+        fs.writeFileSync(tmp, JSON.stringify(data));
+        fs.renameSync(tmp, filePath);
       } catch {}
     },
     remove(keys) {
@@ -93,6 +96,14 @@ function createMainWindow() {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
+  });
+
+  // Klik link postingan tidak boleh mengganti halaman dashboard; buka di browser luar.
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!String(url).startsWith('file://')) {
+      event.preventDefault();
+      if (/^https?:/i.test(url)) shell.openExternal(url);
+    }
   });
 
   mainWindow.on('closed', () => { mainWindow = null; });

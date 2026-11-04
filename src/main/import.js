@@ -180,20 +180,23 @@ async function parseImportFile(filePath, maxRows = 10000) {
 }
 
 /** Parse raw text (satu link per baris) menjadi tasks + hitungan. */
-function parseLinksText(text) {
+function parseLinksText(text, maxRows = 10000) {
   const tasks = [];
   let emptyRows = 0;
   let invalidUrls = 0;
-  const lines = String(text || '').split(/\r?\n/);
+  const raw = String(text || '').replace(/\r?\n$/, '');
+  let lines = raw.split(/\r?\n/);
+  const truncated = lines.length > maxRows;
+  if (truncated) lines = lines.slice(0, maxRows);
   for (const line of lines) {
-    const raw = line.trim();
-    if (!raw) { emptyRows++; continue; }
-    const target = util.normalizeTargetUrl(raw);
+    const rawLine = line.trim();
+    if (!rawLine) { emptyRows++; continue; }
+    const target = util.normalizeTargetUrl(rawLine);
     if (!target) { invalidUrls++; continue; }
     const username = util.usernameFromPostUrl(target.platform, target.url);
     tasks.push({ url: target.url, platform: target.platform, username, tema: null });
   }
-  return { tasks, empty_rows: emptyRows, invalid_urls: invalidUrls };
+  return { tasks, empty_rows: emptyRows, invalid_urls: invalidUrls, truncated };
 }
 
 module.exports = { parseImportFile, parseLinksText, cellText, sniffSeparator, decodeBuffer };

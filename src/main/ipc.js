@@ -25,16 +25,28 @@ function registerIpc({ db, worker, scraper, broadcast }) {
     return { ok: true };
   });
 
+  ipcMain.handle('app:clearSession', async () => {
+    const { session } = require('electron');
+    try {
+      await session.fromPartition('persist:sunscraping').clearStorageData();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
   // ---- worker ----
   ipcMain.handle('worker:start', async () => { const s = await worker.start(); push('worker', s); return s; });
   ipcMain.handle('worker:stop', () => { const s = worker.stop(null); push('worker', s); return s; });
   ipcMain.handle('worker:status', () => worker.getStatus());
   ipcMain.handle('worker:login', (event, platform) => {
+    if (platform !== 'instagram' && platform !== 'tiktok') return { error: 'platform tidak valid' };
     scraper.openLogin(platform);
     return { ok: true };
   });
 
   // ---- data baca ----
+  ipcMain.handle('data:queueStats', () => db.getQueueStats());
   ipcMain.handle('data:summary', (event, auditId) => db.getSummary(auditId));
   ipcMain.handle('data:audits', () => db.getAudits());
   ipcMain.handle('data:targets', (event, params) => db.getTargets(params || {}));
@@ -111,7 +123,7 @@ function registerIpc({ db, worker, scraper, broadcast }) {
       result = db.createAuditWithTasks(parsed.tasks, { name, repeatDays, period: opts.period, sourceFilename: 'tempel-link' });
     }
     dataChanged();
-    return { ...result, invalid_urls: parsed.invalid_urls, empty_rows: parsed.empty_rows, skipped: parsed.invalid_urls };
+    return { ...result, invalid_urls: parsed.invalid_urls, empty_rows: parsed.empty_rows, truncated: parsed.truncated, skipped: parsed.invalid_urls };
   });
 
   // ---- data tulis ----

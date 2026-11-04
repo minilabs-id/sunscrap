@@ -61,6 +61,25 @@ test('duplikat dalam satu file dilewati', () => {
   db.close();
 });
 
+test('getTargets memfilter status ok & partial (F-02)', () => {
+  const db = makeDb();
+  db.createAuditWithTasks([t1, t2], { name: 'f' });
+  const task1 = db.getNextTask();
+  db.updateTaskResult(task1.id, { status: 'OK', likes: 10, comments: 1, followerCount: 1000 });
+  const task2 = db.getNextTask();
+  db.updateTaskResult(task2.id, { status: 'PARTIAL', error: 'views missing' });
+  const auditId = db.getAudits()[0].id;
+
+  const ok = db.getTargets({ auditId, status: 'ok' });
+  assert.equal(ok.total, 1);
+  assert.equal(ok.items[0].status, 'OK');
+
+  const partial = db.getTargets({ auditId, status: 'partial' });
+  assert.equal(partial.total, 1);
+  assert.equal(partial.items[0].status, 'PARTIAL');
+  db.close();
+});
+
 test('recordAccountProfile menyimpan akun + post + seri bulanan', () => {
   const db = makeDb();
   const res = db.recordAccountProfile({

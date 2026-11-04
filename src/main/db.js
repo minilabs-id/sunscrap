@@ -564,6 +564,7 @@ function createDatabase(dbPath) {
       for (const t of ['snapshots', 'tasks', 'targets', 'runs', 'audits', 'accounts', 'account_posts', 'account_history']) {
         run(`DELETE FROM ${t}`);
       }
+      try { run('DELETE FROM sqlite_sequence'); } catch {}
       exec('COMMIT');
     } catch (e) {
       exec('ROLLBACK');
@@ -894,6 +895,21 @@ function createDatabase(dbPath) {
     return getAudits().find((a) => a.id === Number(auditId)) || null;
   }
 
+  function getQueueStats() {
+    // Hitung ringan untuk loop worker & tab Proses; tanpa reclaim, tanpa window function.
+    const row = one(`SELECT
+      SUM(CASE WHEN status='PENDING' THEN 1 ELSE 0 END) AS pending,
+      SUM(CASE WHEN status='RUNNING' THEN 1 ELSE 0 END) AS running,
+      SUM(CASE WHEN status='OK' THEN 1 ELSE 0 END) AS ok,
+      SUM(CASE WHEN status='PARTIAL' THEN 1 ELSE 0 END) AS partial,
+      SUM(CASE WHEN status='FAILED' THEN 1 ELSE 0 END) AS failed
+    FROM tasks`);
+    return {
+      pending: row.pending || 0, running: row.running || 0,
+      ok: row.ok || 0, partial: row.partial || 0, failed: row.failed || 0,
+    };
+  }
+
   function getDashboardStats(auditId) {
     reclaimExpired();
     const where = auditId ? 'WHERE t.audit_id = ?' : '';
@@ -943,6 +959,8 @@ function createDatabase(dbPath) {
     if (params.status) {
       const s = String(params.status).toLowerCase();
       if (s === 'done') conditions.push("COALESCE(lt.status, 'PENDING') IN ('OK','PARTIAL')");
+      else if (s === 'ok') { conditions.push("COALESCE(lt.status, 'PENDING') = 'OK'"); }
+      else if (s === 'partial') { conditions.push("COALESCE(lt.status, 'PENDING') = 'PARTIAL'"); }
       else if (['failed', 'pending', 'running'].includes(s)) { conditions.push("COALESCE(lt.status, 'PENDING') = ?"); cparams.push(s.toUpperCase()); }
     }
     if (params.q) {
@@ -1494,16 +1512,13 @@ function createDatabase(dbPath) {
 
   function backupDatabase(destination) {
     const dir = path.dirname(destination);
-    if (dir && !fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    // node:sqlite tidak punya backup API di Node 22.14; gunakan VACUUM INTO bila tersedia,
-    // else salin via hookap SQLite (simplest: runtime `sqlite3` HTML5 tidak ada; gunakan `.backup` bila ada).
-    try {
-      conn.exec(`VACUUM INTO '${destination.replace(/'/g, "''")}'`);
-    } catch (e) {
-      // fallback: serialize + tulis (membaca seluruh DB ke memori)
-      const data = fs.readFileSync(dbPath);
-      fs.writeFileSync(destination, data);
+    if (dir) fs.mkdirSync(dir, { recursive: true });
+    // Buang salinan lama + sidecar agar VACUUM INTO tidak gagal karena file ada.
+    for (const stale of [destination, destination + '-wal', destination + '-shm']) {
+      try { if (fs.existsSync(stale)) fs.unlinkSync(stale); } catch {}
     }
+    // VACUUM INTO menghasilkan salinan konsisten & self-contained (termasuk data -wal).
+    conn.exec(`VACUUM INTO '${destination.replace(/'/g, "''")}'`);
     return destination;
   }
 
@@ -1520,7 +1535,7 @@ function createDatabase(dbPath) {
     enqueueProfileVisits, updateAudit, deleteAudit, clearAll,
     getNextTask, updateTaskResult, recordAccountProfile,
     // read
-    getAudits, getAudit, getDashboardStats, getTargets, getLatest, getTargetHistory, getTargetWithAudit,
+    getAudits, getAudit, getQueueStats, getDashboardStats, getTargets, getLatest, getTargetHistory, getTargetWithAudit,
     getSummary, getCompare, searchData, getAccountIntel, getAccountDetail, getAccountProfile,
     getAccountCache, getCachedPostMetrics, getExportRows,
     getDatabaseInfo, backupDatabase,

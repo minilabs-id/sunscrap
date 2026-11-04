@@ -62,3 +62,21 @@ test('caption seragam lintas akun terdeteksi sebagai template', () => {
   const shared = intel.sharedCaptionTemplates({ 'instagram:x': posts1, 'instagram:y': posts2 });
   assert.ok(shared.size >= 1);
 });
+
+test('tanggal di bio tidak ditokenisasi sebagai nomor telepon (L-02)', () => {
+  const tokens = intel.bioContactTokens('Est. 2026.10.01, promo saban hari');
+  const phones = Array.from(tokens).filter((t) => t.startsWith('phone:'));
+  assert.equal(phones.length, 0);
+  // nomor asli tetap terbaca
+  assert.ok(Array.from(intel.bioContactTokens('WA 0812-3456-7890')).some((t) => t.startsWith('phone:')));
+});
+
+test('followers datar di band 20K-100K memberi flag (L-01)', () => {
+  const a = account('flat50k', 50000);
+  const history = [
+    { month: '2026-09', follower_count: 50000, post_count: 100 },
+    { month: '2026-10', follower_count: 50100, post_count: 120 },
+  ];
+  const r = intel.analyseAccount(a, [], history, {});
+  assert.ok(r.flags.some((f) => f.key === 'followers_datar'));
+});

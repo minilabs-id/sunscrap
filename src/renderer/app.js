@@ -89,6 +89,14 @@ function closeModal() {
   $('#modal-root').classList.remove('open');
   $('#modal-root').innerHTML = '';
 }
+// Delegasi: tombol [data-close] & tombol Escape selalu bisa menutup modal,
+// tanpa inline handler (yang diblokir CSP script-src 'self').
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-close]')) closeModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
 
 // ---------------- navigation ----------------
 $$('.nav-link').forEach((link) => {
@@ -266,7 +274,7 @@ function openTarget(targetId) {
       <td class="num">${fmt(s.follower_count)}</td><td class="num">${fmt(s.likes)}</td><td class="num">${fmt(s.comments)}</td><td class="num">${fmt(s.views)}</td>
       <td class="wrap">${esc(s.error_message || '')}</td></tr>`).join('');
     openModal(`
-      <div class="modal-head"><h3>Riwayat target</h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+      <div class="modal-head"><h3>Riwayat target</h3><button class="btn btn-ghost" data-close>✕</button></div>
       <div class="modal-body"><table class="table"><thead><tr><th>Waktu</th><th>Status</th><th class="num">Follower</th><th class="num">Likes</th><th class="num">Komen</th><th class="num">Views</th><th>Error</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">Belum ada snapshot.</td></tr>'}</tbody></table></div>`);
   });
 }
@@ -309,7 +317,7 @@ function openAccount(username, platform) {
     const siblings = (detail.siblings || []).map((s) => `<div class="flag">@${esc(s.username)} — ${esc(s.level)} (${(s.reasons || []).join(', ')})</div>`).join('');
     const history = (detail.history || []).map((h) => `<tr><td>${esc(h.month)}</td><td class="num">${fmt(h.follower_count)}</td><td class="num">${fmt(h.post_count)}</td></tr>`).join('');
     openModal(`
-      <div class="modal-head"><h3>@${esc(detail.username)} <span class="badge lv-${esc(detail.level)}">${esc(detail.level)}</span></h3><button class="btn btn-ghost" onclick="closeModal()">✕</button></div>
+      <div class="modal-head"><h3>@${esc(detail.username)} <span class="badge lv-${esc(detail.level)}">${esc(detail.level)}</span></h3><button class="btn btn-ghost" data-close>✕</button></div>
       <div class="modal-body">
         <div class="grid-2">
           <div><div class="muted">Followers</div><div class="num" style="font-size:20px">${fmt(detail.followers)}</div></div>
@@ -326,11 +334,9 @@ function openAccount(username, platform) {
 // ---------------- tab: proses ----------------
 async function loadProcess() {
   try {
-    const summary = await api.getSummary(state.auditId);
-    const k = summary.kpi || {};
-    const s = summary.status || {};
+    const s = await api.getQueueStats();
     $('#queue-stats').innerHTML =
-      kpi(fmt(k.pending), 'Menunggu') + kpi(fmt(k.running), 'Berjalan') + kpi(fmt(k.ok), 'OK') + kpi(fmt(k.failed), 'Gagal');
+      kpi(fmt(s.pending), 'Menunggu') + kpi(fmt(s.running), 'Berjalan') + kpi(fmt(s.ok), 'OK') + kpi(fmt(s.failed), 'Gagal');
 
     const latest = await api.getLatest({ limit: 20 });
     $('#latest-table').innerHTML = `
@@ -378,13 +384,13 @@ function renderAudits() {
     if (act === 'rerun') { api.rerunAudit(id, true).then((r) => toast(r.message || 'Dijadwalkan ulang.')); }
     else if (act === 'delete') {
       openModal(`<div class="modal-head"><h3>Hapus audit?</h3></div><div class="modal-body">Audit beserta seluruh riwayatnya akan dihapus permanen.</div>
-        <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-danger" id="confirm-del">Hapus</button></div>`);
+        <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-del">Hapus</button></div>`);
       $('#confirm-del').addEventListener('click', async () => { await api.deleteAudit(id); closeModal(); loadAudits(); });
     } else if (act === 'edit') {
       openModal(`<div class="modal-head"><h3>Edit audit</h3></div><div class="modal-body">
-        <div class="field"><label>Nama</label><input id="edit-name" class="input" value="${btn.dataset.name}"></div>
+        <div class="field"><label>Nama</label><input id="edit-name" class="input" value="${esc(btn.dataset.name)}"></div>
         <div class="field"><label>Ulang (hari, 0 = manual)</label><input id="edit-repeat" class="input" type="number" min="0" max="365" value="${btn.dataset.repeat}"></div>
-      </div><div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-primary" id="confirm-edit">Simpan</button></div>`);
+      </div><div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" id="confirm-edit">Simpan</button></div>`);
       $('#confirm-edit').addEventListener('click', async () => {
         await api.updateAudit(id, { name: $('#edit-name').value, repeat_days: Number($('#edit-repeat').value) });
         closeModal(); loadAudits();
@@ -404,7 +410,7 @@ function openNewAudit() {
       <textarea id="new-links" class="input" placeholder="https://www.instagram.com/p/CODE/&#10;https://www.tiktok.com/@user/video/7123456789"></textarea></div>
     <p class="muted">Atau import dari file <b>Excel/CSV</b> (kolom Link/URL), maksimal 10.000 baris.</p>
   </div><div class="modal-foot">
-    <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+    <button class="btn btn-ghost" data-close>Batal</button>
     <button class="btn btn-ghost" id="confirm-file">Import file…</button>
     <button class="btn btn-primary" id="confirm-links">Import link</button>
   </div>`);
@@ -490,7 +496,8 @@ function bindEvents() {
     loadTargets();
   });
   $('#btn-retry-selected').addEventListener('click', async () => {
-    if (!state.auditId || !state.targets.selected.size) return;
+    if (!state.targets.selected.size) return;
+    if (!state.auditId) { toast('Pilih audit dulu di dropdown atas.'); return; }
     const r = await api.retryTargets(state.auditId, Array.from(state.targets.selected));
     toast(r.message || `Dijadwalkan ulang ${fmt(r.created)} target.`);
     state.targets.selected.clear(); updateRetrySelected(); loadTargets();
@@ -498,7 +505,7 @@ function bindEvents() {
   $('#btn-export').addEventListener('click', async () => {
     const status = $('#target-status').value === 'partial' ? 'PARTIAL' : $('#target-status').value === 'failed' ? 'FAILED' : $('#target-status').value === 'ok' ? 'OK' : undefined;
     const r = await api.exportExcel({ auditId: state.auditId || null, status });
-    if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast(`Dicek export ${fmt(r.rows)} baris.`, 'ok');
+    if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast(`Export selesai: ${fmt(r.rows)} baris.`, 'ok');
   });
 
   // accounts filters
@@ -515,9 +522,13 @@ function bindEvents() {
     const r = await api.dbBackup();
     if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast('Cadangan tersimpan.', 'ok');
   });
+  $('#btn-clear-session').addEventListener('click', async () => {
+    const r = await api.clearSession();
+    if (r.ok) toast('Sesi login dihapus. Login ulang lewat tray/Browser.', 'ok'); else toast(r.error || 'Gagal hapus sesi.', 'error');
+  });
   $('#btn-clear').addEventListener('click', () => {
     openModal(`<div class="modal-head"><h3>Hapus semua data?</h3></div><div class="modal-body">Semua audit, target, snapshot, dan data akun akan dihapus permanen.</div>
-      <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Batal</button><button class="btn btn-danger" id="confirm-clear">Hapus semua</button></div>`);
+      <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-clear">Hapus semua</button></div>`);
     $('#confirm-clear').addEventListener('click', async () => { await api.clearAll(); closeModal(); toast('Data dihapus.'); await pollUpdate(); });
   });
 }

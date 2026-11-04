@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('sunscraping', {
 
   // data (baca)
   getSummary: (auditId) => invoke('data:summary', auditId),
+  getQueueStats: () => invoke('data:queueStats'),
   getAudits: () => invoke('data:audits'),
   getTargets: (params) => invoke('data:targets', params),
   getAccounts: (params) => invoke('data:accounts', params),
@@ -53,4 +54,5 @@ contextBridge.exposeInMainWorld('sunscraping', {
 
   // aplikasi
   openExternal: (url) => invoke('app:openExternal', url),
+  clearSession: () => invoke('app:clearSession'),
 });

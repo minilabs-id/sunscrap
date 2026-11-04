@@ -31,6 +31,14 @@ function desktopUserAgent() {
   return `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chrome} Safari/537.36`;
 }
 
+/** Batas waktu per panggilan scrape; halaman yang menggantung tidak menahan worker. */
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms)),
+  ]);
+}
+
 function createScraper({ onLog, resolvePage, partition } = {}) {
   const say = typeof onLog === 'function' ? onLog : () => {};
   const resolve = typeof resolvePage === 'function' ? resolvePage : (url) => url;
@@ -114,7 +122,11 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
   async function call(platform, expr) {
     const win = ensureWorkerWindow();
     await inject(platform);
-    return win.webContents.executeJavaScriptInIsolatedWorld(WORLD_ID, [{ code: expr }]);
+    return withTimeout(
+      win.webContents.executeJavaScriptInIsolatedWorld(WORLD_ID, [{ code: expr }]),
+      SCRAPE_TIMEOUT_MS,
+      'Timeout - halaman terlalu lambat',
+    );
   }
 
   return {

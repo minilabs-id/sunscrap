@@ -17,7 +17,7 @@ const UPLOAD_BURST_WINDOW_MINUTES = 10;
 const UPLOAD_BURST_MIN_COUNT = 3;
 const SIBLING_SYNC_WINDOW_MINUTES = 5;
 const SIBLING_SYNC_MIN_HITS = 2;
-const BIO_CONTACT_MIN_DIGITS = 8;
+const BIO_CONTACT_MIN_DIGITS = 10; // nomor HP Indonesia ≥ 10 digit; 8 digit tanggal "20261001" tertolak
 const CAPTION_TEMPLATE_PREFIX = 40;
 const FLAT_FOLLOWER_BANDS = [[TERNAK_BAND_MIN, TERNAK_BAND_MAX], [20000, 100000]];
 const FLAT_FOLLOWER_TOLERANCE = 0.03;
@@ -339,7 +339,7 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
   if (reasonsByPeer.serentak) flag('unggah_serentak', 'Unggahan serentak',
     `Jam upload bergeser beberapa menit saja dengan ${peerList('serentak')}`, 1);
 
-  if (monthValues.length >= 2 && followerDeltaPct !== null && inBand) {
+  if (monthValues.length >= 2 && followerDeltaPct !== null) {
     const bandFlat = FLAT_FOLLOWER_BANDS.some(([lo, hi]) => followers >= lo && followers <= hi);
     const steady = followerDeltaPct <= FLAT_FOLLOWER_TOLERANCE * 100.0;
     const keptUploading = postGrowth === null || postGrowth >= FLAT_FOLLOWER_MIN_POST_GROWTH;

@@ -250,8 +250,8 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers } = 
   }
 
   function pendingCount() {
-    const stats = db.getDashboardStats();
-    return (stats.PENDING || 0) + (stats.RUNNING || 0);
+    const stats = db.getQueueStats();
+    return (stats.pending || 0) + (stats.running || 0);
   }
 
   return { start, stop, getStatus };
