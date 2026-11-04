@@ -7,7 +7,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-  app, BrowserWindow, Menu, Notification, Tray, nativeImage, shell, dialog, protocol,
+  app, BrowserWindow, Menu, Notification, Tray, nativeImage, shell, dialog, protocol, ipcMain,
 } = require('electron');
 
 const { createDatabase } = require('./db');
@@ -155,6 +155,15 @@ function buildAppMenu() {
       role: 'viewMenu',
       label: 'Tampilan',
       submenu: [
+        {
+          label: 'Tema',
+          submenu: [
+            { label: 'Terang', click: () => send('theme:light') },
+            { label: 'Gelap', click: () => send('theme:dark') },
+            { label: 'Ikuti sistem', click: () => send('theme:system') },
+          ],
+        },
+        { type: 'separator' },
         { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' },
         { type: 'separator' },
         { role: 'togglefullscreen' },
@@ -347,6 +356,9 @@ async function boot() {
   });
 
   registerIpc({ db, worker, scraper, broadcast });
+
+  ipcMain.handle('app:copyDiagnostics', () => { copyDiagnostics(); return { ok: true }; });
+  ipcMain.handle('app:openDataFolder', () => { openDataFolder(); return { ok: true }; });
 
   createMainWindow();
 

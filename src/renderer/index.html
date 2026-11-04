@@ -77,6 +77,10 @@
         <div class="panel-title">Kualitas data</div>
         <div id="quality"></div>
       </div>
+      <div class="panel">
+        <div class="panel-title">Perbandingan antar periode</div>
+        <div id="compare-panel" class="muted">Memuat…</div>
+      </div>
     </section>
 
     <!-- TARGET -->
@@ -219,6 +223,27 @@
         <div class="row-gap">
           <button class="btn btn-ghost" id="btn-backup">Cadangkan database</button>
           <button class="btn btn-ghost" id="btn-restore">Pulihkan dari cadangan…</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Tampilan</div>
+        <div class="row-gap" id="theme-picker">
+          <label class="row-gap"><input type="radio" name="theme" class="theme-radio" data-theme="system" checked> Ikuti sistem</label>
+          <label class="row-gap"><input type="radio" name="theme" class="theme-radio" data-theme="light"> Terang</label>
+          <label class="row-gap"><input type="radio" name="theme" class="theme-radio" data-theme="dark"> Gelap</label>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Privasi</div>
+        <p class="muted" style="margin:0 0 10px">Aplikasi ini sepenuhnya lokal. Data login & data publik tersimpan di mesin Anda. Tidak ada data yang dikirim keluar.</p>
+        <div class="row-gap">
+          <button class="btn btn-ghost" id="btn-diag">Salin info diagnostik</button>
+          <button class="btn btn-ghost" id="btn-open-data">Buka folder data</button>
+        </div>
+      </div>
+      <div class="danger-zone">
+        <div class="panel-title">Zona berbahaya</div>
+        <div class="row-gap">
           <button class="btn btn-danger" id="btn-clear-session">Hapus sesi login (IG & TikTok)</button>
           <button class="btn btn-danger" id="btn-clear">Hapus semua data</button>
         </div>

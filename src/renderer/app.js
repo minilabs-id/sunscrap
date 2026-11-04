@@ -154,6 +154,22 @@ document.addEventListener('keydown', (e) => {
 
 // ---------------- navigation ----------------
 const TAB_LABELS = { dashboard: 'Dashboard', targets: 'Target', accounts: 'Akun', browser: 'Browser', proses: 'Proses', settings: 'Pengaturan' };
+
+// ---------------- tema ----------------
+function applyTheme(theme) {
+  if (theme !== 'dark' && theme !== 'light' && theme !== 'system') theme = 'system';
+  const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('sa_theme', theme); } catch {}
+  // sinkronkan radio di Pengaturan bila ada
+  const radio = document.querySelector(`.theme-radio[data-theme="${theme}"]`);
+  if (radio) radio.checked = true;
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  const t = document.documentElement.dataset.theme || 'system';
+  if (t === 'system') applyTheme('system');
+});
 function handleMenuAction(action) {
   if (action === 'import') openNewAudit();
   else if (action === 'export') openExport();
@@ -163,6 +179,8 @@ function handleMenuAction(action) {
     const tab = action.slice(4);
     const link = $$('.nav-link').find((l) => l.dataset.tab === tab);
     if (link) link.click();
+  } else if (action && action.startsWith('theme:')) {
+    applyTheme(action.slice(6));
   }
 }
 function updateTitlebarContext() {
@@ -480,7 +498,7 @@ async function loadProcess() {
     const etaMin = eta > 0 ? Math.max(1, Math.round(eta * 6 / 60)) : 0;
     const etaText = eta > 0 ? `<div class="sub">≈ ${etaMin} menit untuk ${fmt(eta)} tersisa</div>` : '<div class="sub">Antrean kosong</div>';
     $('#queue-stats').innerHTML =
-      kpi(fmt(s.pending), 'Menunggu') + kpi(fmt(s.running), 'Berjalan') + kpi(fmt(s.ok), 'OK') + kpi(fmt(s.failed), 'Gagal');
+      kpi(fmt(s.pending), 'Menunggu') + kpi(fmt(s.running), 'Berjalan') + kpi(fmt(s.ok), 'OK', 'total') + kpi(fmt(s.failed), 'Gagal', 'total');
     let etaEl = $('#queue-eta');
     if (!etaEl) { etaEl = document.createElement('div'); etaEl.id = 'queue-eta'; etaEl.className = 'muted'; $('#queue-stats').insertAdjacentElement('afterend', etaEl); }
     etaEl.innerHTML = etaText;
@@ -676,7 +694,21 @@ function renderStatusBar() {
 
 async function refreshDashboard() {
   if (state.tab !== 'dashboard') return;
-  try { renderDashboard(await api.getSummary(state.auditId)); await loadRiskAccounts(); } catch {}
+  try { renderDashboard(await api.getSummary(state.auditId)); await Promise.all([loadRiskAccounts(), loadComparePanel()]); } catch {}
+}
+
+async function loadComparePanel() {
+  try {
+    const cmp = await api.getCompare({ months: 6 });
+    const el = $('#compare-panel');
+    if (!el) return;
+    const s = cmp.summary || {};
+    if (!cmp.periods || cmp.periods.length < 2) {
+      el.textContent = 'Butuh minimal 2 periode untuk perbandingan.';
+      return;
+    }
+    el.innerHTML = `${cmp.periods.length} periode (terbaru <b>${esc(cmp.latest_period)}</b>) · ${fmt(s.accounts)} akun · <b>${fmt(s.new_accounts)} baru</b> · ${fmt(s.missing_latest)} hilang di periode terbaru`;
+  } catch { const el = $('#compare-panel'); if (el) el.textContent = '—'; }
 }
 
 let pollTimer = null;
@@ -786,6 +818,11 @@ function bindEvents() {
       if (r.ok) toast('Sesi login dihapus. Login ulang lewat tray/Browser.', 'ok'); else toast(r.error || 'Gagal hapus sesi.', 'error');
     });
   });
+
+  // Tampilan & privasi
+  $$('#theme-picker .theme-radio').forEach((r) => r.addEventListener('change', () => { if (r.checked) applyTheme(r.dataset.theme); }));
+  $('#btn-diag').addEventListener('click', async () => { await api.copyDiagnostics(); toast('Info diagnostik disalin ke clipboard.', 'ok'); });
+  $('#btn-open-data').addEventListener('click', () => api.openDataFolder());
   $('#btn-clear').addEventListener('click', () => {
     openModal(`<div class="modal-head"><h3>Hapus semua data</h3></div><div class="modal-body">
       <p>Semua audit, target, snapshot, dan data akun akan dihapus <b>permanen</b>. Tindakan ini tidak bisa dibatalkan.</p>
@@ -807,6 +844,7 @@ function bindEvents() {
 }
 
 async function init() {
+  applyTheme((typeof localStorage !== 'undefined' && localStorage.getItem('sa_theme')) || 'system');
   bindEvents();
   bindBrowser();
   await loadAudits();
@@ -826,5 +864,13 @@ async function init() {
     else if (state.tab === 'proses') loadProcess();
   }, 5000);
 }
+
+// aksesibilitas: pastikan semua <th> di tabel punya scope="col"
+const thObserver = new MutationObserver(() => {
+  for (const th of document.querySelectorAll('thead th')) {
+    if (!th.hasAttribute('scope')) th.setAttribute('scope', 'col');
+  }
+});
+thObserver.observe(document.body, { childList: true, subtree: true });
 
 init();

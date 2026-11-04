@@ -59,4 +59,6 @@ contextBridge.exposeInMainWorld('sunscraping', {
   // aplikasi
   openExternal: (url) => invoke('app:openExternal', url),
   clearSession: () => invoke('app:clearSession'),
+  copyDiagnostics: () => invoke('app:copyDiagnostics'),
+  openDataFolder: () => invoke('app:openDataFolder'),
 });
