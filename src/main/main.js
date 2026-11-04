@@ -161,6 +161,10 @@ async function toggleWorker() {
 
 async function boot() {
   app.setAppUserModelId('com.sunscraping.desktop');
+  // Folder data bisa diarahkan (portable / isolasi tes) lewat SA_USER_DATA.
+  if (process.env.SA_USER_DATA) {
+    try { app.setPath('userData', process.env.SA_USER_DATA); } catch {}
+  }
   const userData = app.getPath('userData');
   if (!fs.existsSync(userData)) fs.mkdirSync(userData, { recursive: true });
 
