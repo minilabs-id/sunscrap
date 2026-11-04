@@ -262,6 +262,14 @@ function statusBadge(status) {
   return `<span class="status ${s}"><span class="sdot"></span>${label}</span>`;
 }
 
+function avatarHtml(url, username, large = false) {
+  const cls = large ? 'avatar-lg' : '';
+  const icon = url
+    ? `<img class="avatar ${cls}" src="${esc(url)}" alt="" loading="lazy">`
+    : `<span class="avatar-fallback ${cls}">${esc((username || '?').slice(0, 1).toUpperCase())}</span>`;
+  return `<span class="avatar-wrap">${icon}</span>`;
+}
+
 function updateRetrySelected() {
   $('#btn-retry-selected').disabled = state.targets.selected.size === 0;
   $('#btn-retry-selected').textContent = state.targets.selected.size ? `Ulangi terpilih (${state.targets.selected.size})` : 'Ulangi terpilih';
@@ -297,7 +305,7 @@ async function loadAccounts() {
     <thead><tr><th>Akun</th><th>Level</th><th class="num">Skor</th><th class="num">Followers</th><th class="num">Reach</th><th class="num">Post</th><th class="num">Bulan</th><th>Indikasi</th></tr></thead>
     <tbody>${state.accounts.items.map((a) =>
       `<tr class="clickable" data-account="${esc(a.username)}" data-platform="${esc(a.platform)}">
-        <td><b>@${esc(a.username)}</b> <span class="muted">${esc(a.display_name || '')}</span></td>
+        <td>${avatarHtml(a.avatar_url, a.username)}<b>@${esc(a.username)}</b> <span class="muted">${esc(a.display_name || '')}</span></td>
         <td><span class="badge lv-${esc(a.level)}">${esc(a.level.replace('_', ' '))}</span></td>
         <td class="num">${fmt(a.score)}</td>
         <td class="num">${fmt(a.followers)}</td>
@@ -317,7 +325,7 @@ function openAccount(username, platform) {
     const siblings = (detail.siblings || []).map((s) => `<div class="flag">@${esc(s.username)} — ${esc(s.level)} (${(s.reasons || []).join(', ')})</div>`).join('');
     const history = (detail.history || []).map((h) => `<tr><td>${esc(h.month)}</td><td class="num">${fmt(h.follower_count)}</td><td class="num">${fmt(h.post_count)}</td></tr>`).join('');
     openModal(`
-      <div class="modal-head"><h3>@${esc(detail.username)} <span class="badge lv-${esc(detail.level)}">${esc(detail.level)}</span></h3><button class="btn btn-ghost" data-close>✕</button></div>
+      <div class="modal-head"><h3>${avatarHtml(detail.avatar_url, detail.username, true)}@${esc(detail.username)} <span class="badge lv-${esc(detail.level)}">${esc(detail.level)}</span></h3><button class="btn btn-ghost" data-close>✕</button></div>
       <div class="modal-body">
         <div class="grid-2">
           <div><div class="muted">Followers</div><div class="num" style="font-size:20px">${fmt(detail.followers)}</div></div>

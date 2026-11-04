@@ -372,6 +372,7 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
     bio: account.bio || null,
     region: account.region || null,
     external_id: account.external_id || null,
+    avatar_url: account.avatar_url || null,
     is_verified: Boolean(account.is_verified),
     followers: followers !== null ? Math.round(followers) : null,
     following: following !== null ? Math.round(following) : null,

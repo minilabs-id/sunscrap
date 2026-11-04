@@ -85,6 +85,8 @@ function createMainWindow() {
     minHeight: 640,
     title: 'sunscraping',
     icon: ICON_FILE,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: { color: '#ffffff', symbolColor: '#101828', height: 40 },
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload', 'preload.js'),
       nodeIntegration: false,
@@ -92,6 +94,8 @@ function createMainWindow() {
       webviewTag: true,
     },
   });
+
+  mainWindow.maximize();
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url)) shell.openExternal(url);
@@ -161,6 +165,7 @@ async function toggleWorker() {
 
 async function boot() {
   app.setAppUserModelId('com.sunscraping.desktop');
+  Menu.setApplicationMenu(null);
   // Folder data bisa diarahkan (portable / isolasi tes) lewat SA_USER_DATA.
   if (process.env.SA_USER_DATA) {
     try { app.setPath('userData', process.env.SA_USER_DATA); } catch {}

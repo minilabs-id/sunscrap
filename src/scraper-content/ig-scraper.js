@@ -475,6 +475,8 @@
       username: (node && node.username) || username || null,
       accountId: node && (node.pk ?? node.id) !== undefined ? String(node.pk ?? node.id) : null,
       externalId: null,
+      avatarUrl: (node && (node.profile_pic_url || node.profile_pic_url_hd))
+        || (document.querySelector('meta[property="og:image"]') && document.querySelector('meta[property="og:image"]').getAttribute('content')) || null,
       displayName: (node && node.full_name) || displayNameFromMeta(),
       bio: (node && node.biography) ? truncateText(node.biography, 300) : null,
       region: null,

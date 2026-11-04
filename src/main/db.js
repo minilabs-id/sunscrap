@@ -113,7 +113,7 @@ function createDatabase(dbPath) {
         follower_count INTEGER, fetched_at TEXT DEFAULT CURRENT_TIMESTAMP,
         account_id TEXT, external_id TEXT, display_name TEXT, bio TEXT, region TEXT,
         following_count INTEGER, post_count INTEGER, is_verified INTEGER,
-        last_visit_at TEXT, needs_visit INTEGER DEFAULT 1,
+        last_visit_at TEXT, needs_visit INTEGER DEFAULT 1, avatar_url TEXT,
         PRIMARY KEY (platform, username)
       );
       CREATE TABLE IF NOT EXISTS account_posts (
@@ -151,6 +151,11 @@ function createDatabase(dbPath) {
     exec('CREATE INDEX IF NOT EXISTS idx_account_history_account ON account_history(platform, username, month)');
     exec('CREATE INDEX IF NOT EXISTS idx_account_history_month ON account_history(month)');
     exec(`PRAGMA user_version = ${SCHEMA_VERSION}`);
+    // Migrasi inkremental untuk DB yang sudah ada (CREATE TABLE IF NOT EXISTS tidak menambah kolom).
+    const acctCols = new Set(conn.prepare('PRAGMA table_info(accounts)').all().map((r) => r.name));
+    if (!acctCols.has('avatar_url')) {
+      exec('ALTER TABLE accounts ADD COLUMN avatar_url TEXT');
+    }
   }
 
   // ---- infer error code ----
@@ -729,6 +734,7 @@ function createDatabase(dbPath) {
       follower_count: cleanInt(payload.followerCount),
       following_count: cleanInt(payload.followingCount),
       post_count: cleanInt(payload.postCount),
+      avatar_url: cleanText(payload.avatarUrl, 500),
       is_verified: verified === null || verified === undefined ? null : (verified ? 1 : 0),
     };
     for (const [column, key, size] of PROFILE_ACCOUNT_FIELDS) {
@@ -743,8 +749,8 @@ function createDatabase(dbPath) {
     exec('BEGIN IMMEDIATE');
     try {
       run(`INSERT INTO accounts (platform, username, follower_count, fetched_at, account_id, external_id,
-            display_name, bio, region, following_count, post_count, is_verified, needs_visit, last_visit_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            display_name, bio, region, following_count, post_count, is_verified, needs_visit, last_visit_at, avatar_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(platform, username) DO UPDATE SET
           follower_count = COALESCE(excluded.follower_count, accounts.follower_count),
           following_count = COALESCE(excluded.following_count, accounts.following_count),
@@ -754,13 +760,14 @@ function createDatabase(dbPath) {
           display_name = COALESCE(excluded.display_name, accounts.display_name),
           bio = COALESCE(excluded.bio, accounts.bio),
           region = COALESCE(excluded.region, accounts.region),
+          avatar_url = COALESCE(excluded.avatar_url, accounts.avatar_url),
           is_verified = COALESCE(excluded.is_verified, accounts.is_verified),
           fetched_at = excluded.fetched_at,
           needs_visit = MIN(accounts.needs_visit, excluded.needs_visit),
           last_visit_at = excluded.last_visit_at`,
         platform, username, account.follower_count, fetchedAt, account.account_id, account.external_id,
         account.display_name, account.bio, account.region, account.following_count, account.post_count,
-        account.is_verified, needsVisit, fetchedAt);
+        account.is_verified, needsVisit, fetchedAt, account.avatar_url);
 
       recordAccountMonth(platform, username, fetchedAt, account.follower_count, account.following_count, account.post_count);
 

@@ -31,7 +31,22 @@ body {
   font-size: var(--fs-body);
   line-height: 1.45;
   display: flex;
+  flex-direction: column;
 }
+
+/* ---------- titlebar (drag region, native controls overlay di kanan) ---------- */
+.titlebar {
+  height: 40px;
+  flex: 0 0 40px;
+  -webkit-app-region: drag;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 0 150px 0 16px; /* sisa ruang untuk tombol min/max/close */
+}
+.titlebar-title { font-size: 13px; font-weight: 600; color: var(--brand-ink); }
+.layout { flex: 1; display: flex; min-height: 0; }
 
 /* ---------- sidebar ---------- */
 .sidebar {
@@ -41,9 +56,7 @@ body {
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
-  height: 100vh;
+  height: 100%;
 }
 .brand {
   font-size: 18px;
@@ -72,7 +85,7 @@ body {
 .worker-sub { font-size: var(--fs-meta); color: var(--faint); margin-top: 8px; }
 
 /* ---------- main ---------- */
-.main { padding: 24px 28px; flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
+.main { padding: 24px 28px; flex: 1; min-width: 0; height: 100%; overflow-y: auto; }
 .tab { display: none; }
 .tab.active { display: block; }
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
@@ -227,6 +240,13 @@ body {
 .row-item { display: flex; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
 .row-item:last-child { border-bottom: none; }
 .row-item .num { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* avatar akun */
+.avatar-wrap { display: inline-flex; align-items: center; vertical-align: middle; margin-right: 9px; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: block; background: var(--line-soft); }
+.avatar-lg { width: 48px; height: 48px; }
+.avatar-fallback { width: 28px; height: 28px; border-radius: 50%; background: var(--line-soft); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.avatar-fallback.avatar-lg { width: 48px; height: 48px; font-size: 18px; }
 
 /* ---------- browser ---------- */
 #tab-browser.active { display: flex; flex-direction: column; height: 100%; }
