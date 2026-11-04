@@ -49,4 +49,7 @@ contextBridge.exposeInMainWorld('sunscraping', {
     ipcRenderer.on('evt', handler);
     return () => ipcRenderer.removeListener('evt', handler);
   },
+
+  // aplikasi
+  openExternal: (url) => invoke('app:openExternal', url),
 });

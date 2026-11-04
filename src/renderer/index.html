@@ -14,6 +14,7 @@
       <a class="nav-link active" data-tab="dashboard">Dashboard</a>
       <a class="nav-link" data-tab="targets">Data · Target</a>
       <a class="nav-link" data-tab="accounts">Data · Akun</a>
+      <a class="nav-link" data-tab="browser">Browser</a>
       <a class="nav-link" data-tab="proses">Proses</a>
       <a class="nav-link" data-tab="settings">Pengaturan</a>
     </nav>
@@ -138,6 +139,22 @@
       </div>
       <div class="table-wrap">
         <table class="table" id="accounts-table"></table>
+      </div>
+    </section>
+
+    <!-- BROWSER -->
+    <section class="tab" id="tab-browser">
+      <div class="browser-bar">
+        <button class="btn btn-ghost nav-btn" id="browser-back" title="Mundur">‹</button>
+        <button class="btn btn-ghost nav-btn" id="browser-fwd" title="Maju">›</button>
+        <button class="btn btn-ghost nav-btn" id="browser-reload" title="Muat ulang">⟳</button>
+        <input id="browser-url" class="input" placeholder="https://www.instagram.com/…" />
+        <button class="btn btn-ghost" id="browser-go">Buka</button>
+        <button class="btn btn-ghost" id="browser-ig">Instagram</button>
+        <button class="btn btn-ghost" id="browser-tk">TikTok</button>
+      </div>
+      <div class="browser-wrap">
+        <webview id="browser-webview" partition="persist:sunscraping"></webview>
       </div>
     </section>
 

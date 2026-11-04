@@ -30,6 +30,46 @@ function esc(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ---------------- browser ----------------
+let browserInited = false;
+function ensureBrowser() {
+  const wv = $('#browser-webview');
+  if (!wv || browserInited) return;
+  browserInited = true;
+  wv.src = 'https://www.instagram.com/';
+}
+function browserNavigate(url) {
+  const wv = $('#browser-webview');
+  if (!wv) return;
+  let target = String(url || '').trim();
+  if (!target) return;
+  if (!/^https?:\/\//i.test(target)) {
+    target = target.includes('.') ? 'https://' + target : 'https://www.instagram.com/' + encodeURIComponent(target);
+  }
+  wv.loadURL(target);
+}
+function bindBrowser() {
+  const wv = $('#browser-webview');
+  if (!wv) return;
+  wv.addEventListener('did-navigate', () => { $('#browser-url').value = wv.getURL(); });
+  wv.addEventListener('did-navigate-in-page', () => { $('#browser-url').value = wv.getURL(); });
+  wv.addEventListener('new-window', (e) => {
+    if (/^https?:/i.test(String(e.url))) window.sunscraping.openExternal(e.url);
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  });
+  wv.addEventListener('did-fail-load', (e) => {
+    if (e.errorCode !== -3 && e.isMainFrame) toast('Gagal memuat: ' + (e.errorDescription || e.errorCode), 'error');
+  });
+
+  $('#browser-go').addEventListener('click', () => browserNavigate($('#browser-url').value));
+  $('#browser-url').addEventListener('keydown', (e) => { if (e.key === 'Enter') browserNavigate($('#browser-url').value); });
+  $('#browser-back').addEventListener('click', () => { const w = $('#browser-webview'); if (w.canGoBack()) w.goBack(); });
+  $('#browser-fwd').addEventListener('click', () => { const w = $('#browser-webview'); if (w.canGoForward()) w.goForward(); });
+  $('#browser-reload').addEventListener('click', () => $('#browser-webview').reload());
+  $('#browser-ig').addEventListener('click', () => { ensureBrowser(); $('#browser-webview').loadURL('https://www.instagram.com/'); });
+  $('#browser-tk').addEventListener('click', () => { ensureBrowser(); $('#browser-webview').loadURL('https://www.tiktok.com/'); });
+}
+
 function toast(message, kind = '') {
   const root = $('#toast-root');
   const node = document.createElement('div');
@@ -60,6 +100,7 @@ $$('.nav-link').forEach((link) => {
     $('#tab-' + state.tab).classList.add('active');
     if (state.tab === 'targets') loadTargets();
     if (state.tab === 'accounts') loadAccounts();
+    if (state.tab === 'browser') ensureBrowser();
     if (state.tab === 'proses') loadProcess();
     if (state.tab === 'settings') loadSettings();
   });
@@ -451,6 +492,7 @@ function bindEvents() {
 
 async function init() {
   bindEvents();
+  bindBrowser();
   await loadAudits();
   await refreshWorker();
   await refreshDashboard();

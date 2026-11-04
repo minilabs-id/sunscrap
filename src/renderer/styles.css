@@ -23,16 +23,15 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
 body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   color: var(--brand-ink);
   background: var(--surface-sunken);
   font-size: var(--fs-body);
   line-height: 1.45;
+  display: flex;
 }
-
-.app-shell { display: flex; }
 
 /* ---------- sidebar ---------- */
 .sidebar {
@@ -73,7 +72,7 @@ body {
 .worker-sub { font-size: var(--fs-meta); color: var(--faint); margin-top: 8px; }
 
 /* ---------- main ---------- */
-.main { padding: 24px 28px; flex: 1; min-width: 0; }
+.main { padding: 24px 28px; flex: 1; min-width: 0; height: 100vh; overflow-y: auto; }
 .tab { display: none; }
 .tab.active { display: block; }
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
@@ -225,6 +224,14 @@ body {
 .row-item { display: flex; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
 .row-item:last-child { border-bottom: none; }
 .row-item .num { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* ---------- browser ---------- */
+#tab-browser.active { display: flex; flex-direction: column; height: 100%; }
+.browser-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.browser-bar .input { flex: 1; }
+.browser-bar .nav-btn { padding: 8px 12px; }
+.browser-wrap { flex: 1; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; position: relative; }
+.browser-wrap webview { width: 100%; height: 100%; border: none; display: flex; }
 
 @media (max-width: 1200px) {
   .kpi-strip { grid-template-columns: repeat(3, 1fr); row-gap: 14px; }

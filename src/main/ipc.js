@@ -5,7 +5,7 @@
  * memicu broadcast 'data' agar dashboard menyegarkan diri.
  */
 
-const { ipcMain, dialog } = require('electron');
+const { ipcMain, dialog, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -14,6 +14,14 @@ function registerIpc({ db, worker, scraper, broadcast }) {
     try { broadcast(type, payload); } catch {}
   };
   const dataChanged = () => push('data', { ts: Date.now() });
+
+  // ---- aplikasi ----
+  ipcMain.handle('app:openExternal', (event, url) => {
+    if (typeof url === 'string' && /^https?:\/\//i.test(url)) {
+      try { shell.openExternal(url); } catch {}
+    }
+    return { ok: true };
+  });
 
   // ---- worker ----
   ipcMain.handle('worker:start', async () => { const s = await worker.start(); push('worker', s); return s; });

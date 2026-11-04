@@ -86,7 +86,7 @@ function createMainWindow() {
       preload: path.join(__dirname, '..', 'preload', 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true,
+      webviewTag: true,
     },
   });
 
@@ -199,7 +199,12 @@ if (!gotLock) {
 
   app.on('web-contents-created', (event, contents) => {
     contents.setWindowOpenHandler(() => ({ action: 'deny' }));
-    contents.on('will-attach-webview', (webviewEvent) => webviewEvent.preventDefault());
+    contents.on('will-attach-webview', (webviewEvent, webPreferences) => {
+      // Izinkan <webview> di tab Browser, tapi kunci preferensi guest.
+      delete webPreferences.preload;
+      webPreferences.nodeIntegration = false;
+      webPreferences.contextIsolation = true;
+    });
   });
 
   app.on('before-quit', (event) => {
