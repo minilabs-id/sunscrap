@@ -5,7 +5,7 @@
  * memicu broadcast 'data' agar dashboard menyegarkan diri.
  */
 
-const { ipcMain, dialog, shell } = require('electron');
+const { ipcMain, dialog, shell, BrowserWindow } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -14,6 +14,8 @@ function registerIpc({ db, worker, scraper, broadcast }) {
     try { broadcast(type, payload); } catch {}
   };
   const dataChanged = () => push('data', { ts: Date.now() });
+
+  const parentOf = (event) => BrowserWindow.fromWebContents(event.sender) || undefined;
 
   // ---- aplikasi ----
   ipcMain.handle('app:openExternal', (event, url) => {
@@ -44,8 +46,11 @@ function registerIpc({ db, worker, scraper, broadcast }) {
   ipcMain.handle('data:search', (event, q) => db.searchData(q, 20));
 
   // ---- impor (membuka dialog native) ----
-  async function pickImportFile() {
-    const result = await dialog.showOpenDialog({
+  function dlg(win, fn, options) {
+    return win ? fn(win, options) : fn(options);
+  }
+  async function pickImportFile(event) {
+    const result = await dlg(parentOf(event), dialog.showOpenDialog, {
       title: 'Pilih file target',
       properties: ['openFile'],
       filters: [
@@ -54,12 +59,12 @@ function registerIpc({ db, worker, scraper, broadcast }) {
         { name: 'Excel', extensions: ['xlsx'] },
       ],
     });
-    if (result.canceled || !result.filePaths.length) return null;
+    if (!result || result.canceled || !result.filePaths.length) return null;
     return result.filePaths[0];
   }
 
   ipcMain.handle('data:createAudit', async (event, opts = {}) => {
-    const filePath = await pickImportFile();
+    const filePath = await pickImportFile(event);
     if (!filePath) return { canceled: true };
     const parsed = await require('./import').parseImportFile(filePath);
     if (!parsed) return { error: "Kolom 'Link'/'URL' tidak ditemukan." };
@@ -73,7 +78,7 @@ function registerIpc({ db, worker, scraper, broadcast }) {
 
   ipcMain.handle('data:appendTargets', async (event, opts = {}) => {
     if (!opts.auditId) return { error: 'auditId wajib diisi.' };
-    const filePath = await pickImportFile();
+    const filePath = await pickImportFile(event);
     if (!filePath) return { canceled: true };
     const parsed = await require('./import').parseImportFile(filePath);
     if (!parsed) return { error: "Kolom 'Link'/'URL' tidak ditemukan." };
@@ -160,7 +165,7 @@ function registerIpc({ db, worker, scraper, broadcast }) {
         : 'Belum ada hasil untuk diexport.' };
     }
     const defaultName = `sunscraping_export_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-').replace(/-/g, '')}.xlsx`;
-    const result = await dialog.showSaveDialog({ title: 'Simpan export', defaultPath: defaultName, filters: [{ name: 'Excel', extensions: ['xlsx'] }] });
+    const result = await dlg(parentOf(event), dialog.showSaveDialog, { title: 'Simpan export', defaultPath: defaultName, filters: [{ name: 'Excel', extensions: ['xlsx'] }] });
     if (result.canceled || !result.filePath) return { canceled: true };
     try {
       const out = await require('./export').writeExport(db, { auditId: auditId || null, status: status || null, filePath: result.filePath });
@@ -172,8 +177,8 @@ function registerIpc({ db, worker, scraper, broadcast }) {
 
   // ---- database ----
   ipcMain.handle('db:info', () => db.getDatabaseInfo());
-  ipcMain.handle('db:backup', async () => {
-    const result = await dialog.showSaveDialog({
+  ipcMain.handle('db:backup', async (event) => {
+    const result = await dlg(parentOf(event), dialog.showSaveDialog, {
       title: 'Simpan cadangan database',
       defaultPath: `sunscraping_db_${new Date().toISOString().slice(0, 10)}.db`,
       filters: [{ name: 'SQLite', extensions: ['db'] }],
