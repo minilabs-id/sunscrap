@@ -18,6 +18,9 @@ const UPLOAD_BURST_MIN_COUNT = 3;
 const SIBLING_SYNC_WINDOW_MINUTES = 5;
 const SIBLING_SYNC_MIN_HITS = 2;
 const BIO_CONTACT_MIN_DIGITS = 10; // nomor HP Indonesia ≥ 10 digit; 8 digit tanggal "20261001" tertolak
+// Fan-out cutoff: token/ref/template yang dipakai > MAX_FANOUT akun adalah "umum"
+// (hotline publik, konten viral), bukan bukti pasangan — mencegah ledakan C(n,2) edge.
+const MAX_FANOUT = 50;
 const CAPTION_TEMPLATE_PREFIX = 40;
 const FLAT_FOLLOWER_BANDS = [[TERNAK_BAND_MIN, TERNAK_BAND_MAX], [20000, 100000]];
 const FLAT_FOLLOWER_TOLERANCE = 0.03;
@@ -99,6 +102,7 @@ function captionTemplateKey(caption) {
 
 function _pairOff(keys, reason, links) {
   const ordered = Array.from(new Set(keys)).sort();
+  if (ordered.length > MAX_FANOUT) return; // token/ref umum -> bukan bukti, cegah O(n^2)
   for (let i = 0; i < ordered.length; i++) {
     for (let j = i + 1; j < ordered.length; j++) {
       const a = ordered[i];
@@ -147,7 +151,7 @@ function findAccountLinks(accounts, postsByAccount) {
 
   const syncHits = {};
   for (const keys of Object.values(byBucket)) {
-    if (keys.size < 2) continue;
+    if (keys.size < 2 || keys.size > MAX_FANOUT) continue; // bucket raksasa = sinyal umum
     for (const key of keys) {
       for (const other of keys) {
         if (other !== key) {

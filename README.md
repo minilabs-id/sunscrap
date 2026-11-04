@@ -14,7 +14,8 @@ npm install
 npm start
 ```
 
-Prasyarat: Node 20+ (runtime Electron sudah dibundel; tidak perlu Python).
+Prasyarat: **Node ≥ 22.13** (untuk `node:sqlite`; runtime Electron sudah dibundel — tidak perlu Python).
+Untuk *hanya* menjalankan aplikasi (`npm start`), Node hanya dibutuhkan untuk `npm` (Electron membawa runtime own-nya).
 
 Saat pertama dibuka, login dulu ke Instagram/TikTok lewat menu tray **Login Instagram /**
 **Login TikTok**, lalu **Mulai worker**.
@@ -63,12 +64,18 @@ src/
 ## Pengujian
 
 ```bash
-npm test        # node --test src/test/ (32 tes: db, intel, throttle, policy, cache, util)
+npm test          # node --test src/test/ (tes murni: db, intel, throttle, policy, cache, util, import)
+npm run e2e       # kendarai UI nyata (Electron + Playwright): import file & tempel link
 ```
 
 ## Keamanan & batasan
 
-- Seluruh akses hanya ke `127.0.0.1`/host Instagram/TikTok; allowlist host cocok persis.
+- Seluruh akses hanya ke host Instagram/TikTok; allowlist host cocok persis.
 - Jendela hidden memakai `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`.
 - Pacing adalah upaya pengurangan agresivitas; platform tetap dapat membatasi akses.
-- Hanya scraping data publik; patuhi ToS masing-masing platform.
+- Skor "akun ternak/kembar" adalah **indikasi otomatis untuk prioritas tinjauan**, bukan vonis; keputusan tetap di tangan manusia + bukti.
+
+> **Peringatan jujur (ToS):** alat ini mengambil data dari halaman publik Instagram/TikTok *tanpa* API
+> resmi, yang dapat melanggar ketentuan layanan platform. Akun operator dapat dibatasi, ditantang login,
+> atau diblokir. Data publik bukan berarti bebas diproses. Gunakan untuk kebutuhan sendiri dengan tanggung
+> jawab masing-masing.

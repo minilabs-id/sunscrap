@@ -15,6 +15,7 @@ const CONTENT_DIR = path.join(__dirname, '..', 'scraper-content');
 const PARTITION = 'persist:sunscraping';
 const WORLD_ID = 999;
 const SCRAPE_TIMEOUT_MS = 45000;
+const LOAD_TIMEOUT_MS = 30000;
 const LOADS_PER_WINDOW = 120;
 
 const LOGIN_URLS = {
@@ -100,9 +101,21 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
     }
     loads += 1;
     try {
-      await win.loadURL(resolve(url));
+      await withTimeout(
+        win.loadURL(resolve(url)).catch((e) => {
+          // Redirect membatalkan load pertama; itu bukan kegagalan.
+          if (!/ERR_ABORTED/i.test(String((e && e.message) || e))) throw e;
+        }),
+        LOAD_TIMEOUT_MS,
+        'Timeout - halaman tidak termuat',
+      );
     } catch (error) {
-      if (!/ERR_ABORTED/i.test(String((error && error.message) || error))) throw error;
+      if (/Timeout/.test(String((error && error.message) || error))) {
+        say(`Navigasi timeout (${url}); jendela worker dibuang.`);
+        if (win && !win.isDestroyed()) win.destroy();
+        workerWindow = null;
+      }
+      throw error;
     }
     return win;
   }

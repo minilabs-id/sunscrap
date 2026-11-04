@@ -91,3 +91,27 @@ test('komentar tak terbaca (null) tidak memicu flag komentar_minim', () => {
   const r = intel.analyseAccount(a, posts, [], {});
   assert.ok(!r.flags.some((f) => f.key === 'komentar_minim'));
 });
+
+test('fan-out cutoff: token dipakai >50 akun bukan bukti pasangan (cegah O(n^2))', () => {
+  const accounts = [];
+  const postsByAccount = {};
+  for (let i = 0; i < 60; i++) {
+    const u = `farm_${String(i).padStart(2, '0')}`;
+    accounts.push({ platform: 'instagram', username: u, bio: 'WA 0812-3456-7890', follower_count: 10000 });
+    postsByAccount[`instagram:${u}`] = [];
+  }
+  const links = intel.findAccountLinks(accounts, postsByAccount);
+  assert.equal(Object.keys(links).length, 0); // token umum -> tidak ada edge 'kontak'
+});
+
+test('token dipakai <=50 akun tetap menjadi bukti pasangan', () => {
+  const accounts = [];
+  const postsByAccount = {};
+  for (let i = 0; i < 40; i++) {
+    const u = `satu_${String(i).padStart(2, '0')}`;
+    accounts.push({ platform: 'instagram', username: u, bio: 'WA 0812-3456-7890', follower_count: 10000 });
+    postsByAccount[`instagram:${u}`] = [];
+  }
+  const links = intel.findAccountLinks(accounts, postsByAccount);
+  assert.ok(Object.keys(links).length > 0); // 40 akun berbagi kontak -> terhubung
+});

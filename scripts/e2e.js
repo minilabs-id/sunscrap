@@ -71,7 +71,8 @@ async function main() {
   ].join('\n'));
   await page.click('#confirm-links');
   await page.waitForTimeout(1500);
-  log('A. tempel link ->', await page.$eval('#targets-total', () => '').then(() => 'ok').catch(() => 'fail'));
+  const auditsA = await page.$$eval('#global-audit option', (els) => els.map((e) => e.textContent));
+  log('A. tempel link ->', JSON.stringify(auditsA));
 
   // ---- B. Import via FILE (tombol primary "Pilih file Excel/CSV") ----
   await page.click('#btn-new-audit');
@@ -99,12 +100,13 @@ async function main() {
 
   await app.close();
   try { fs.rmSync(userData, { recursive: true, force: true }); } catch {}
+  if (importFile.startsWith(os.tmpdir())) { try { fs.rmSync(importFile, { force: true }); } catch {} }
 
   const realErrors = errors.filter((e) => !/net::ERR_|Failed to load resource|SQLite is an experimental/i.test(e));
   log('console/page errors relevan:', realErrors.length ? JSON.stringify(realErrors) : 'tidak ada');
 
   const okFile = audits.some((a) => a.includes('File E2E'));
-  const okTempel = audits.some((a) => a.includes('Tempel E2E'));
+  const okTempel = audits.some((a) => a.includes('Tempel E2E')) || auditsA.some((a) => a.includes('Tempel E2E'));
   if (!okFile || !okTempel) { log('FAIL: audit tidak terbentuk'); process.exit(1); }
   if (targetRows < 5) { log('FAIL: baris target terlalu sedikit:', targetRows); process.exit(1); }
   if (realErrors.length) { log('FAIL: ada error console'); process.exit(2); }

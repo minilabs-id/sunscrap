@@ -139,6 +139,7 @@ function createDatabase(dbPath) {
 
     exec('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)');
     exec('CREATE INDEX IF NOT EXISTS idx_tasks_status_platform ON tasks(status, platform)');
+    exec('CREATE INDEX IF NOT EXISTS idx_tasks_target ON tasks(target_id, id)');
     exec('CREATE INDEX IF NOT EXISTS idx_tasks_run ON tasks(run_id, status)');
     exec('CREATE INDEX IF NOT EXISTS idx_tasks_audit ON tasks(audit_id, status)');
     exec('CREATE INDEX IF NOT EXISTS idx_targets_audit ON targets(audit_id)');
@@ -1357,9 +1358,7 @@ function createDatabase(dbPath) {
       if (params.band === 'ternak' && !item.in_ternak_band) return false;
       if (params.band === 'kecil' && !(item.followers !== null && item.followers < intel.TERNAK_BAND_MIN)) return false;
       if (params.band === 'besar' && !(item.followers !== null && item.followers > intel.TERNAK_BAND_MAX)) return false;
-      if (params.level === 'curiga') {
-        if (item.score < intel.RISK_FLOORS.pola_ternak) return false;
-      } else if (params.level && item.level !== params.level) return false;
+      if (params.level && item.level !== params.level) return false;
       if (params.q) {
         const needle = String(params.q).trim().toLowerCase();
         if (!needle) return true;

@@ -5,7 +5,7 @@
  * memicu broadcast 'data' agar dashboard menyegarkan diri.
  */
 
-const { ipcMain, dialog, shell, BrowserWindow } = require('electron');
+const { ipcMain, dialog, shell, BrowserWindow, app } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -62,8 +62,8 @@ function registerIpc({ db, worker, scraper, broadcast }) {
     return win ? fn(win, options) : fn(options);
   }
   async function pickImportFile(event) {
-    // Kait uji: jalur file tanpa dialog native (digunakan E2E lewat interface nyata).
-    if (process.env.SA_IMPORT_FILE) {
+    // Kait uji: jalur file tanpa dialog native (hanya saat dev, bukan packaged).
+    if (!app.isPackaged && process.env.SA_IMPORT_FILE) {
       const hooked = path.resolve(process.env.SA_IMPORT_FILE);
       if (fs.existsSync(hooked)) return hooked;
     }

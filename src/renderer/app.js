@@ -487,14 +487,20 @@ function schedulePoll() {
 }
 
 // ---------------- bindings ----------------
+function debounce(fn, ms = 300) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
 function bindEvents() {
   $('#worker-toggle').addEventListener('click', toggleWorker);
   $('#btn-new-audit').addEventListener('click', openNewAudit);
   $('#global-audit').addEventListener('change', (e) => { state.auditId = e.target.value ? Number(e.target.value) : null; refreshDashboard(); });
 
   // targets
+  const resetTargets = () => { state.targets.offset = 0; state.targets.selected.clear(); updateRetrySelected(); loadTargets(); };
   ['#target-q', '#target-status', '#target-platform', '#target-sort'].forEach((s) => {
-    $(s).addEventListener(s === '#target-q' ? 'input' : 'change', () => { state.targets.offset = 0; state.targets.selected.clear(); updateRetrySelected(); loadTargets(); });
+    $(s).addEventListener(s === '#target-q' ? 'input' : 'change', s === '#target-q' ? debounce(resetTargets, 300) : resetTargets);
   });
   $('#targets-prev').addEventListener('click', () => { state.targets.offset = Math.max(0, state.targets.offset - state.targets.limit); loadTargets(); });
   $('#targets-next').addEventListener('click', () => { if ((state.targets.offset + state.targets.limit) < state.targets.total) { state.targets.offset += state.targets.limit; loadTargets(); } });
@@ -519,7 +525,7 @@ function bindEvents() {
 
   // accounts filters
   ['#account-q', '#account-level', '#account-band'].forEach((s) => {
-    $(s).addEventListener(s === '#account-q' ? 'input' : 'change', loadAccounts);
+    $(s).addEventListener(s === '#account-q' ? 'input' : 'change', s === '#account-q' ? debounce(loadAccounts, 300) : loadAccounts);
   });
 
   // proses
