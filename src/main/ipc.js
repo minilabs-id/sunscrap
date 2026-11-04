@@ -62,6 +62,11 @@ function registerIpc({ db, worker, scraper, broadcast }) {
     return win ? fn(win, options) : fn(options);
   }
   async function pickImportFile(event) {
+    // Kait uji: jalur file tanpa dialog native (digunakan E2E lewat interface nyata).
+    if (process.env.SA_IMPORT_FILE) {
+      const hooked = path.resolve(process.env.SA_IMPORT_FILE);
+      if (fs.existsSync(hooked)) return hooked;
+    }
     const result = await dlg(parentOf(event), dialog.showOpenDialog, {
       title: 'Pilih file target',
       properties: ['openFile'],

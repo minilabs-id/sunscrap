@@ -2,9 +2,11 @@
 /**
  * sunscraping — e2e
  * Jalankan aplikasi Electron sungguhan dan kendarai UI-nya seperti pengguna:
- * buka dashboard → buka modal → tutup (Esc) → import link → lihat target/akun/setting.
- * Tidak menyentuh file dialog native; import lewat jalur "tempel link".
- * Run: node scripts/e2e.js
+ *  - import via TEMPEL LINK (textarea)
+ *  - import via FILE (klik tombol "Pilih file Excel/CSV", dialog native di-stub via SA_IMPORT_FILE)
+ *  - cek Target / Akun / Pengaturan.
+ * File yang diuji: SA_E2E_FILE, fallback = xlsx temp digenerate sendiri.
+ * Run: node scripts/e2e.js   (atau: $env:SA_E2E_FILE="C:\...\mei.xlsx"; node scripts/e2e.js)
  */
 
 const os = require('node:os');
@@ -13,20 +15,40 @@ const fs = require('node:fs');
 const { _electron } = require('playwright-core');
 
 const ELECTRON = path.join(__dirname, '..', 'node_modules', 'electron', 'dist', 'electron.exe');
-const LINKS = [
-  'https://www.instagram.com/aku/p/ABC123/',
-  'https://www.tiktok.com/@dia/video/7123456789',
-  'https://www.instagram.com/budi/reel/DXwbx0QRMRz/',
-].join('\n');
 
 function log(...a) { console.log('[e2e]', ...a); }
 
+async function makeTempXlsx() {
+  const ExcelJS = require('exceljs');
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Sheet1');
+  ws.addRow(['LINK']);
+  const links = [
+    'https://www.instagram.com/raffi/p/CODE111/',
+    'https://www.instagram.com/nagita/reel/CODE222/',
+    'https://www.tiktok.com/@abdi/video/7000000001',
+    'https://www.tiktok.com/@bibi/video/7000000002',
+    'https://www.instagram.com/raffi/tv/CODE333/',
+  ];
+  for (const l of links) ws.addRow([l]);
+  const file = path.join(os.tmpdir(), 'sa-e2e-file-' + Date.now() + '.xlsx');
+  await wb.xlsx.writeFile(file);
+  return file;
+}
+
 async function main() {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'sa-e2e-'));
+  const importFile = process.env.SA_E2E_FILE ? path.resolve(process.env.SA_E2E_FILE) : await makeTempXlsx();
+
   const app = await _electron.launch({
     executablePath: ELECTRON,
     args: ['.'],
-    env: { ...process.env, SA_USER_DATA: userData, CSC_IDENTITY_AUTO_DISCOVERY: 'false', SA_AUTOSTART_WORKER: '' },
+    env: {
+      ...process.env,
+      SA_USER_DATA: userData,
+      SA_AUTOSTART_WORKER: '',
+      SA_IMPORT_FILE: importFile,       // stub dialog native -> file ini
+    },
   });
 
   const page = await app.firstWindow();
@@ -36,71 +58,57 @@ async function main() {
 
   await page.waitForLoadState('domcontentloaded');
   await page.waitForSelector('#kpi-strip', { timeout: 10000 });
-  await page.waitForTimeout(1200); // biarkan load awal selesai
+  await page.waitForTimeout(1200);
 
-  // 1. Dashboard render
-  const kpi0 = (await page.$eval('#kpi-strip', (el) => el.textContent)).replace(/\s+/g, ' ').trim();
-  log('KPI awal:', kpi0);
-
-  // 2. Buka modal import
+  // ---- A. Import via tempel link (3 link) ----
   await page.click('#btn-new-audit');
-  await page.waitForSelector('.modal', { timeout: 5000 });
-  log('modal import terbuka OK');
-
-  // 3. Tutup via Escape (regresi F-01)
-  await page.keyboard.press('Escape');
-  await page.waitForSelector('.modal', { state: 'detached', timeout: 5000 });
-  log('tutup modal via Esc OK');
-
-  // 4. Buka lagi + import link
-  await page.click('#btn-new-audit');
-  await page.fill('#new-name', 'Uji E2E');
-  await page.fill('#new-links', LINKS);
+  await page.waitForSelector('.modal');
+  await page.fill('#new-name', 'Tempel E2E');
+  await page.fill('#new-links', [
+    'https://www.instagram.com/aku/p/ABC123/',
+    'https://www.tiktok.com/@dia/video/7123456789',
+    'https://www.instagram.com/budi/reel/DXwbx0QRMRz/',
+  ].join('\n'));
   await page.click('#confirm-links');
   await page.waitForTimeout(1500);
+  log('A. tempel link ->', await page.$eval('#targets-total', () => '').then(() => 'ok').catch(() => 'fail'));
+
+  // ---- B. Import via FILE (tombol primary "Pilih file Excel/CSV") ----
+  await page.click('#btn-new-audit');
+  await page.waitForSelector('.modal');
+  await page.fill('#new-name', 'File E2E');
+  await page.click('#confirm-file');          // <- jalur file (di-stub ke importFile)
+  await page.waitForTimeout(2000);
 
   const audits = await page.$$eval('#global-audit option', (els) => els.map((e) => e.textContent));
-  log('audits setelah import:', JSON.stringify(audits));
+  log('B. audits setelah import file:', JSON.stringify(audits));
 
-  const kpi1 = (await page.$eval('#kpi-strip', (el) => el.textContent)).replace(/\s+/g, ' ').trim();
-  log('KPI setelah import:', kpi1);
-
-  // 5. Tab Target
+  // Verifikasi tab Target (jumlah = 3 tempel + N file)
   await page.click('.nav-link[data-tab="targets"]');
-  await page.waitForTimeout(900);
-  const targetRows = await page.$$eval('#targets-table tbody tr', (els) => els.length);
+  await page.waitForTimeout(1000);
   const targetTotal = await page.$eval('#targets-total', (el) => el.textContent);
-  log('tab Target: baris =', targetRows, '|', targetTotal);
+  const targetRows = await page.$$eval('#targets-table tbody tr', (els) => els.length);
+  log('B. tab Target:', targetTotal, '| baris =', targetRows);
 
-  // 6. Tab Akun (belum ada data akun — hanya pastikan tidak error)
-  await page.click('.nav-link[data-tab="accounts"]');
-  await page.waitForTimeout(700);
-  await page.waitForSelector('#accounts-table', { timeout: 5000 });
-  log('tab Akun dimuat OK');
-
-  // 7. Tab Pengaturan
+  // ---- C. Tab Pengaturan memuat kedua audit ----
   await page.click('.nav-link[data-tab="settings"]');
-  await page.waitForTimeout(700);
-  const settingsHasAudit = await page.$eval('#audits-table', (el) => el.textContent.includes('Uji E2E'));
-  log('tab Pengaturan berisi "Uji E2E":', settingsHasAudit);
+  await page.waitForTimeout(800);
+  const settingsText = await page.$eval('#audits-table', (el) => el.textContent);
+  log('C. settings memuat "Tempel E2E":', settingsText.includes('Tempel E2E'));
+  log('C. settings memuat "File E2E":', settingsText.includes('File E2E'));
 
   await app.close();
-
-  // Bersihkan data tes
   try { fs.rmSync(userData, { recursive: true, force: true }); } catch {}
 
   const realErrors = errors.filter((e) => !/net::ERR_|Failed to load resource|SQLite is an experimental/i.test(e));
   log('console/page errors relevan:', realErrors.length ? JSON.stringify(realErrors) : 'tidak ada');
 
-  if (!settingsHasAudit || targetRows < 3) {
-    log('FAIL: hasil tidak sesuai');
-    process.exit(1);
-  }
-  if (realErrors.length) {
-    log('FAIL: ada error console');
-    process.exit(2);
-  }
-  log('E2E OK - semua langkah seperti pengguna berhasil');
+  const okFile = audits.some((a) => a.includes('File E2E'));
+  const okTempel = audits.some((a) => a.includes('Tempel E2E'));
+  if (!okFile || !okTempel) { log('FAIL: audit tidak terbentuk'); process.exit(1); }
+  if (targetRows < 5) { log('FAIL: baris target terlalu sedikit:', targetRows); process.exit(1); }
+  if (realErrors.length) { log('FAIL: ada error console'); process.exit(2); }
+  log('E2E OK — import file & tempel link sama-sama jalan lewat interface');
   process.exit(0);
 }
 

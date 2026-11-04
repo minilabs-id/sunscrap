@@ -402,17 +402,18 @@ function renderAudits() {
 function openNewAudit() {
   const auditOptions = `<option value="">— Audit baru —</option>`
     + (state.audits || []).map((a) => `<option value="${a.id}">Tambah ke: ${esc(a.name)}</option>`).join('');
-  openModal(`<div class="modal-head"><h3>Import data link</h3></div><div class="modal-body">
+  openModal(`<div class="modal-head"><h3>Import data</h3></div><div class="modal-body">
     <div class="field"><label>Nama audit (untuk audit baru)</label><input id="new-name" class="input" placeholder="mis. Kampanye November"></div>
     <div class="field"><label>Ulang (hari, 0 = manual)</label><input id="new-repeat" class="input" type="number" min="0" max="365" value="0"></div>
     <div class="field"><label>Tujuan</label><select id="new-audit" class="select">${auditOptions}</select></div>
+    <button class="btn btn-primary btn-block" id="confirm-file">📄 Pilih file Excel/CSV (kolom Link/URL)</button>
+    <div class="modal-divider"><span>atau tempel link langsung</span></div>
     <div class="field"><label>Tempel link postingan — satu per baris (IG /p/, /reel/, /tv/ · TikTok /video/, /photo/)</label>
       <textarea id="new-links" class="input" placeholder="https://www.instagram.com/p/CODE/&#10;https://www.tiktok.com/@user/video/7123456789"></textarea></div>
-    <p class="muted">Atau import dari file <b>Excel/CSV</b> (kolom Link/URL), maksimal 10.000 baris.</p>
+    <p class="muted">Maksimal 10.000 baris per import.</p>
   </div><div class="modal-foot">
     <button class="btn btn-ghost" data-close>Batal</button>
-    <button class="btn btn-ghost" id="confirm-file">Import file…</button>
-    <button class="btn btn-primary" id="confirm-links">Import link</button>
+    <button class="btn btn-ghost" id="confirm-links">Import link</button>
   </div>`);
 
   const getOpts = () => ({

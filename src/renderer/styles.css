@@ -207,6 +207,8 @@ body {
 .modal-head h3 { margin: 0; font-size: var(--fs-title); }
 .modal-body { padding: 18px; overflow: auto; }
 .modal-foot { padding: 14px 18px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+.modal-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; color: var(--faint); font-size: var(--fs-meta); }
+.modal-divider::before, .modal-divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
 .field { margin-bottom: 12px; }
 .field label { display: block; font-size: var(--fs-label); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 4px; }
 .field .input, .field .select { width: 100%; }
