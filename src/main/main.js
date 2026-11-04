@@ -7,7 +7,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-  app, BrowserWindow, Menu, Notification, Tray, nativeImage, shell, dialog,
+  app, BrowserWindow, Menu, Notification, Tray, nativeImage, shell, dialog, protocol,
 } = require('electron');
 
 const { createDatabase } = require('./db');
@@ -15,6 +15,12 @@ const { createScraper } = require('./scraper');
 const { createWorker } = require('./worker');
 const { createRateLimiter } = require('./rateLimiter');
 const { registerIpc } = require('./ipc');
+const avatar = require('./avatar');
+
+// Skema kustom untuk menyajikan avatar lokal (tanpa akses CDN dari renderer).
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'sa-avatar', privileges: { standard: true, secure: true, supportFetchAPI: true } },
+]);
 
 const ICON_FILE = path.join(__dirname, '..', '..', 'assets', 'icon.png');
 const LIMITER_STATE = 'worker-state.json';
@@ -266,6 +272,20 @@ async function boot() {
   db = createDatabase(path.join(userData, 'sunscraping.db'));
   log(`Database: ${db.dbPath}`);
 
+  const avatarDir = path.join(userData, 'avatars');
+  fs.mkdirSync(avatarDir, { recursive: true });
+  protocol.handle('sa-avatar', (request) => {
+    try {
+      const file = avatar.resolveAvatar(avatarDir, new URL(request.url).pathname.replace(/^\//, ''));
+      if (!file) return new Response('', { status: 404 });
+      const buf = fs.readFileSync(file);
+      const type = path.extname(file).toLowerCase() === '.png' ? 'image/png' : 'image/jpeg';
+      return new Response(buf, { headers: { 'content-type': type, 'cache-control': 'max-age=604800' } });
+    } catch {
+      return new Response('', { status: 500 });
+    }
+  });
+
   windowStore = createStorage(path.join(userData, WINDOW_STATE));
 
   scraper = createScraper({ onLog: log });
@@ -274,7 +294,7 @@ async function boot() {
   const limiter = createRateLimiter(storage).init();
 
   worker = createWorker({
-    db, scraper, limiter, notify, log,
+    db, scraper, limiter, notify, log, avatarDir,
     onChange: (status) => { refreshTraySoon(); broadcast('worker', status); },
   });
 

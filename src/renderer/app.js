@@ -303,8 +303,9 @@ function statusBadge(status) {
 
 function avatarHtml(url, username, large = false) {
   const cls = large ? 'avatar-lg' : '';
+  const src = url && url.match(/^https?:/i) ? esc(url) : `sa-avatar://${esc(url)}`;
   const icon = url
-    ? `<img class="avatar ${cls}" src="${esc(url)}" alt="" loading="lazy">`
+    ? `<img class="avatar ${cls}" src="${src}" alt="" loading="lazy">`
     : `<span class="avatar-fallback ${cls}">${esc((username || '?').slice(0, 1).toUpperCase())}</span>`;
   return `<span class="avatar-wrap">${icon}</span>`;
 }
@@ -430,9 +431,13 @@ function renderAudits() {
     const act = btn.dataset.act;
     if (act === 'rerun') { api.rerunAudit(id, true).then((r) => toast(r.message || 'Dijadwalkan ulang.')); }
     else if (act === 'delete') {
-      openModal(`<div class="modal-head"><h3>Hapus audit?</h3></div><div class="modal-body">Audit beserta seluruh riwayatnya akan dihapus permanen.</div>
-        <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-del">Hapus</button></div>`);
-      $('#confirm-del').addEventListener('click', async () => { await api.deleteAudit(id); closeModal(); loadAudits(); });
+      const audit = (state.audits || []).find((a) => a.id === id);
+      const targetCount = audit ? audit.target_count : 0;
+      openModal(`<div class="modal-head"><h3>Hapus audit?</h3></div><div class="modal-body">
+        <p>Audit <b>${esc(audit ? audit.name : id)}</b> beserta <b>${fmt(targetCount)} target</b> dan seluruh riwayat snapshots-nya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.</p>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-del">Hapus</button></div>`);
+      $('#confirm-del').addEventListener('click', async () => { await api.deleteAudit(id); closeModal(); await loadAudits(); });
     } else if (act === 'edit') {
       openModal(`<div class="modal-head"><h3>Edit audit</h3></div><div class="modal-body">
         <div class="field"><label>Nama</label><input id="edit-name" class="input" value="${esc(btn.dataset.name)}"></div>
@@ -533,6 +538,8 @@ async function openExport() {
 
 async function loadAudits() {
   state.audits = await api.getAudits();
+  // Reset audit terpilih bila sudah terhapus.
+  if (state.auditId && !state.audits.some((a) => a.id === state.auditId)) state.auditId = null;
   const sel = $('#global-audit');
   const current = state.auditId;
   sel.innerHTML = `<option value="">Semua audit</option>` + state.audits.map((a) => `<option value="${a.id}" ${a.id === current ? 'selected' : ''}>${esc(a.name)}</option>`).join('');
@@ -612,9 +619,22 @@ function bindEvents() {
     if (r.ok) toast('Sesi login dihapus. Login ulang lewat tray/Browser.', 'ok'); else toast(r.error || 'Gagal hapus sesi.', 'error');
   });
   $('#btn-clear').addEventListener('click', () => {
-    openModal(`<div class="modal-head"><h3>Hapus semua data?</h3></div><div class="modal-body">Semua audit, target, snapshot, dan data akun akan dihapus permanen.</div>
-      <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-clear">Hapus semua</button></div>`);
-    $('#confirm-clear').addEventListener('click', async () => { await api.clearAll(); closeModal(); toast('Data dihapus.'); await pollUpdate(); });
+    openModal(`<div class="modal-head"><h3>Hapus semua data</h3></div><div class="modal-body">
+      <p>Semua audit, target, snapshot, dan data akun akan dihapus <b>permanen</b>. Tindakan ini tidak bisa dibatalkan.</p>
+      <div class="field"><label>Ketik <b>HAPUS</b> untuk melanjutkan</label><input id="clear-confirm" class="input" placeholder="HAPUS"></div>
+      <label class="row-gap" style="margin:6px 0 0"><input type="checkbox" id="clear-backup" checked> Cadangkan database dulu (disarankan)</label>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-clear" disabled>Hapus semua</button></div>`);
+    const checkEnabled = () => { $('#confirm-clear').disabled = $('#clear-confirm').value.trim() !== 'HAPUS'; };
+    $('#clear-confirm').addEventListener('input', checkEnabled);
+    checkEnabled();
+    $('#confirm-clear').addEventListener('click', async () => {
+      if ($('#clear-backup').checked) { await api.dbBackup(); }
+      await api.clearAll();
+      closeModal();
+      toast('Data dihapus.', 'ok');
+      await pollUpdate();
+    });
   });
 }
 

@@ -7,13 +7,25 @@
 
 const TaskCache = require('./taskCache');
 const { allowedTarget, cacheKey, classifyError, outcomeOf, CACHE_HIT_DELAY_MS, ERROR_BACKOFF_MS, IDLE_POLL_MS } = require('./policy');
+const { cacheAvatar } = require('./avatar');
 
 function delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
-function createWorker({ db, scraper, limiter, notify, log, onChange, timers } = {}) {
+function createWorker({ db, scraper, limiter, notify, log, onChange, timers, avatarDir } = {}) {
   const say = typeof log === 'function' ? log : () => {};
   const ping = typeof notify === 'function' ? notify : () => {};
   const clock = timers && typeof timers.setTimeout === 'function' ? timers : { setTimeout, clearTimeout };
+
+  // Simpan profil + unduh avatar ke disk lokal (sekali per akun).
+  async function recordProfile(profile, fallbackUsername, fallbackPlatform) {
+    if (profile && profile.avatarUrl && avatarDir) {
+      const platform = profile.platform || fallbackPlatform;
+      const username = profile.username || fallbackUsername;
+      const local = await cacheAvatar(profile.avatarUrl, avatarDir, `${platform}_${username}`);
+      if (local) profile.avatarUrl = local;
+    }
+    db.recordAccountProfile(profile);
+  }
 
   const state = {
     active: false, busy: false, timer: null,
@@ -86,7 +98,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers } = 
       await delay(1200 + Math.floor(Math.random() * 1800));
       const profile = await scraper.scrapeProfile(task.username, task.platform);
       if (!profile) return null;
-      db.recordAccountProfile(profile);
+      await recordProfile(profile, task.username, task.platform);
       if (profile.followerCount !== null && profile.followerCount !== undefined) {
         task.cachedFollowerCount = profile.followerCount;
         state.followerAttempts.add(key);
@@ -113,7 +125,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers } = 
       limiter.recordAuxiliaryVisit();
       const profile = await scraper.scrapeProfile(result.username, platform);
       if (!profile) return;
-      db.recordAccountProfile(profile);
+      await recordProfile(profile, result.username, platform);
       if (profile.followerCount !== null && profile.followerCount !== undefined) result.followerCount = profile.followerCount;
     } catch (error) {
       say(`Lookup follower @${result.username} gagal: ${error.message}`);
@@ -131,7 +143,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers } = 
         if (!profile) {
           return { status: 'FAILED', kind: 'PROFILE', platform: task.platform, username: task.username, error: 'Kunjungan profil tidak menghasilkan data', errorCode: 'TRANSIENT' };
         }
-        db.recordAccountProfile(profile);
+        await recordProfile(profile, task.username, task.platform);
         return { status: profile.status === 'FAILED' ? 'FAILED' : 'OK', kind: 'PROFILE', platform: task.platform, username: task.username, errorCode: profile.errorCode || null };
       }
 
