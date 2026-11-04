@@ -341,6 +341,7 @@ function createDatabase(dbPath) {
         inserted++;
       }
       exec('COMMIT');
+      markIntelDirty();
       return { audit_id: auditId, run_id: runId, inserted, duplicates };
     } catch (e) {
       exec('ROLLBACK');
@@ -375,6 +376,7 @@ function createDatabase(dbPath) {
           sqlNow(), cleanText(opts.sourceFilename, 200), auditId);
       }
       exec('COMMIT');
+      markIntelDirty();
       return { audit_id: auditId, audit_name: audit.name, run_id: runId, inserted, duplicates };
     } catch (e) {
       exec('ROLLBACK');
@@ -557,6 +559,7 @@ function createDatabase(dbPath) {
       run('DELETE FROM runs WHERE audit_id = ?', auditId);
       run('DELETE FROM audits WHERE id = ?', auditId);
       exec('COMMIT');
+      markIntelDirty();
       return true;
     } catch (e) {
       exec('ROLLBACK');
@@ -572,6 +575,7 @@ function createDatabase(dbPath) {
       }
       try { run('DELETE FROM sqlite_sequence'); } catch {}
       exec('COMMIT');
+      markIntelDirty();
     } catch (e) {
       exec('ROLLBACK');
       throw e;
@@ -705,6 +709,7 @@ function createDatabase(dbPath) {
 
       finalizeRun(row.run_id);
       exec('COMMIT');
+      markIntelDirty();
       return true;
     } catch (e) {
       exec('ROLLBACK');
@@ -797,6 +802,7 @@ function createDatabase(dbPath) {
         stored++;
       }
       exec('COMMIT');
+      markIntelDirty();
       return {
         platform, username, posts_seen: posts.length, posts_stored: stored,
         truncated: posts.length > MAX_PROFILE_POSTS, fetched_at: fetchedAt,
@@ -1340,16 +1346,27 @@ function createDatabase(dbPath) {
     return { query: needle, targets, accounts, posts };
   }
 
-  function getAccountIntel(params = {}) {
-    const limit = clampLimit(params.limit, 1, 200, 50);
-    const offset = Math.max(0, Number(params.offset || 0));
+  let intelGen = 0;
+  let intelCache = { gen: -1, snapshot: null };
 
+  function markIntelDirty() { intelGen++; }
+
+  function intelSnapshotCached() {
+    if (intelCache.gen === intelGen && intelCache.snapshot) return intelCache.snapshot;
     const accountRows = all('SELECT * FROM accounts ORDER BY LOWER(username) ASC').map(plain);
     const postRows = all('SELECT platform, username, post_ref, posted_at, likes, comments, shares, views, caption FROM account_posts').map(plain);
     const historyRows = all('SELECT platform, username, month, follower_count, post_count FROM account_history').map(plain);
     const targetRows = all('SELECT platform, username, audit_id, last_scraped_at FROM targets').map(plain);
-
     const snapshot = intel.snapshotFromRows(accountRows, postRows, historyRows, targetRows);
+    intelCache = { gen: intelGen, snapshot };
+    return snapshot;
+  }
+
+  function getAccountIntel(params = {}) {
+    const limit = clampLimit(params.limit, 1, 200, 50);
+    const offset = Math.max(0, Number(params.offset || 0));
+
+    const snapshot = intelSnapshotCached();
     const items = snapshot.items;
     const clusters = snapshot.clusters;
 
@@ -1425,11 +1442,7 @@ function createDatabase(dbPath) {
   function getAccountDetail(username, platform) {
     const handle = cleanUsername(username);
     if (!handle) return null;
-    const accountRows = all('SELECT * FROM accounts ORDER BY LOWER(username) ASC').map(plain);
-    const postRows = all('SELECT platform, username, post_ref, posted_at, likes, comments, shares, views, caption FROM account_posts').map(plain);
-    const historyRows = all('SELECT platform, username, month, follower_count, post_count FROM account_history').map(plain);
-    const targetRows = all('SELECT platform, username, audit_id, last_scraped_at FROM targets').map(plain);
-    const snapshot = intel.snapshotFromRows(accountRows, postRows, historyRows, targetRows);
+    const snapshot = intelSnapshotCached();
     const byKey = Object.fromEntries(snapshot.items.map((i) => [i.key, i]));
 
     const wanted = platform ? `${platform}:${handle}` : null;
@@ -1479,7 +1492,8 @@ function createDatabase(dbPath) {
     const conditions = [];
     const params = [];
     if (auditId) { conditions.push('t.audit_id = ?'); params.push(Number(auditId)); }
-    if (status) { conditions.push('s.status = ?'); params.push(status); }
+    if (status === 'DONE') { conditions.push("s.status IN ('OK','PARTIAL')"); }
+    else if (status) { conditions.push('s.status = ?'); params.push(status); }
     const where = 'WHERE s.attempt_rn = 1' + (conditions.length ? ' AND ' + conditions.join(' AND ') : '');
     return all(`
       WITH attempts AS (
@@ -1502,6 +1516,10 @@ function createDatabase(dbPath) {
         LEFT JOIN tasks tk ON tk.id = s.task_id ${where}
       )
       SELECT * FROM ordered ORDER BY audit_id ASC, target_id ASC, id ASC`, ...params).map(plain);
+  }
+
+  function getExportCount(auditId, status) {
+    return getExportRows(auditId, status).length;
   }
 
   // ---- database info / backup ----
@@ -1558,7 +1576,7 @@ function createDatabase(dbPath) {
     // read
     getAudits, getAudit, getQueueStats, getDashboardStats, getTargets, getLatest, getTargetHistory, getTargetWithAudit,
     getSummary, getCompare, searchData, getAccountIntel, getAccountDetail, getAccountProfile,
-    getAccountCache, getCachedPostMetrics, getExportRows,
+    getAccountCache, getCachedPostMetrics, getExportRows, getExportCount,
     getDatabaseInfo, backupDatabase,
     close,
     constants: { TASK_LOCK_MINUTES, CACHE_TTL_MINUTES, POST_CACHE_TTL_MINUTES, MAX_RETRIES, MAX_PROFILE_POSTS, VISIT_BUDGET_PER_CYCLE },

@@ -23,6 +23,11 @@
 }
 
 * { box-sizing: border-box; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: inherit; }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+body.modal-open .layout { pointer-events: none; filter: saturate(0.9); }
 html, body { margin: 0; height: 100%; overflow: hidden; }
 body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -68,10 +73,14 @@ body {
 .nav { padding: 10px 10px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .nav-link {
   display: block;
+  width: 100%;
   padding: 9px 12px;
+  border: none;
+  background: transparent;
   border-radius: 8px;
   color: var(--muted);
-  text-decoration: none;
+  text-align: left;
+  font: inherit;
   font-weight: 500;
   cursor: pointer;
 }
@@ -232,6 +241,7 @@ body {
 .toast { background: var(--brand-ink); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: var(--fs-body); box-shadow: var(--shadow-pop); }
 .toast.error { background: var(--err); }
 .toast.ok { background: var(--ok); }
+.toast.warning { background: var(--warn); }
 
 .flag-list { margin-top: 8px; }
 .flag { font-size: var(--fs-meta); padding: 4px 0; color: var(--muted); }

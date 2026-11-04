@@ -7,7 +7,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-  app, BrowserWindow, Menu, Notification, Tray, nativeImage, shell,
+  app, BrowserWindow, Menu, Notification, Tray, nativeImage, shell, dialog,
 } = require('electron');
 
 const { createDatabase } = require('./db');
@@ -18,15 +18,20 @@ const { registerIpc } = require('./ipc');
 
 const ICON_FILE = path.join(__dirname, '..', '..', 'assets', 'icon.png');
 const LIMITER_STATE = 'worker-state.json';
+const WINDOW_STATE = 'window-state.json';
+const RENDERER_INDEX = 'file://' + path.join(__dirname, '..', 'renderer', 'index.html').replace(/\\/g, '/');
+const APP_VERSION = '1.0.0';
 
 let mainWindow = null;
 let tray = null;
 let db = null;
 let worker = null;
 let scraper = null;
+let userData = null;
+let windowStore = null;
 let shuttingDown = false;
 
-// ---- file-backed storage untuk rate limiter (sinkron, proses utama) ----
+// ---- file-backed storage (sinkron, proses utama) ----
 function createStorage(filePath) {
   let data = {};
   try {
@@ -46,7 +51,6 @@ function createStorage(filePath) {
       Object.assign(data, values || {});
       try {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        // Tulis atomik: tulis .tmp lalu rename, agar crash di tengah tulis tidak merusak state.
         const tmp = filePath + '.tmp';
         fs.writeFileSync(tmp, JSON.stringify(data));
         fs.renameSync(tmp, filePath);
@@ -77,14 +81,72 @@ function log(message) {
   console.log(`[sunscraping] ${message}`);
 }
 
+function showAbout() {
+  const acc = db ? db.getDatabaseInfo() : {};
+  const counts = acc.counts || {};
+  const lines = [
+    `sunscraping v${APP_VERSION}`,
+    '',
+    `Data tersimpan lokal di:`,
+    `${userData || '(belum siap)'}`,
+    '',
+    `Audit: ${counts.audits ?? '-'} · Target: ${counts.targets ?? '-'} · Snapshot: ${counts.snapshots ?? '-'}`,
+    `Ukuran DB: ${acc.size_bytes ? (Math.round(acc.size_bytes / 1024)) + ' KB' : '-'}`,
+  ];
+  dialog.showMessageBox(mainWindow || undefined, {
+    type: 'info', title: 'Tentang sunscraping', message: `sunscraping v${APP_VERSION}`,
+    detail: lines.join('\n'), buttons: ['Tutup'],
+  }).catch(() => {});
+}
+
+/** Menu minimal dengan role edit (copy/paste/select-all) + keluar + tentang. */
+function buildAppMenu() {
+  const isMac = process.platform === 'darwin';
+  const template = [
+    ...(isMac ? [{ role: 'appMenu' }] : []),
+    { role: 'fileMenu', label: 'Berkas' },
+    {
+      role: 'editMenu',
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+        { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
+      ],
+    },
+    {
+      role: 'viewMenu',
+      label: 'Tampilan',
+      submenu: [
+        { role: 'reload', visible: false },
+        { role: 'toggleDevTools', visible: false },
+        { type: 'separator' },
+        { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
+    { role: 'windowMenu', label: 'Jendela' },
+    {
+      role: 'help',
+      label: 'Bantuan',
+      submenu: [{ label: 'Tentang sunscraping…', click: () => showAbout() }],
+    },
+  ];
+  return Menu.buildFromTemplate(template);
+}
+
 function createMainWindow() {
+  const bounds = windowStore ? windowStore.get([WINDOW_STATE]) : {};
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 860,
+    width: (bounds.width) || 1280,
+    height: (bounds.height) || 860,
+    x: bounds.x,
+    y: bounds.y,
     minWidth: 1024,
     minHeight: 640,
     title: 'sunscraping',
     icon: ICON_FILE,
+    autoHideMenuBar: true,
     titleBarStyle: 'hidden',
     titleBarOverlay: { color: '#ffffff', symbolColor: '#101828', height: 40 },
     webPreferences: {
@@ -95,30 +157,58 @@ function createMainWindow() {
     },
   });
 
-  mainWindow.maximize();
+  // Pertama kali = maximized; setelah itu ikuti posisi/besaran pengguna.
+  if (bounds.maximized) {
+    mainWindow.maximize();
+  }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  // Klik link postingan tidak boleh mengganti halaman dashboard; buka di browser luar.
+  // Halaman utama hanya boleh menavigasi ke dokumen renderer sendiri;
+  // navigasi lain dibuka di browser luar.
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!String(url).startsWith('file://')) {
-      event.preventDefault();
-      if (/^https?:/i.test(url)) shell.openExternal(url);
+    if (String(url).startsWith('file:')) {
+      if (decodeURIComponent(url.split('?')[0].split('#')[0]) !== decodeURIComponent(RENDERER_INDEX)) {
+        event.preventDefault();
+      }
+      return;
     }
+    event.preventDefault();
+    if (/^https?:/i.test(url)) shell.openExternal(url);
   });
+
+  const saveBounds = () => {
+    if (!windowStore || !mainWindow) return;
+    const b = mainWindow.getBounds();
+    windowStore.set({ width: b.width, height: b.height, x: b.x, y: b.y, maximized: mainWindow.isMaximized() });
+  };
+  mainWindow.on('resize', saveBounds);
+  mainWindow.on('move', saveBounds);
+  mainWindow.on('close', saveBounds);
 
   mainWindow.on('closed', () => { mainWindow = null; });
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
   return mainWindow;
 }
 
+/** Satu jendela: buka ulang/fokus bila sudah ada; jika belum, buat. */
+function showMainWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    return mainWindow;
+  }
+  return createMainWindow();
+}
+
 function trayMenu() {
   const status = worker ? worker.getStatus() : { active: false, label: 'belum siap' };
   const items = [
-    { label: 'Buka dashboard', click: () => createMainWindow() },
+    { label: 'Buka dashboard', click: () => showMainWindow() },
     { type: 'separator' },
     { label: status.active ? 'Hentikan worker' : 'Mulai worker', enabled: Boolean(worker), click: () => toggleWorker() },
     { label: `Status: ${status.label}`, enabled: false },
@@ -130,6 +220,7 @@ function trayMenu() {
     { label: 'Login Instagram', click: () => scraper.openLogin('instagram') },
     { label: 'Login TikTok', click: () => scraper.openLogin('tiktok') },
     { type: 'separator' },
+    { label: 'Tentang sunscraping…', click: () => showAbout() },
     { label: 'Keluar', click: () => app.quit() },
   );
   return Menu.buildFromTemplate(items);
@@ -165,16 +256,17 @@ async function toggleWorker() {
 
 async function boot() {
   app.setAppUserModelId('com.sunscraping.desktop');
-  Menu.setApplicationMenu(null);
-  // Folder data bisa diarahkan (portable / isolasi tes) lewat SA_USER_DATA.
+  Menu.setApplicationMenu(buildAppMenu());
   if (process.env.SA_USER_DATA) {
     try { app.setPath('userData', process.env.SA_USER_DATA); } catch {}
   }
-  const userData = app.getPath('userData');
+  userData = app.getPath('userData');
   if (!fs.existsSync(userData)) fs.mkdirSync(userData, { recursive: true });
 
   db = createDatabase(path.join(userData, 'sunscraping.db'));
   log(`Database: ${db.dbPath}`);
+
+  windowStore = createStorage(path.join(userData, WINDOW_STATE));
 
   scraper = createScraper({ onLog: log });
 
@@ -192,7 +284,7 @@ async function boot() {
 
   const icon = nativeImage.createFromPath(ICON_FILE);
   tray = new Tray(icon);
-  tray.on('double-click', () => createMainWindow());
+  tray.on('double-click', () => showMainWindow());
   tray.setToolTip('sunscraping');
   refreshTray();
 
@@ -213,17 +305,17 @@ const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => createMainWindow());
+  app.on('second-instance', () => showMainWindow());
   app.on('window-all-closed', () => {});
-  app.on('activate', () => createMainWindow());
+  app.on('activate', () => showMainWindow());
 
   app.on('web-contents-created', (event, contents) => {
     contents.setWindowOpenHandler(() => ({ action: 'deny' }));
     contents.on('will-attach-webview', (webviewEvent, webPreferences) => {
-      // Izinkan <webview> di tab Browser, tapi kunci preferensi guest.
       delete webPreferences.preload;
       webPreferences.nodeIntegration = false;
       webPreferences.contextIsolation = true;
+      webPreferences.sandbox = true;
     });
   });
 

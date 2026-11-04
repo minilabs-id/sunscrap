@@ -31,6 +31,13 @@ function esc(s) {
 }
 
 // ---------------- browser ----------------
+function isSocialHost(url) {
+  try {
+    const h = new URL(String(url)).hostname.toLowerCase();
+    return h === 'instagram.com' || h.endsWith('.instagram.com')
+      || h === 'tiktok.com' || h.endsWith('.tiktok.com');
+  } catch { return false; }
+}
 let browserInited = false;
 function ensureBrowser() {
   const wv = $('#browser-webview');
@@ -46,11 +53,19 @@ function browserNavigate(url) {
   if (!/^https?:\/\//i.test(target)) {
     target = target.includes('.') ? 'https://' + target : 'https://www.instagram.com/' + encodeURIComponent(target);
   }
+  if (!isSocialHost(target)) {
+    window.sunscraping.openExternal(target);
+    toast('Dibuka di browser luar (bukan sesi login).', 'warning');
+    return;
+  }
   wv.loadURL(target);
 }
 function bindBrowser() {
   const wv = $('#browser-webview');
   if (!wv) return;
+  wv.addEventListener('will-navigate', (e) => {
+    if (!isSocialHost(e.url)) { e.preventDefault(); window.sunscraping.openExternal(e.url); }
+  });
   wv.addEventListener('did-navigate', () => { $('#browser-url').value = wv.getURL(); });
   wv.addEventListener('did-navigate-in-page', () => { $('#browser-url').value = wv.getURL(); });
   wv.addEventListener('new-window', (e) => {
@@ -74,20 +89,32 @@ function toast(message, kind = '') {
   const root = $('#toast-root');
   const node = document.createElement('div');
   node.className = 'toast ' + kind;
+  node.setAttribute('role', 'status');
+  node.setAttribute('aria-live', kind === 'error' ? 'assertive' : 'polite');
   node.textContent = message;
   root.appendChild(node);
-  setTimeout(() => node.remove(), 4000);
+  while (root.children.length > 3) root.removeChild(root.firstChild);
+  setTimeout(() => node.remove(), kind === 'error' ? 8000 : 4000);
 }
+
+let lastFocusElement = null;
 
 function openModal(html) {
   const root = $('#modal-root');
-  root.innerHTML = `<div class="modal-backdrop"></div><div class="modal">${html}</div>`;
+  root.innerHTML = `<div class="modal-backdrop"></div><div class="modal" role="dialog" aria-modal="true">${html}</div>`;
   root.classList.add('open');
   $('.modal-backdrop', root).addEventListener('click', closeModal);
+  lastFocusElement = document.activeElement;
+  const first = $('.modal [data-close], .modal input, .modal select, .modal textarea, .modal button', root);
+  if (first) first.focus();
+  document.body.classList.add('modal-open');
 }
 function closeModal() {
   $('#modal-root').classList.remove('open');
   $('#modal-root').innerHTML = '';
+  document.body.classList.remove('modal-open');
+  if (lastFocusElement && typeof lastFocusElement.focus === 'function') lastFocusElement.focus();
+  lastFocusElement = null;
 }
 // Delegasi: tombol [data-close] & tombol Escape selalu bisa menutup modal,
 // tanpa inline handler (yang diblokir CSP script-src 'self').
@@ -95,14 +122,26 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-close]')) closeModal();
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') { closeModal(); return; }
+  // Fokus-trap dalam modal.
+  const modal = document.querySelector('#modal-root.open .modal');
+  if (!modal) return;
+  if (e.key === 'Tab') {
+    const focusables = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
 });
 
 // ---------------- navigation ----------------
 $$('.nav-link').forEach((link) => {
   link.addEventListener('click', () => {
-    $$('.nav-link').forEach((l) => l.classList.remove('active'));
+    $$('.nav-link').forEach((l) => { l.classList.remove('active'); l.removeAttribute('aria-current'); });
     link.classList.add('active');
+    link.setAttribute('aria-current', 'page');
     state.tab = link.dataset.tab;
     $$('.tab').forEach((t) => t.classList.remove('active'));
     $('#tab-' + state.tab).classList.add('active');
@@ -222,7 +261,7 @@ async function loadTargets() {
   const tbody = state.targets.items.map((r) => {
     const checked = state.targets.selected.has(r.target_id);
     return `<tr data-target="${r.target_id}" class="clickable">
-      <td><input type="checkbox" class="sel" data-id="${r.target_id}" ${checked ? 'checked' : ''}></td>
+      <td><input type="checkbox" class="sel" data-id="${r.target_id}" aria-label="Pilih target @${esc(r.username || r.target_id)}" ${checked ? 'checked' : ''}></td>
       <td><span class="badge ${r.platform === 'instagram' ? 'ig' : 'tk'}">${r.platform === 'instagram' ? 'IG' : 'TT'}</span></td>
       <td class="wrap">@${esc(r.username || '—')}</td>
       <td class="wrap" title="${esc(r.url)}"><a href="${esc(r.url)}">${esc(r.tema || shortUrl(r.url))}</a></td>
@@ -457,6 +496,41 @@ function openNewAudit() {
 }
 
 // ---------------- refresh / init ----------------
+function statusToExport(val) {
+  return { ok: 'OK', partial: 'PARTIAL', failed: 'FAILED', done: 'DONE' }[val] || null;
+}
+async function openExport() {
+  const val = $('#target-status').value;
+  if (val === 'pending' || val === 'running') {
+    toast('Belum ada hasil untuk status menunggu/berjalan.', 'warning');
+    return;
+  }
+  const status = statusToExport(val);
+  const audit = (state.audits || []).find((a) => a.id === state.auditId);
+  const statusLabel = { done: 'Selesai (OK + sebagian)', ok: 'OK', partial: 'Sebagian', failed: 'Gagal' }[val] || 'Semua status';
+  const count = await api.exportCount({ auditId: state.auditId || null, status });
+  openModal(`
+    <div class="modal-head"><h3>Export data</h3><button class="btn btn-ghost" data-close>✕</button></div>
+    <div class="modal-body">
+      <p>Anda akan mengekspor:</p>
+      <ul style="margin:0 0 8px 18px">
+        <li><b>Audit:</b> ${esc(audit ? audit.name : 'Semua audit')}</li>
+        <li><b>Status:</b> ${esc(statusLabel)}</li>
+        <li><b>Baris:</b> ${fmt(count)}</li>
+      </ul>
+      <p class="muted">File .xlsx berisi kolom metrik + delta + rekap. Simpan di lokasi aman.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Batal</button>
+      <button class="btn btn-primary" id="confirm-export">Unduh .xlsx…</button>
+    </div>`);
+  $('#confirm-export').addEventListener('click', async () => {
+    closeModal();
+    const r = await api.exportExcel({ auditId: state.auditId || null, status });
+    if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast(`Export selesai: ${fmt(r.rows)} baris.`, 'ok');
+  });
+}
+
 async function loadAudits() {
   state.audits = await api.getAudits();
   const sel = $('#global-audit');
@@ -517,11 +591,7 @@ function bindEvents() {
     toast(r.message || `Dijadwalkan ulang ${fmt(r.created)} target.`);
     state.targets.selected.clear(); updateRetrySelected(); loadTargets();
   });
-  $('#btn-export').addEventListener('click', async () => {
-    const status = $('#target-status').value === 'partial' ? 'PARTIAL' : $('#target-status').value === 'failed' ? 'FAILED' : $('#target-status').value === 'ok' ? 'OK' : undefined;
-    const r = await api.exportExcel({ auditId: state.auditId || null, status });
-    if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast(`Export selesai: ${fmt(r.rows)} baris.`, 'ok');
-  });
+  $('#btn-export').addEventListener('click', openExport);
 
   // accounts filters
   ['#account-q', '#account-level', '#account-band'].forEach((s) => {

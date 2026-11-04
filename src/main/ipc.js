@@ -174,6 +174,7 @@ function registerIpc({ db, worker, scraper, broadcast }) {
   });
 
   // ---- export ----
+  ipcMain.handle('data:exportCount', (event, { auditId, status } = {}) => db.getExportCount(auditId || null, status || null));
   ipcMain.handle('data:export', async (event, { auditId, status } = {}) => {
     const rows = db.getExportRows(auditId || null, status || null);
     if (!rows.length) {

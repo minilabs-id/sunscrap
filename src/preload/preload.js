@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('sunscraping', {
   deleteAudit: (auditId) => invoke('data:deleteAudit', auditId),
   clearAll: () => invoke('data:clearAll'),
   exportExcel: (opts) => invoke('data:export', opts),
+  exportCount: (opts) => invoke('data:exportCount', opts),
 
   // database
   dbInfo: () => invoke('db:info'),
