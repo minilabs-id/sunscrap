@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — import
+ * sunscrap — import
  * Parse CSV/XLSX menjadi deret target {url, platform, username, tema}.
  * Deteksi pemisah & encoding CSV (BOM / cp1252), dan sniffing header longgar.
  */

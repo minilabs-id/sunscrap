@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — rate limiter
+ * sunscrap — rate limiter
  * Throttling keselamatan best-effort, sinkron (dijalankan di proses utama).
  * Port dari engine extension chrome-extension/utils/rate-limiter.js, dengan
  * persistensi ke objek storage eksternal (berkas) agar tidak bergantung chrome.*.

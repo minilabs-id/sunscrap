@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — main
+ * sunscrap — main
  * Titik masuk aplikasi: bootstrap DB, scraper, worker, tray, dan jendela dashboard.
  */
 
@@ -84,14 +84,14 @@ function broadcast(type, payload) {
 
 function log(message) {
   if (!message) return;
-  console.log(`[sunscraping] ${message}`);
+  console.log(`[sunscrap] ${message}`);
 }
 
 function showAbout() {
   const acc = db ? db.getDatabaseInfo() : {};
   const counts = acc.counts || {};
   const lines = [
-    `sunscraping v${APP_VERSION}`,
+    `sunscrap v${APP_VERSION}`,
     '',
     `Data tersimpan lokal di:`,
     `${userData || '(belum siap)'}`,
@@ -100,7 +100,7 @@ function showAbout() {
     `Ukuran DB: ${acc.size_bytes ? (Math.round(acc.size_bytes / 1024)) + ' KB' : '-'}`,
   ];
   dialog.showMessageBox(mainWindow || undefined, {
-    type: 'info', title: 'Tentang sunscraping', message: `sunscraping v${APP_VERSION}`,
+    type: 'info', title: 'Tentang sunscrap', message: `sunscrap v${APP_VERSION}`,
     detail: lines.join('\n'), buttons: ['Tutup'],
   }).catch(() => {});
 }
@@ -109,7 +109,7 @@ function copyDiagnostics() {
   const info = db ? db.getDatabaseInfo() : {};
   const counts = info.counts || {};
   const lines = [
-    `sunscraping v${APP_VERSION}`,
+    `sunscrap v${APP_VERSION}`,
     `Electron ${process.versions.electron} · Node ${process.versions.node} · Chromium ${process.versions.chrome}`,
     `OS: ${process.platform} ${process.arch}`,
     `Data: ${userData || '?'}`,
@@ -119,7 +119,7 @@ function copyDiagnostics() {
   const text = lines.join('\n');
   const { clipboard } = require('electron');
   clipboard.writeText(text);
-  notify('Info diagnostik disalin', `sunscraping v${APP_VERSION} — sudah di clipboard.`);
+  notify('Info diagnostik disalin', `sunscrap v${APP_VERSION} — sudah di clipboard.`);
 }
 
 function openDataFolder() {
@@ -189,7 +189,7 @@ function buildAppMenu() {
       role: 'help',
       label: 'Bantuan',
       submenu: [
-        { label: 'Tentang sunscraping…', click: () => showAbout() },
+        { label: 'Tentang sunscrap…', click: () => showAbout() },
         { label: 'Salin info diagnostik…', click: () => copyDiagnostics() },
         { label: 'Buka folder data…', click: () => openDataFolder() },
       ],
@@ -207,7 +207,7 @@ function createMainWindow() {
     y: bounds.y,
     minWidth: 1024,
     minHeight: 640,
-    title: 'sunscraping',
+    title: 'sunscrap',
     icon: ICON_FILE,
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
@@ -283,7 +283,7 @@ function trayMenu() {
     { label: 'Login Instagram', click: () => scraper.openLogin('instagram') },
     { label: 'Login TikTok', click: () => scraper.openLogin('tiktok') },
     { type: 'separator' },
-    { label: 'Tentang sunscraping…', click: () => showAbout() },
+    { label: 'Tentang sunscrap…', click: () => showAbout() },
     { label: 'Keluar', click: () => app.quit() },
   );
   return Menu.buildFromTemplate(items);
@@ -294,7 +294,7 @@ function refreshTray() {
   try {
     tray.setContextMenu(trayMenu());
     const status = worker ? worker.getStatus() : null;
-    const tooltip = status ? `sunscraping — ${status.label}${status.lastError ? ` (${status.lastError})` : ''}` : 'sunscraping';
+    const tooltip = status ? `sunscrap — ${status.label}${status.lastError ? ` (${status.lastError})` : ''}` : 'sunscrap';
     tray.setToolTip(tooltip.slice(0, 120));
   } catch {}
 }
@@ -318,7 +318,7 @@ async function toggleWorker() {
 }
 
 async function boot() {
-  app.setAppUserModelId('com.sunscraping.desktop');
+  app.setAppUserModelId('com.sunscrap.app');
   Menu.setApplicationMenu(buildAppMenu());
   if (process.env.SA_USER_DATA) {
     try { app.setPath('userData', process.env.SA_USER_DATA); } catch {}
@@ -326,7 +326,7 @@ async function boot() {
   userData = app.getPath('userData');
   if (!fs.existsSync(userData)) fs.mkdirSync(userData, { recursive: true });
 
-  db = createDatabase(path.join(userData, 'sunscraping.db'));
+  db = createDatabase(path.join(userData, 'sunscrap.db'));
   log(`Database: ${db.dbPath}`);
 
   const avatarDir = path.join(userData, 'avatars');
@@ -365,7 +365,7 @@ async function boot() {
   const icon = nativeImage.createFromPath(ICON_FILE);
   tray = new Tray(icon);
   tray.on('double-click', () => showMainWindow());
-  tray.setToolTip('sunscraping');
+  tray.setToolTip('sunscrap');
   refreshTray();
 
   if (process.env.SA_AUTOSTART_WORKER === '1') {
@@ -407,7 +407,7 @@ if (!gotLock) {
   });
 
   app.whenReady().then(boot).catch((error) => {
-    console.error('[sunscraping] gagal mulai:', error);
+    console.error('[sunscrap] gagal mulai:', error);
     try { if (db) db.close(); } catch {}
     app.exit(1);
   });

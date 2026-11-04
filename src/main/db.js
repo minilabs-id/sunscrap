@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — db
+ * sunscrap — db
  * Lapisan data SQLite via node:sqlite bawaan Electron (tanpa modul native).
  * Port dari backend/database.py. Satu koneksi sinkron per instance; proses utama
  * adalah single-threaded sehingga aman.
@@ -1600,7 +1600,7 @@ function createDatabase(dbPath) {
       if (ok !== 'ok') throw new Error('File cadangan rusak (integrity check gagal).');
       const tables = new Set(src.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r) => Object.values(r)[0]));
       const missing = RESTORE_REQUIRED_TABLES.filter((t) => !tables.has(t));
-      if (missing.length) throw new Error('File bukan cadangan sunscraping (tabel ' + missing.join(', ') + ' tidak ada).');
+      if (missing.length) throw new Error('File bukan cadangan sunscrap (tabel ' + missing.join(', ') + ' tidak ada).');
       const counts = {};
       for (const t of [...RESTORE_REQUIRED_TABLES, 'accounts', 'account_posts', 'account_history']) {
         try { counts[t] = src.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n; } catch { counts[t] = null; }

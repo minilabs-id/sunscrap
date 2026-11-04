@@ -1,5 +1,5 @@
 /**
- * sunscraping — content/tk-scraper
+ * sunscrap — content/tk-scraper
  * Membaca postingan/profil TikTok dari halaman yang sudah dirender.
  * Dipanggil lewat globalThis.__saScrapePost / __saScrapeProfile di isolated world.
  */

@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — e2e
+ * sunscrap — e2e
  * Jalankan aplikasi Electron sungguhan dan kendarai UI-nya seperti pengguna:
  *  - import via TEMPEL LINK (textarea)
  *  - import via FILE (klik tombol "Pilih file Excel/CSV", dialog native di-stub via SA_IMPORT_FILE)

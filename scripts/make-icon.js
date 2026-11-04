@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — make-icon
+ * sunscrap — make-icon
  * Menghasilkan ikon PNG (matahari) tanpa dependency: RGBA → PNG (zlib + CRC32).
  * Dipakai untuk assets/icon.png (window/tray) dan build/icon.png (installer).
  */

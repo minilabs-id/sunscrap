@@ -1,4 +1,4 @@
-# sunscraping — Desktop
+# sunscrap — Desktop
 
 Aplikasi desktop (Electron) untuk audit keterlibatan kampanye influencer di **Instagram & TikTok**
 secara berkala, tanpa API berbayar dan sepenuhnya **lokal**. Data diambil dari halaman publik lewat
@@ -32,8 +32,8 @@ Untuk *hanya* menjalankan aplikasi (`npm start`), Node hanya dibutuhkan untuk `n
 Saat pertama dibuka, login dulu ke Instagram/TikTok lewat menu tray **Login Instagram /**
 **Login TikTok**, lalu **Mulai worker**.
 
-Data tersimpan di folder `userData` OS (mis. `%APPDATA%\sunscraping\`):
-- `sunscraping.db` — SQLite (audit, target, snapshot, akun)
+Data tersimpan di folder `userData` OS (mis. `%APPDATA%\sunscrap\`):
+- `sunscrap.db` — SQLite (audit, target, snapshot, akun)
 - `worker-state.json` — state throttle (budget kunjungan, sesi)
 
 ## Membuat installer `.exe`
@@ -42,7 +42,7 @@ Data tersimpan di folder `userData` OS (mis. `%APPDATA%\sunscraping\`):
 npm run dist
 ```
 
-Hasil: `release/sunscraping-setup-<versi>.exe` (NSIS).
+Hasil: `release/sunscrap-setup-<versi>.exe` (NSIS).
 
 ## Alur kerja
 

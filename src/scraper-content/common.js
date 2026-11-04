@@ -1,5 +1,5 @@
 /**
- * sunscraping — content/common
+ * sunscrap — content/common
  * Disuntik ke isolated world BrowserWindow. Helper murni untuk scraper IG & TikTok.
  * Tanpa akses chrome.*; hasil dipasang di globalThis.SA_CONTENT untuk dipakai scraper.
  */

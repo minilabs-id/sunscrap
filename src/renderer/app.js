@@ -1,9 +1,9 @@
 'use strict';
 /**
- * sunscraping — renderer
- * Logika dashboard. Memakai API contextBridge `window.sunscraping`.
+ * sunscrap — renderer
+ * Logika dashboard. Memakai API contextBridge `window.sunscrap`.
  */
-const api = window.sunscraping;
+const api = window.sunscrap;
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -70,7 +70,7 @@ function browserNavigate(url) {
     target = target.includes('.') ? 'https://' + target : 'https://www.instagram.com/' + encodeURIComponent(target);
   }
   if (!isSocialHost(target)) {
-    window.sunscraping.openExternal(target);
+    window.sunscrap.openExternal(target);
     toast('Dibuka di browser luar (bukan sesi login).', 'warning');
     return;
   }
@@ -80,12 +80,12 @@ function bindBrowser() {
   const wv = $('#browser-webview');
   if (!wv) return;
   wv.addEventListener('will-navigate', (e) => {
-    if (!isSocialHost(e.url)) { e.preventDefault(); window.sunscraping.openExternal(e.url); }
+    if (!isSocialHost(e.url)) { e.preventDefault(); window.sunscrap.openExternal(e.url); }
   });
   wv.addEventListener('did-navigate', () => { $('#browser-url').value = wv.getURL(); });
   wv.addEventListener('did-navigate-in-page', () => { $('#browser-url').value = wv.getURL(); });
   wv.addEventListener('new-window', (e) => {
-    if (/^https?:/i.test(String(e.url))) window.sunscraping.openExternal(e.url);
+    if (/^https?:/i.test(String(e.url))) window.sunscrap.openExternal(e.url);
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
   });
   wv.addEventListener('did-fail-load', (e) => {
@@ -189,7 +189,7 @@ function updateTitlebarContext() {
   const context = audit && state.tab !== 'browser' && state.tab !== 'settings' ? `${tab} · ${audit.name}` : tab;
   const el = $('#titlebar-context');
   if (el) el.textContent = context;
-  document.title = `${context} — sunscraping`;
+  document.title = `${context} — sunscrap`;
 }
 $$('.nav-link').forEach((link) => {
   link.addEventListener('click', () => {
@@ -851,7 +851,7 @@ async function init() {
   await refreshWorker();
   await refreshDashboard();
 
-  window.sunscraping.onEvent((payload) => {
+  window.sunscrap.onEvent((payload) => {
     if (payload.type === 'worker') { state.worker = payload.payload; renderWorker(); }
     else if (payload.type === 'data') schedulePoll();
     else if (payload.type === 'menu') handleMenuAction(payload.payload && payload.payload.action);

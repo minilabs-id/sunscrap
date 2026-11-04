@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — avatar
+ * sunscrap — avatar
  * Unduh avatar profil sekali ke disk lokal agar renderer tidak pernah memanggil
  * CDN IG/TikTok (privasi) dan tidak bergantung URL bertanda tangan yang kedaluwarsa.
  */

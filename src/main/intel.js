@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — intel akun
+ * sunscrap — intel akun
  * Mesin deteksi akun ternak / akun kembar, port murni dari backend/database.py.
  * Semua fungsi murni (dict JS, tanpa DB) agar bisa diuji langsung.
  */

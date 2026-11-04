@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — export
+ * sunscrap — export
  * Ekspor Excel (.xlsx) per audit: sheet Data + sheet Rekap, dengan sanitasi
  * formula injection, kolom delta, dan engagement rate. Port dari app.py export.
  */
@@ -146,7 +146,7 @@ async function writeExport(db, { auditId, status, filePath }) {
 
   const ExcelJS = require('exceljs');
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'sunscraping';
+  workbook.creator = 'sunscrap';
   workbook.created = new Date();
 
   const dataSheet = workbook.addWorksheet('Data');

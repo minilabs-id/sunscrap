@@ -1,6 +1,6 @@
 @echo off
 rem ============================================================
-rem  sunscraping — Jalankan lewat runtime Electron (bertanda tangan)
+rem  sunscrap — Jalankan lewat runtime Electron (bertanda tangan)
 rem  Alasan: .exe hasil packaging kita belum ditandatangani sehingga
 rem  Smart App Control / antivirus memblokirnya. Biner electron.exe
 rem  adalah rilisan resmi Electron yang SUDAH ditandatangani, jadi SAC

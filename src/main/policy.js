@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — policy
+ * sunscrap — policy
  * Aturan yang memutuskan seberapa banyak lalu lintas yang dikirim: allowlist host,
  * taksonomi error, dan makna sebuah hasil. Bebas dari Electron agar bisa diuji
  * dengan node:test murni.

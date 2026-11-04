@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — preload
+ * sunscrap — preload
  * Jembatan aman renderer ↔ proses utama via contextBridge. Renderer tidak pernah
  * menyentuh Node/ipcRenderer langsung.
  */
@@ -9,7 +9,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 const invoke = (channel, payload) => ipcRenderer.invoke(channel, payload);
 
-contextBridge.exposeInMainWorld('sunscraping', {
+contextBridge.exposeInMainWorld('sunscrap', {
   // worker
   workerStart: () => invoke('worker:start'),
   workerStop: () => invoke('worker:stop'),

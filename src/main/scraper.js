@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — scraper
+ * sunscrap — scraper
  * Permukaan scraping untuk aplikasi desktop: BrowserWindow tersembunyi yang
  * menyuntikkan scraper IG/TikTok ke isolated world dan membaca hasilnya.
  * Login disimpan di partisi persist agar tidak hilang saat aplikasi ditutup.
@@ -12,7 +12,7 @@ const { BrowserWindow, session } = require('electron');
 const { allowedTarget, platformForHost } = require('./policy');
 
 const CONTENT_DIR = path.join(__dirname, '..', 'scraper-content');
-const PARTITION = 'persist:sunscraping';
+const PARTITION = 'persist:sunscrap';
 const WORLD_ID = 999;
 const SCRAPE_TIMEOUT_MS = 45000;
 const LOAD_TIMEOUT_MS = 30000;
@@ -62,7 +62,7 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
     workerWindow = new BrowserWindow({
       show: false,
       width: 1280, height: 900,
-      title: 'sunscraping worker',
+      title: 'sunscrap worker',
       webPreferences: {
         partition: partitionName,
         nodeIntegration: false,

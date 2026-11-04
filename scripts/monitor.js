@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — monitor
+ * sunscrap — monitor
  * Baca database aplikasi (read-only ringan) untuk memantau progres: antrean,
  * hasil scrape, akun terdeteksi, dan "sample" target yang sudah selesai.
  */
@@ -9,7 +9,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 function main() {
-  const dbPath = path.join(os.homedir(), 'AppData', 'Roaming', 'sunscraping', 'sunscraping.db');
+  const dbPath = path.join(os.homedir(), 'AppData', 'Roaming', 'sunscrap', 'sunscrap.db');
   if (!fs.existsSync(dbPath)) {
     console.log('DB belum ada:', dbPath, '(aplikasi belum membuatnya?)');
     return;

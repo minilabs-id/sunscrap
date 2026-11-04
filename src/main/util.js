@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — util
+ * sunscrap — util
  * Helper murni (tanpa Electron, tanpa DB) yang dipakai lintas modul:
  * pembersihan teks/angka, username kanonik, tanggal UTC, dan normalisasi URL target.
  */

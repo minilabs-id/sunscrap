@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — ipc
+ * sunscrap — ipc
  * Mendaftarkan handler ipcMain untuk seluruh permukaan renderer. Operasi tulis
  * memicu broadcast 'data' agar dashboard menyegarkan diri.
  */
@@ -28,7 +28,7 @@ function registerIpc({ db, worker, scraper, broadcast }) {
   ipcMain.handle('app:clearSession', async () => {
     const { session } = require('electron');
     try {
-      await session.fromPartition('persist:sunscraping').clearStorageData();
+      await session.fromPartition('persist:sunscrap').clearStorageData();
       return { ok: true };
     } catch (e) {
       return { ok: false, error: e.message };
@@ -188,7 +188,7 @@ function registerIpc({ db, worker, scraper, broadcast }) {
         : status ? `Belum ada snapshot berstatus ${status} untuk diexport.`
         : 'Belum ada hasil untuk diexport.' };
     }
-    const defaultName = `sunscraping_export_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-').replace(/-/g, '')}.xlsx`;
+    const defaultName = `sunscrap_export_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-').replace(/-/g, '')}.xlsx`;
     const result = await dlg(parentOf(event), dialog.showSaveDialog, { title: 'Simpan export', defaultPath: defaultName, filters: [{ name: 'Excel', extensions: ['xlsx'] }] });
     if (result.canceled || !result.filePath) return { canceled: true };
     try {
@@ -204,7 +204,7 @@ function registerIpc({ db, worker, scraper, broadcast }) {
   ipcMain.handle('db:backup', async (event) => {
     const result = await dlg(parentOf(event), dialog.showSaveDialog, {
       title: 'Simpan cadangan database',
-      defaultPath: `sunscraping_db_${new Date().toISOString().slice(0, 10)}.db`,
+      defaultPath: `sunscrap_db_${new Date().toISOString().slice(0, 10)}.db`,
       filters: [{ name: 'SQLite', extensions: ['db'] }],
     });
     if (result.canceled || !result.filePath) return { canceled: true };

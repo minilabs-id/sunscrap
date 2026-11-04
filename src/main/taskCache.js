@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — task cache
+ * sunscrap — task cache
  * Memutuskan apakah sebuah post yang diantrekan bisa dijawab dari angka hasil
  * kunjungan profil, tanpa memuat halaman post lagi. Bebas Electron agar bisa diuji.
  */

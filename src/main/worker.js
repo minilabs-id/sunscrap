@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — worker
+ * sunscrap — worker
  * Loop pekerja: klaim task, kunjungi, scrape, laporkan, dengan pacing dari rate
  * limiter. Memanggil db langsung (tanpa HTTP). Direproduksi dari desktop/worker/core.js.
  */

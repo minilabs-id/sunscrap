@@ -1,6 +1,6 @@
 'use strict';
 /**
- * sunscraping — smoke
+ * sunscrap — smoke
  * Validasi require-graph + DB + worker + scraper di bawah runtime Electron
  * (node:sqlite bawaan Electron), tanpa membuka jendela/tray. Keluar setelah OK.
  */
@@ -16,7 +16,7 @@ app.whenReady().then(() => {
     const { createRateLimiter } = require('../src/main/rateLimiter');
     const { registerIpc } = require('../src/main/ipc');
 
-    const dbPath = path.join(os.tmpdir(), 'sunscraping-smoke-' + Date.now() + '.db');
+    const dbPath = path.join(os.tmpdir(), 'sunscrap-smoke-' + Date.now() + '.db');
     const db = createDatabase(dbPath);
 
     // jalur penuh: buat audit → klaim → hasil → ringkasan → intel → import import-module

@@ -1,5 +1,5 @@
 /**
- * sunscraping — content/ig-scraper
+ * sunscrap — content/ig-scraper
  * Membaca postingan/profil Instagram dari halaman yang sudah dirender.
  * Dipanggil lewat globalThis.__saScrapePost / __saScrapeProfile di isolated world.
  */
