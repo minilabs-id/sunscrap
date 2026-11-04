@@ -57,6 +57,12 @@ function registerIpc({ db, worker, scraper, broadcast }) {
   ipcMain.handle('data:compare', (event, params) => db.getCompare((params && params.months) || 6, params && params.period));
   ipcMain.handle('data:search', (event, q) => db.searchData(q, 20));
 
+  ipcMain.handle('account:delete', (event, { platform, username } = {}) => {
+    const ok = db.deleteAccount(platform, username);
+    if (ok) dataChanged();
+    return { ok };
+  });
+
   // ---- impor (membuka dialog native) ----
   function dlg(win, fn, options) {
     return win ? fn(win, options) : fn(options);
@@ -205,6 +211,33 @@ function registerIpc({ db, worker, scraper, broadcast }) {
     try {
       db.backupDatabase(result.filePath);
       return { ok: true, filePath: result.filePath };
+    } catch (e) {
+      return { error: e.message };
+    }
+  });
+
+  ipcMain.handle('db:restorePreview', async (event) => {
+    const result = await dlg(parentOf(event), dialog.showOpenDialog, {
+      title: 'Pilih cadangan database',
+      properties: ['openFile'],
+      filters: [{ name: 'SQLite', extensions: ['db', 'sqlite', 'sqlite3', 'backup'] }],
+    });
+    if (!result || result.canceled || !result.filePaths.length) return { canceled: true };
+    try {
+      const info = db.inspectBackup(result.filePaths[0]);
+      return { ok: true, ...info, path: result.filePaths[0] };
+    } catch (e) {
+      return { error: e.message };
+    }
+  });
+
+  ipcMain.handle('db:restoreCommit', (event, filePath) => {
+    if (typeof filePath !== 'string' || !filePath) return { error: 'path tidak valid' };
+    try {
+      worker.stop('Memulihkan cadangan database…');
+      const r = db.restoreDatabase(filePath);
+      dataChanged();
+      return { ok: true, safety_backup: r.safety };
     } catch (e) {
       return { error: e.message };
     }

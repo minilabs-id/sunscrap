@@ -14,7 +14,7 @@ const state = {
   worker: null,
   auditId: null,
   targets: { items: [], total: 0, limit: 50, offset: 0, selected: new Set() },
-  accounts: { items: [], total: 0 },
+  accounts: { items: [], total: 0, limit: 100, offset: 0 },
 };
 
 function fmt(n) {
@@ -358,13 +358,18 @@ async function loadAccounts() {
     q: $('#account-q').value || undefined,
     level: $('#account-level').value || undefined,
     band: $('#account-band').value || undefined,
+    platform: $('#account-platform').value || undefined,
     sort: 'risk',
-    limit: 200,
+    limit: state.accounts.limit,
+    offset: state.accounts.offset,
   };
   const res = await api.getAccounts(params);
   state.accounts.items = res.items || [];
+  state.accounts.total = res.total || 0;
   $('#accounts-total').textContent = `${fmt(res.total)} akun · ${fmt((res.summary || {}).flagged)} terindikasi · ${fmt((res.summary || {}).clusters)} klaster`;
-  $('#account-legend').innerHTML = `<span>Skor: 0 bersih · 2 amati · 6 ternak · 10 kembar</span>`;
+  $('#accounts-page').textContent = `Hal ${Math.floor(state.accounts.offset / state.accounts.limit) + 1} / ${Math.max(1, Math.ceil(res.total / state.accounts.limit))}`;
+  const legend = $('#account-legend');
+  if (legend) legend.innerHTML = `<button class="btn btn-ghost" id="score-help" style="font-size:12px;padding:4px 8px">Bagaimana skor dihitung?</button>`;
 
   $('#accounts-table').innerHTML = `
     <thead><tr><th>Akun</th><th>Level</th><th class="num">Skor</th><th class="num">Followers</th><th class="num">Reach</th><th class="num">Post</th><th class="num">Bulan</th><th>Indikasi</th></tr></thead>
@@ -381,6 +386,24 @@ async function loadAccounts() {
       </tr>`).join('') || '<tr><td colspan="8" class="muted">Belum ada akun tersimpan. Jalankan worker untuk mengisi data.</td></tr>'}</tbody>`;
 
   $$('#accounts-table tr[data-account]').forEach((row) => row.addEventListener('click', () => openAccount(row.dataset.account, row.dataset.platform)));
+  const helpBtn = $('#score-help');
+  if (helpBtn) helpBtn.addEventListener('click', showScoreHelp);
+}
+
+function showScoreHelp() {
+  openModal(`
+    <div class="modal-head"><h3>Bagaimana skor dihitung?</h3><button class="btn btn-ghost" data-close>✕</button></div>
+    <div class="modal-body">
+      <p>Skor adalah agregasi sinyal lemah dari data <b>publik</b> (bukan identitas):</p>
+      <ul style="margin:0 0 10px 18px">
+        <li><b>+4</b> Unggahan sama muncul di akun lain</li>
+        <li><b>+3</b> Kontak (nomor/email) di bio dipakai akun lain</li>
+        <li><b>+2</b> Caption seragam lintas akun · jangkauan sangat rendah · komentar nyaris nol · unggahan bertumpuk · follower datar</li>
+        <li><b>+1</b> Unggahan serentak · following &gt; follower</li>
+      </ul>
+      <p class="muted" style="border-left:3px solid var(--warn);padding-left:10px"><b>Disclaimer:</b> ini indikasi otomatis dari data publik — bukan identifikasi orang, bukan vonis. Wajib verifikasi manual sebelum tindakan apa pun. Data dapat dihapus atas permintaan.</p>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>Tutup</button></div>`);
 }
 
 function openAccount(username, platform) {
@@ -400,7 +423,31 @@ function openAccount(username, platform) {
         <div class="panel"><div class="panel-title">Indikasi (${fmt(detail.score)} poin)</div>${flags || '<div class="muted">Tidak ada.</div>'}</div>
         ${siblings ? `<div class="panel"><div class="panel-title">Akun tertaut</div>${siblings}</div>` : ''}
         ${history ? `<div class="panel"><div class="panel-title">Seri bulanan</div><table class="table"><thead><tr><th>Bulan</th><th class="num">Followers</th><th class="num">Post</th></tr></thead><tbody>${history}</tbody></table></div>` : ''}
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-danger" id="del-account" style="margin-right:auto">Hapus data akun ini…</button>
+        <button class="btn btn-ghost" data-close>Tutup</button>
       </div>`);
+    $('#del-account').addEventListener('click', () => openDeleteAccount(detail.username, detail.platform));
+  });
+}
+
+function openDeleteAccount(username, platform) {
+  openModal(`
+    <div class="modal-head"><h3>Hapus data akun</h3><button class="btn btn-ghost" data-close>✕</button></div>
+    <div class="modal-body">
+      <p>Data akun <b>@${esc(username)}</b> (profil, riwayat bulanan, dan unggahan tersimpan) akan dihapus. Ketik username untuk melanjutkan.</p>
+      <div class="field"><label>Ketik @${esc(username)}</label><input id="del-account-confirm" class="input" placeholder="${esc(username)}"></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-del-account" disabled>Hapus</button></div>`);
+  const check = () => { $('#confirm-del-account').disabled = $('#del-account-confirm').value.trim() !== username; };
+  $('#del-account-confirm').addEventListener('input', check);
+  check();
+  $('#confirm-del-account').addEventListener('click', async () => {
+    const r = await api.deleteAccount(platform, username);
+    closeModal();
+    if (r.ok) toast(`Data @${username} dihapus.`, 'ok'); else toast('Gagal menghapus data akun.', 'error');
+    if (state.tab === 'accounts') loadAccounts();
   });
 }
 
@@ -632,9 +679,12 @@ function bindEvents() {
   $('#btn-export').addEventListener('click', openExport);
 
   // accounts filters
-  ['#account-q', '#account-level', '#account-band'].forEach((s) => {
-    $(s).addEventListener(s === '#account-q' ? 'input' : 'change', s === '#account-q' ? debounce(loadAccounts, 300) : loadAccounts);
+  const resetAccounts = () => { state.accounts.offset = 0; loadAccounts(); };
+  ['#account-q', '#account-level', '#account-band', '#account-platform'].forEach((s) => {
+    $(s).addEventListener(s === '#account-q' ? 'input' : 'change', s === '#account-q' ? debounce(resetAccounts, 300) : resetAccounts);
   });
+  $('#accounts-prev').addEventListener('click', () => { state.accounts.offset = Math.max(0, state.accounts.offset - state.accounts.limit); loadAccounts(); });
+  $('#accounts-next').addEventListener('click', () => { if ((state.accounts.offset + state.accounts.limit) < state.accounts.total) { state.accounts.offset += state.accounts.limit; loadAccounts(); } });
 
   // proses
   $('#btn-login-ig').addEventListener('click', () => api.openLogin('instagram'));
@@ -646,6 +696,29 @@ function bindEvents() {
   $('#btn-backup').addEventListener('click', async () => {
     const r = await api.dbBackup();
     if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast('Cadangan tersimpan.', 'ok');
+  });
+  $('#btn-restore').addEventListener('click', async () => {
+    const prev = await api.restorePreview();
+    if (prev.canceled) return;
+    if (prev.error) { toast(prev.error, 'error'); return; }
+    const c = prev.counts || {};
+    openModal(`
+      <div class="modal-head"><h3>Pulihkan dari cadangan</h3><button class="btn btn-ghost" data-close>✕</button></div>
+      <div class="modal-body">
+        <p>Anda akan mengganti <b>seluruh data saat ini</b> dengan cadangan:</p>
+        <ul style="margin:0 0 8px 18px">
+          <li><b>File:</b> ${esc(prev.file)}</li>
+          <li>Audit ${fmt(c.audits)} · Target ${fmt(c.targets)} · Snapshot ${fmt(c.snapshots)} · Akun ${fmt(c.accounts)}</li>
+        </ul>
+        <p class="muted">Data aktif dicadangkan otomatis dulu sebelum diganti. Tindakan ini tidak bisa dibatalkan.</p>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-restore">Pulihkan</button></div>`);
+    $('#confirm-restore').addEventListener('click', async () => {
+      const r = await api.restoreCommit(prev.path);
+      closeModal();
+      if (r.error) toast(r.error, 'error');
+      else { toast('Data dipulihkan. Safety backup: ' + r.safety_backup, 'ok'); await pollUpdate(); }
+    });
   });
   $('#btn-clear-session').addEventListener('click', async () => {
     const r = await api.clearSession();

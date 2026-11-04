@@ -144,10 +144,20 @@
           <option value="kecil">< 5K</option>
           <option value="besar">> 20K</option>
         </select>
+        <select id="account-platform" class="select">
+          <option value="">Semua platform</option>
+          <option value="instagram">Instagram</option>
+          <option value="tiktok">TikTok</option>
+        </select>
         <div class="legend" id="account-legend"></div>
       </div>
       <div class="table-wrap">
         <table class="table" id="accounts-table"></table>
+      </div>
+      <div class="pager">
+        <button class="btn btn-ghost" id="accounts-prev">‹ Prev</button>
+        <span class="muted" id="accounts-page">1</span>
+        <button class="btn btn-ghost" id="accounts-next">Next ›</button>
       </div>
     </section>
 
@@ -204,7 +214,8 @@
         <div id="db-info" class="row-gap"></div>
         <div class="row-gap">
           <button class="btn btn-ghost" id="btn-backup">Cadangkan database</button>
-          <button class="btn btn-ghost" id="btn-clear-session">Hapus sesi login (IG & TikTok)</button>
+          <button class="btn btn-ghost" id="btn-restore">Pulihkan dari cadangan…</button>
+          <button class="btn btn-danger" id="btn-clear-session">Hapus sesi login (IG & TikTok)</button>
           <button class="btn btn-danger" id="btn-clear">Hapus semua data</button>
         </div>
       </div>

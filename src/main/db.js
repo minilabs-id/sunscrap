@@ -30,7 +30,7 @@ const ERROR_CODES = ['PERMANENT', 'TRANSIENT', 'THROTTLED', 'AUTH'];
 const { cleanText, cleanUsername, cleanInt, isoNow, sqlNow, parseUtc, parseRepeatDays, clampLimit, cleanPeriod } = util;
 
 function createDatabase(dbPath) {
-  const conn = new DatabaseSync(dbPath);
+  let conn = new DatabaseSync(dbPath);
   conn.exec('PRAGMA journal_mode=WAL');
   conn.exec('PRAGMA busy_timeout=30000');
   conn.exec('PRAGMA foreign_keys=ON');
@@ -560,6 +560,24 @@ function createDatabase(dbPath) {
       run('DELETE FROM targets WHERE audit_id = ?', auditId);
       run('DELETE FROM runs WHERE audit_id = ?', auditId);
       run('DELETE FROM audits WHERE id = ?', auditId);
+      exec('COMMIT');
+      markIntelDirty();
+      return true;
+    } catch (e) {
+      exec('ROLLBACK');
+      throw e;
+    }
+  }
+
+  // Hapus data satu akun (privasi / hak hapus): accounts + posts + history.
+  function deleteAccount(platform, username) {
+    const handle = cleanUsername(username);
+    if (!handle || !['instagram', 'tiktok'].includes(platform)) return false;
+    exec('BEGIN IMMEDIATE');
+    try {
+      run('DELETE FROM account_posts WHERE platform = ? AND username = ?', platform, handle);
+      run('DELETE FROM account_history WHERE platform = ? AND username = ?', platform, handle);
+      run('DELETE FROM accounts WHERE platform = ? AND username = ?', platform, handle);
       exec('COMMIT');
       markIntelDirty();
       return true;
@@ -1567,19 +1585,67 @@ function createDatabase(dbPath) {
     if (conn) { try { conn.close(); } catch {} }
   }
 
+  const RESTORE_REQUIRED_TABLES = ['audits', 'targets', 'tasks', 'snapshots'];
+
+  /** Validasi file cadangan: integrity + tabel wajib + hitungan baris. Throws bila gagal. */
+  function inspectBackup(sourcePath) {
+    if (!fs.existsSync(sourcePath)) throw new Error('File cadangan tidak ditemukan.');
+    const size = fs.statSync(sourcePath).size;
+    if (size < 512) throw new Error('File terlalu kecil untuk menjadi database SQLite.');
+    let src = null;
+    try {
+      src = new DatabaseSync(sourcePath, { readOnly: true });
+      const check = src.prepare('PRAGMA integrity_check').get();
+      const ok = Object.values(check)[0];
+      if (ok !== 'ok') throw new Error('File cadangan rusak (integrity check gagal).');
+      const tables = new Set(src.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r) => Object.values(r)[0]));
+      const missing = RESTORE_REQUIRED_TABLES.filter((t) => !tables.has(t));
+      if (missing.length) throw new Error('File bukan cadangan sunscraping (tabel ' + missing.join(', ') + ' tidak ada).');
+      const counts = {};
+      for (const t of [...RESTORE_REQUIRED_TABLES, 'accounts', 'account_posts', 'account_history']) {
+        try { counts[t] = src.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n; } catch { counts[t] = null; }
+      }
+      return { file: path.basename(sourcePath), size_bytes: size, counts, schema_version: src.prepare('PRAGMA user_version').get().user_version || 0 };
+    } finally {
+      if (src) { try { src.close(); } catch {} } 
+    }
+  }
+
+  /** Ganti seluruh data dengan cadangan (validasi dulu + safety copy DB aktif). */
+  function restoreDatabase(sourcePath) {
+    inspectBackup(sourcePath);
+    const safety = path.join(path.dirname(dbPath), `pre_restore_${Date.now()}.db`);
+    backupDatabase(safety);
+    conn.close();
+    try {
+      for (const stale of [dbPath, dbPath + '-wal', dbPath + '-shm']) {
+        try { if (fs.existsSync(stale)) fs.unlinkSync(stale); } catch {}
+      }
+      fs.copyFileSync(sourcePath, dbPath);
+    } finally {
+      conn = new DatabaseSync(dbPath);
+      conn.exec('PRAGMA journal_mode=WAL');
+      conn.exec('PRAGMA busy_timeout=30000');
+      conn.exec('PRAGMA foreign_keys=ON');
+      initSchema();
+      markIntelDirty();
+    }
+    return { safety: path.basename(safety) };
+  }
+
   return {
     dbPath,
     initSchema,
     inferErrorCode,
     // write
     createAuditWithTasks, appendTargetsToAudit, enqueueRun, retryTargets, retryFailedTargets,
-    enqueueProfileVisits, updateAudit, deleteAudit, clearAll,
+    enqueueProfileVisits, updateAudit, deleteAudit, clearAll, deleteAccount,
     getNextTask, updateTaskResult, recordAccountProfile,
     // read
     getAudits, getAudit, getQueueStats, getDashboardStats, getTargets, getLatest, getTargetHistory, getTargetWithAudit,
     getSummary, getCompare, searchData, getAccountIntel, getAccountDetail, getAccountProfile,
     getAccountCache, getCachedPostMetrics, getExportRows, getExportCount,
-    getDatabaseInfo, backupDatabase,
+    getDatabaseInfo, backupDatabase, inspectBackup, restoreDatabase,
     close,
     constants: { TASK_LOCK_MINUTES, CACHE_TTL_MINUTES, POST_CACHE_TTL_MINUTES, MAX_RETRIES, MAX_PROFILE_POSTS, VISIT_BUDGET_PER_CYCLE },
   };

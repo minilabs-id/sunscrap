@@ -1,6 +1,9 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { createDatabase } = require('../main/db');
 
 function makeDb() {
@@ -128,10 +131,32 @@ test('retryFailedTargets melewatkan PERMANENT', () => {
   db.updateTaskResult(task1.id, { status: 'FAILED', error: 'private account', errorCode: 'PERMANENT' });
   const task2 = db.getNextTask();
   db.updateTaskResult(task2.id, { status: 'FAILED', error: 'terlalu banyak permintaan', errorCode: 'THROTTLED' });
-
   const auditId = db.getAudits()[0].id;
   const r = db.retryFailedTargets(auditId);
   assert.equal(r.created, 1);
   assert.equal(r.skipped_permanent, 1);
   db.close();
+});
+
+test('deleteAccount menghapus data akun + post + history', () => {
+  const db = makeDb();
+  db.recordAccountProfile({ platform: 'instagram', username: 'aku', followerCount: 100, posts: [{ id: 'P1', url: 'https://www.instagram.com/aku/p/P1/', postedAt: '2026-10-01T08:00:00Z', likes: 5 }] });
+  assert.ok(db.getAccountCache('aku', 'instagram') !== null);
+  assert.equal(db.deleteAccount('instagram', 'aku'), true);
+  assert.equal(db.getAccountCache('aku', 'instagram'), null);
+  db.close();
+});
+
+test('backupDatabase + restoreDatabase mengembalikan data', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sadb-'));
+  const db = createDatabase(path.join(dir, 'main.db'));
+  db.createAuditWithTasks([t1], { name: 'x' });
+  const bak = path.join(dir, 'bak.db');
+  db.backupDatabase(bak);
+  db.createAuditWithTasks([t2], { name: 'y' });
+  assert.equal(db.getAudits().length, 2);
+  db.restoreDatabase(bak);
+  assert.equal(db.getAudits().length, 1);
+  db.close();
+  fs.rmSync(dir, { recursive: true, force: true });
 });

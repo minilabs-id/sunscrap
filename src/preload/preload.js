@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('sunscraping', {
   getTargets: (params) => invoke('data:targets', params),
   getAccounts: (params) => invoke('data:accounts', params),
   getAccountDetail: (platform, username) => invoke('data:accountDetail', { platform, username }),
+  deleteAccount: (platform, username) => invoke('account:delete', { platform, username }),
   getTargetHistory: (targetId) => invoke('data:targetHistory', targetId),
   getLatest: (params) => invoke('data:latest', params),
   getCompare: (params) => invoke('data:compare', params),
@@ -45,6 +46,8 @@ contextBridge.exposeInMainWorld('sunscraping', {
   // database
   dbInfo: () => invoke('db:info'),
   dbBackup: () => invoke('db:backup'),
+  restorePreview: () => invoke('db:restorePreview'),
+  restoreCommit: (path) => invoke('db:restoreCommit', path),
 
   // events push
   onEvent: (callback) => {
