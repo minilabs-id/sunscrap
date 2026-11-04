@@ -309,8 +309,10 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
     }
   }
 
-  if (liked.length >= MIN_POSTS_FOR_COMMENT_RATIO && medianLikes && medianLikes >= LIKE_FLOOR_WITHOUT_COMMENTS) {
-    const commentsValue = medianComments || 0;
+  // Median komentar null = data komentar tak terbaca; jangan vonis "nyaris nol".
+  if (liked.length >= MIN_POSTS_FOR_COMMENT_RATIO && medianLikes && medianLikes >= LIKE_FLOOR_WITHOUT_COMMENTS
+      && medianComments !== null) {
+    const commentsValue = medianComments;
     if (commentsValue <= Math.max(1.0, medianLikes * COMMENT_TO_LIKE_FLOOR)) {
       flag('komentar_minim', 'Komentar nyaris nol',
         `${liked.length} unggahan rata-rata ${displayInt(medianLikes)} likes tetapi hanya ${displayInt(commentsValue)} komentar`, 2);

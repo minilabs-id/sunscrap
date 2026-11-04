@@ -1292,10 +1292,15 @@ function createDatabase(dbPath) {
         bucket.er_rows = er.length; bucket.median_er = recapMedian(er);
         row.months[pk] = bucket;
         row.posts_total += bucket.posts; row.views_total += bucket.views;
-        if (row.first_period === null) row.first_period = pk;
-        row.last_period = pk;
       }
-      row.is_new = periods.length > 1 && row.first_period === latestPeriod;
+      // periods diurut DESC (terbaru dulu). first_period = periode paling LAMA yang berisi data.
+      const withData = periods.filter((pk) => row.months[pk] !== null);
+      row.first_period = withData.length ? withData[withData.length - 1] : null;
+      row.last_period = withData.length ? withData[0] : null;
+      // "baru" hanya bila ada data di periode terbaru TANPA data di periode mana pun yang lebih lama.
+      row.is_new = periods.length > 1
+        && row.months[latestPeriod] !== null
+        && periods.slice(1).every((pk) => row.months[pk] === null);
       row.missing_latest = row.months[latestPeriod] === null;
       items.push(row);
     }
@@ -1364,7 +1369,7 @@ function createDatabase(dbPath) {
       reach: (i) => i.metrics.view_reach_pct !== null ? i.metrics.view_reach_pct : (i.metrics.like_reach_pct || -1),
       posts: (i) => i.metrics.posts_seen || 0,
       audits: (i) => i.audits_seen || 0,
-      age: (i) => i.data_age_minutes !== null ? i.data_age_minutes : (1 << 40),
+      age: (i) => i.data_age_minutes !== null ? i.data_age_minutes : Number.MAX_SAFE_INTEGER,
       username: (i) => String(i.username || '').toLowerCase(),
     };
     const keyFn = sortKeys[params.sort] || sortKeys.risk;
@@ -1511,15 +1516,25 @@ function createDatabase(dbPath) {
   }
 
   function backupDatabase(destination) {
-    const dir = path.dirname(destination);
-    if (dir) fs.mkdirSync(dir, { recursive: true });
-    // Buang salinan lama + sidecar agar VACUUM INTO tidak gagal karena file ada.
-    for (const stale of [destination, destination + '-wal', destination + '-shm']) {
-      try { if (fs.existsSync(stale)) fs.unlinkSync(stale); } catch {}
+    const finalDest = path.resolve(destination);
+    if (finalDest === path.resolve(dbPath)) {
+      throw new Error('Cadangan tidak boleh menimpa database aktif.');
     }
-    // VACUUM INTO menghasilkan salinan konsisten & self-contained (termasuk data -wal).
-    conn.exec(`VACUUM INTO '${destination.replace(/'/g, "''")}'`);
-    return destination;
+    const dir = path.dirname(finalDest);
+    if (dir) fs.mkdirSync(dir, { recursive: true });
+    // Tulis ke temp lalu rename atomik: cadangan lama tetap utuh bila VACUUM gagal.
+    const tmp = `${finalDest}.tmp-${Date.now()}`;
+    try {
+      conn.exec(`VACUUM INTO '${tmp.replace(/'/g, "''")}'`);
+      for (const stale of [finalDest, finalDest + '-wal', finalDest + '-shm']) {
+        try { if (fs.existsSync(stale)) fs.unlinkSync(stale); } catch {}
+      }
+      fs.renameSync(tmp, finalDest);
+    } catch (e) {
+      try { if (fs.existsSync(tmp)) fs.unlinkSync(tmp); } catch {}
+      throw e;
+    }
+    return finalDest;
   }
 
   function close() {

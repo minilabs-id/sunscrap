@@ -103,6 +103,24 @@ test('recordAccountProfile menyimpan akun + post + seri bulanan', () => {
   db.close();
 });
 
+test('getCompare is_new hanya untuk akun yang baru di periode terbaru', () => {
+  const db = makeDb();
+  db.createAuditWithTasks([t1], { name: 'Sep', period: '2026-09' });        // t1 = aku (IG)
+  db.createAuditWithTasks([t1, t2], { name: 'Okt', period: '2026-10' });     // t1 = aku, t2 = dia (TT)
+  let task;
+  while ((task = db.getNextTask())) {
+    db.updateTaskResult(task.id, { status: 'OK', likes: 10, comments: 1, views: 100, followerCount: 1000 });
+  }
+  const cmp = db.getCompare(6);
+  const aku = cmp.accounts.find((a) => a.username === 'aku');
+  const dia = cmp.accounts.find((a) => a.username === 'dia');
+  assert.ok(aku && dia);
+  assert.equal(aku.is_new, false); // muncul di 2 periode
+  assert.equal(dia.is_new, true);  // hanya periode terbaru
+  assert.equal(cmp.summary.new_accounts, 1);
+  db.close();
+});
+
 test('retryFailedTargets melewatkan PERMANENT', () => {
   const db = makeDb();
   db.createAuditWithTasks([t1, t2], { name: 'r' });

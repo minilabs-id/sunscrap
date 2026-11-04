@@ -29,18 +29,16 @@ function parseUtc(value) {
   let text = String(value).trim();
   if (!text) return null;
   if (text.endsWith('Z')) text = text.slice(0, -1) + '+00:00';
-  let d;
-  try {
-    d = new Date(text);
-  } catch {
-    return null;
+
+  // Keluaran sqlNow() adalah "YYYY-MM-DD HH:MM:SS" DALAM UTC — parse sebagai UTC
+  // eksplisit, bukan lokal (bug: `new Date(...)` membacanya sebagai waktu lokal ±7 jam).
+  const m = text.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/);
+  if (m) {
+    return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
   }
-  if (Number.isNaN(d.getTime())) {
-    // coba bentuk "YYYY-MM-DD HH:MM:SS" tanpa zona
-    const m = text.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/);
-    if (!m) return null;
-    d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
-  }
+
+  // Bentuk lain (ISO 8601 bernotasi offset) diserahkan ke Date.parse.
+  const d = new Date(text);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 

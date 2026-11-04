@@ -48,3 +48,10 @@ test('sqlNow adalah format SQLite UTC', () => {
   const now = util.sqlNow();
   assert.match(now, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
 });
+
+test('parseUtc membaca "YYYY-MM-DD HH:MM:SS" sebagai UTC (bukan lokal)', () => {
+  const d = util.parseUtc('2026-11-04 12:00:00');
+  assert.equal(d.toISOString(), '2026-11-04T12:00:00.000Z');
+  const iso = util.parseUtc('2026-11-04T12:00:00Z');
+  assert.equal(iso.toISOString(), '2026-11-04T12:00:00.000Z');
+});

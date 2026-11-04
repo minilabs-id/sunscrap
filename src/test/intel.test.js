@@ -80,3 +80,14 @@ test('followers datar di band 20K-100K memberi flag (L-01)', () => {
   const r = intel.analyseAccount(a, [], history, {});
   assert.ok(r.flags.some((f) => f.key === 'followers_datar'));
 });
+
+test('komentar tak terbaca (null) tidak memicu flag komentar_minim', () => {
+  const a = account('nocomments', 10000);
+  const posts = [
+    { post_ref: 'a', posted_at: '2026-10-01T08:00:00Z', likes: 200, comments: null, views: null, caption: null },
+    { post_ref: 'b', posted_at: '2026-10-02T08:00:00Z', likes: 200, comments: null, views: null, caption: null },
+    { post_ref: 'c', posted_at: '2026-10-03T08:00:00Z', likes: 200, comments: null, views: null, caption: null },
+  ];
+  const r = intel.analyseAccount(a, posts, [], {});
+  assert.ok(!r.flags.some((f) => f.key === 'komentar_minim'));
+});
