@@ -153,6 +153,26 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ---------------- navigation ----------------
+const TAB_LABELS = { dashboard: 'Dashboard', targets: 'Target', accounts: 'Akun', browser: 'Browser', proses: 'Proses', settings: 'Pengaturan' };
+function handleMenuAction(action) {
+  if (action === 'import') openNewAudit();
+  else if (action === 'export') openExport();
+  else if (action === 'backup') {
+    api.dbBackup().then((r) => { if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast('Cadangan tersimpan.', 'ok'); });
+  } else if (action && action.startsWith('tab:')) {
+    const tab = action.slice(4);
+    const link = $$('.nav-link').find((l) => l.dataset.tab === tab);
+    if (link) link.click();
+  }
+}
+function updateTitlebarContext() {
+  const tab = TAB_LABELS[state.tab] || 'Dashboard';
+  const audit = (state.audits || []).find((a) => a.id === state.auditId);
+  const context = audit && state.tab !== 'browser' && state.tab !== 'settings' ? `${tab} · ${audit.name}` : tab;
+  const el = $('#titlebar-context');
+  if (el) el.textContent = context;
+  document.title = `${context} — sunscraping`;
+}
 $$('.nav-link').forEach((link) => {
   link.addEventListener('click', () => {
     $$('.nav-link').forEach((l) => { l.classList.remove('active'); l.removeAttribute('aria-current'); });
@@ -161,6 +181,7 @@ $$('.nav-link').forEach((link) => {
     state.tab = link.dataset.tab;
     $$('.tab').forEach((t) => t.classList.remove('active'));
     $('#tab-' + state.tab).classList.add('active');
+    updateTitlebarContext();
     if (state.tab === 'targets') loadTargets();
     if (state.tab === 'accounts') loadAccounts();
     if (state.tab === 'browser') ensureBrowser();
@@ -343,7 +364,7 @@ function updateRetrySelected() {
 function openTarget(targetId) {
   api.getTargetHistory(targetId).then((snapshots) => {
     const rows = (snapshots || []).map((s) =>
-      `<tr><td>${esc((s.scraped_at || '').slice(0, 16).replace('T', ' '))}</td><td>${statusBadge(s.status)}</td>
+      `<tr><td>${esc(fmtWhen(s.scraped_at))}</td><td>${statusBadge(s.status)}</td>
       <td class="num">${fmt(s.follower_count)}</td><td class="num">${fmt(s.likes)}</td><td class="num">${fmt(s.comments)}</td><td class="num">${fmt(s.views)}</td>
       <td class="wrap">${esc(s.error_message || '')}</td></tr>`).join('');
     openModal(`
@@ -502,7 +523,7 @@ function renderAudits() {
           <button class="btn btn-ghost" data-act="edit" data-id="${a.id}" data-name="${esc(a.name)}" data-repeat="${a.repeat_days}">Edit</button>
           <button class="btn btn-danger" data-act="delete" data-id="${a.id}">Hapus</button>
         </td>
-      </tr>`).join('') || '<tr><td colspan="7" class="muted">Belum ada audit. Klik "+ Audit baru".</td></tr>'}</tbody>`;
+      </tr>`).join('') || '<tr><td colspan="7" class="muted">Belum ada audit. Klik <b>＋ Import data</b>.</td></tr>'}</tbody>`;
 
   $$('#audits-table [data-act]').forEach((btn) => btn.addEventListener('click', (e) => {
     const id = Number(btn.dataset.id);
@@ -620,13 +641,37 @@ async function loadAudits() {
   if (state.auditId && !state.audits.some((a) => a.id === state.auditId)) state.auditId = null;
   const sel = $('#global-audit');
   const current = state.auditId;
-  sel.innerHTML = `<option value="">Semua audit</option>` + state.audits.map((a) => `<option value="${a.id}" ${a.id === current ? 'selected' : ''}>${esc(a.name)}</option>`).join('');
+  // Jangan bangun ulang dropdown saat poll/fokus (menghindari kedip & fokus hilang).
+  const idsKey = state.audits.map((a) => a.id).join(',') + '|' + current;
+  if (sel.dataset.key !== idsKey && document.activeElement !== sel) {
+    sel.innerHTML = `<option value="">Semua audit</option>` + state.audits.map((a) => `<option value="${a.id}" ${a.id === current ? 'selected' : ''}>${esc(a.name)}</option>`).join('');
+    sel.dataset.key = idsKey;
+  }
   if (state.tab === 'settings') renderAudits();
+  updateTitlebarContext();
 }
 
 async function refreshWorker() {
   state.worker = await api.workerStatus();
   renderWorker();
+  renderStatusBar();
+}
+
+let dbInfoCache = null;
+function renderStatusBar() {
+  const w = state.worker;
+  if (w) {
+    const label = w.active ? 'Aktif' : (w.lastError ? 'Terhenti' : 'Siaga');
+    $('#sb-worker').innerHTML = `<span class="dot ${w.active ? 'active' : (w.lastError ? 'error' : '')}"></span>${label}`;
+  }
+  const audit = (state.audits || []).find((a) => a.id === state.auditId);
+  const sbAudit = $('#sb-audit');
+  if (sbAudit) sbAudit.textContent = audit ? `Audit: ${audit.name}` : 'Audit: Semua';
+  if (dbInfoCache) {
+    $('#sb-db').textContent = `DB ${Math.round(dbInfoCache.size_bytes / 1024)} KB`;
+  } else {
+    api.dbInfo().then((info) => { dbInfoCache = info; $('#sb-db').textContent = `DB ${Math.round(info.size_bytes / 1024)} KB`; }).catch(() => {});
+  }
 }
 
 async function refreshDashboard() {
@@ -654,7 +699,15 @@ function debounce(fn, ms = 300) {
 function bindEvents() {
   $('#worker-toggle').addEventListener('click', toggleWorker);
   $('#btn-new-audit').addEventListener('click', openNewAudit);
-  $('#global-audit').addEventListener('change', (e) => { state.auditId = e.target.value ? Number(e.target.value) : null; refreshDashboard(); });
+  $('#global-audit').addEventListener('change', (e) => { state.auditId = e.target.value ? Number(e.target.value) : null; refreshDashboard(); updateTitlebarContext(); renderStatusBar(); });
+
+  // status bar: klik segmen = pindah tab
+  $$('#statusbar .sb-item').forEach((el) => {
+    el.addEventListener('click', () => {
+      const link = $$('.nav-link').find((l) => l.dataset.tab === el.dataset.tab);
+      if (link) link.click();
+    });
+  });
 
   // targets
   const resetTargets = () => { state.targets.offset = 0; state.targets.selected.clear(); updateRetrySelected(); loadTargets(); };
@@ -720,9 +773,18 @@ function bindEvents() {
       else { toast('Data dipulihkan. Safety backup: ' + r.safety_backup, 'ok'); await pollUpdate(); }
     });
   });
-  $('#btn-clear-session').addEventListener('click', async () => {
-    const r = await api.clearSession();
-    if (r.ok) toast('Sesi login dihapus. Login ulang lewat tray/Browser.', 'ok'); else toast(r.error || 'Gagal hapus sesi.', 'error');
+  $('#btn-clear-session').addEventListener('click', () => {
+    openModal(`
+      <div class="modal-head"><h3>Hapus sesi login?</h3><button class="btn btn-ghost" data-close>✕</button></div>
+      <div class="modal-body">
+        <p>Sesi login Instagram & TikTok akan dihapus. <b>Worker akan berhenti sampai Anda login ulang.</b> Data audit TIDAK terhapus.</p>
+      </div>
+      <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-clear-session">Hapus sesi</button></div>`);
+    $('#confirm-clear-session').addEventListener('click', async () => {
+      const r = await api.clearSession();
+      closeModal();
+      if (r.ok) toast('Sesi login dihapus. Login ulang lewat tray/Browser.', 'ok'); else toast(r.error || 'Gagal hapus sesi.', 'error');
+    });
   });
   $('#btn-clear').addEventListener('click', () => {
     openModal(`<div class="modal-head"><h3>Hapus semua data</h3></div><div class="modal-body">
@@ -754,6 +816,7 @@ async function init() {
   window.sunscraping.onEvent((payload) => {
     if (payload.type === 'worker') { state.worker = payload.payload; renderWorker(); }
     else if (payload.type === 'data') schedulePoll();
+    else if (payload.type === 'menu') handleMenuAction(payload.payload && payload.payload.action);
   });
 
   // polling ringan: worker selalu; tab aktif ikut disegarkan.

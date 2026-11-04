@@ -105,12 +105,44 @@ function showAbout() {
   }).catch(() => {});
 }
 
-/** Menu minimal dengan role edit (copy/paste/select-all) + keluar + tentang. */
+function copyDiagnostics() {
+  const info = db ? db.getDatabaseInfo() : {};
+  const counts = info.counts || {};
+  const lines = [
+    `sunscraping v${APP_VERSION}`,
+    `Electron ${process.versions.electron} · Node ${process.versions.node} · Chromium ${process.versions.chrome}`,
+    `OS: ${process.platform} ${process.arch}`,
+    `Data: ${userData || '?'}`,
+    `Ukuran DB: ${info.size_bytes ? Math.round(info.size_bytes / 1024) + ' KB' : '-'}`,
+    `Schema: ${info.schema_version ?? '?'} · Audit ${counts.audits ?? '-'} · Target ${counts.targets ?? '-'} · Snapshot ${counts.snapshots ?? '-'}`,
+  ];
+  const text = lines.join('\n');
+  const { clipboard } = require('electron');
+  clipboard.writeText(text);
+  notify('Info diagnostik disalin', `sunscraping v${APP_VERSION} — sudah di clipboard.`);
+}
+
+function openDataFolder() {
+  try { shell.openPath(userData || app.getPath('userData')); } catch {}
+}
+
+/** Menu dengan role edit + aksi aplikasi (Import/Export/Cadangkan/Buka/Help). */
 function buildAppMenu() {
   const isMac = process.platform === 'darwin';
+  const send = (action) => broadcast('menu', { action });
   const template = [
     ...(isMac ? [{ role: 'appMenu' }] : []),
-    { role: 'fileMenu', label: 'Berkas' },
+    {
+      label: 'Berkas',
+      submenu: [
+        { label: 'Import data…', accelerator: 'CmdOrCtrl+I', click: () => send('import') },
+        { label: 'Export…', accelerator: 'CmdOrCtrl+E', click: () => send('export') },
+        { type: 'separator' },
+        { label: 'Cadangkan database…', accelerator: 'CmdOrCtrl+Shift+B', click: () => send('backup') },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
     {
       role: 'editMenu',
       label: 'Edit',
@@ -123,19 +155,35 @@ function buildAppMenu() {
       role: 'viewMenu',
       label: 'Tampilan',
       submenu: [
-        { role: 'reload', visible: false },
-        { role: 'toggleDevTools', visible: false },
-        { type: 'separator' },
         { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' },
         { type: 'separator' },
         { role: 'togglefullscreen' },
       ],
     },
-    { role: 'windowMenu', label: 'Jendela' },
+    {
+      label: 'Buka',
+      submenu: [
+        { label: 'Dashboard', accelerator: 'CmdOrCtrl+1', click: () => send('tab:dashboard') },
+        { label: 'Target', accelerator: 'CmdOrCtrl+2', click: () => send('tab:targets') },
+        { label: 'Akun', accelerator: 'CmdOrCtrl+3', click: () => send('tab:accounts') },
+        { label: 'Proses', accelerator: 'CmdOrCtrl+4', click: () => send('tab:proses') },
+        { label: 'Browser', accelerator: 'CmdOrCtrl+5', click: () => send('tab:browser') },
+        { label: 'Pengaturan', accelerator: 'CmdOrCtrl+6', click: () => send('tab:settings') },
+      ],
+    },
+    {
+      role: 'windowMenu',
+      label: 'Jendela',
+      submenu: [{ role: 'minimize' }, { role: 'close' }],
+    },
     {
       role: 'help',
       label: 'Bantuan',
-      submenu: [{ label: 'Tentang sunscraping…', click: () => showAbout() }],
+      submenu: [
+        { label: 'Tentang sunscraping…', click: () => showAbout() },
+        { label: 'Salin info diagnostik…', click: () => copyDiagnostics() },
+        { label: 'Buka folder data…', click: () => openDataFolder() },
+      ],
     },
   ];
   return Menu.buildFromTemplate(template);

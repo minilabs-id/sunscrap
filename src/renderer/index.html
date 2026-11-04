@@ -8,16 +8,20 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="titlebar"><span class="titlebar-title">☀ sunscraping</span></div>
+  <div class="titlebar"><span class="titlebar-title" id="titlebar-context">Dashboard</span></div>
   <div class="layout">
   <aside class="sidebar">
     <div class="brand"><span class="brand-sun">☀</span> sunscraping</div>
     <nav class="nav" aria-label="Navigasi utama">
+      <div class="nav-group">Utama</div>
       <button class="nav-link active" data-tab="dashboard" aria-current="page">Dashboard</button>
-      <button class="nav-link" data-tab="targets">Data · Target</button>
-      <button class="nav-link" data-tab="accounts">Data · Akun</button>
-      <button class="nav-link" data-tab="browser">Browser</button>
+      <div class="nav-group">Pekerjaan</div>
+      <button class="nav-link" data-tab="targets">Target</button>
+      <button class="nav-link" data-tab="accounts">Akun</button>
       <button class="nav-link" data-tab="proses">Proses</button>
+      <div class="nav-group">Alat</div>
+      <button class="nav-link" data-tab="browser">Browser</button>
+      <div class="nav-group">Sistem</div>
       <button class="nav-link" data-tab="settings">Pengaturan</button>
     </nav>
     <div class="worker-widget">
@@ -221,6 +225,14 @@
       </div>
     </section>
   </main>
+  </div>
+
+  <div class="statusbar" id="statusbar">
+    <span id="sb-worker" class="sb-item" data-tab="proses">● Siaga</span>
+    <span id="sb-audit" class="sb-item" data-tab="dashboard">Audit: Semua</span>
+    <span id="sb-db" class="sb-dim">DB —</span>
+    <span class="sb-spacer"></span>
+    <span id="sb-version" class="sb-dim">v1.0.0</span>
   </div>
 
   <div id="modal-root" class="modal-root"></div>

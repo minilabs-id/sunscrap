@@ -7,6 +7,18 @@ jendela browser tersembunyi yang sudah login.
 Ditulis ulang dari nol sebagai satu runtime Node/Electron — tanpa Python, tanpa Chrome extension,
 tanpa server HTTP. File lama `social-auditor` tidak diubah dan tidak dipakai.
 
+> **Platform:** Windows saja (resmi — `"os": ["win32"]`). macOS/Linux tidak didukung.
+
+## Jalan pintas
+
+| Aksi | Tombol |
+|---|---|
+| Import data | `Ctrl+I` |
+| Export | `Ctrl+E` |
+| Cadangkan database | `Ctrl+Shift+B` |
+| Buka tab (1..6) | `Ctrl+1` … `Ctrl+6` |
+| Menu aplikasi | `Alt` |
+
 ## Menjalankan
 
 ```bash

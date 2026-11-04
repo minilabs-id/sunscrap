@@ -6,6 +6,9 @@
   "main": "src/main/main.js",
   "author": "sunscraping",
   "license": "MIT",
+  "os": [
+    "win32"
+  ],
   "scripts": {
     "start": "electron .",
     "test": "node --test src/test/",

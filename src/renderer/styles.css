@@ -53,6 +53,25 @@ body {
 .titlebar-title { font-size: 13px; font-weight: 600; color: var(--brand-ink); }
 .layout { flex: 1; display: flex; min-height: 0; }
 
+/* status bar bawah */
+.statusbar {
+  height: 28px;
+  flex: 0 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.sb-item { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.sb-item:hover { color: var(--brand-ink); }
+.sb-dim { color: var(--faint); }
+.sb-spacer { flex: 1; }
+
 /* ---------- sidebar ---------- */
 .sidebar {
   width: 230px;
@@ -85,7 +104,9 @@ body {
   cursor: pointer;
 }
 .nav-link:hover { background: var(--line-soft); }
-.nav-link.active { background: var(--line-soft); color: var(--brand); font-weight: 600; }
+.nav-link.active { background: var(--line-soft); color: var(--brand); font-weight: 600; box-shadow: inset 3px 0 0 var(--warn); }
+.nav-group { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); font-weight: 600; padding: 10px 12px 4px; }
+.nav-group:first-child { padding-top: 2px; }
 .worker-widget { padding: 14px; border-top: 1px solid var(--line); }
 .worker-widget-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); display: inline-block; }
