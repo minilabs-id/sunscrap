@@ -31,6 +31,16 @@ function fmtWhen(iso) {
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
 }
+function relTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const s = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (s < 60) return 'baru saja';
+  if (s < 3600) return Math.floor(s / 60) + ' mnt lalu';
+  if (s < 86400) return Math.floor(s / 3600) + ' jam lalu';
+  return Math.floor(s / 86400) + ' hari lalu';
+}
 function esc(s) {
   return String(s === null || s === undefined ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -284,13 +294,14 @@ async function loadTargets() {
       <td class="num">${fmt(r.comments)}</td>
       <td class="num">${fmt(r.views)}</td>
       <td class="num">${r.engagement_rate !== null && r.engagement_rate !== undefined ? fmtPct(r.engagement_rate) : '—'}</td>
+      <td class="muted" title="${esc(fmtWhen(r.snapshot_at))}">${esc(relTime(r.snapshot_at))}</td>
       <td>${statusBadge(r.status)}</td>
     </tr>`;
   }).join('');
 
   $('#targets-table').innerHTML = `
-    <thead><tr><th></th><th>Pl.</th><th>Akun</th><th>Postingan</th><th class="num">Follower</th><th class="num">Likes</th><th class="num">Komen</th><th class="num">Views</th><th class="num">ER</th><th>Status</th></tr></thead>
-    <tbody>${tbody || `<tr><td colspan="10" class="muted">Tidak ada target.</td></tr>`}</tbody>`;
+    <thead><tr><th></th><th>Pl.</th><th>Akun</th><th>Postingan</th><th class="num">Follower</th><th class="num">Likes</th><th class="num">Komen</th><th class="num">Views</th><th class="num">ER</th><th>Di-scrape</th><th>Status</th></tr></thead>
+    <tbody>${tbody || `<tr><td colspan="11" class="muted">Tidak ada target.</td></tr>`}</tbody>`;
 
   $$('#targets-table tr[data-target]').forEach((row) => {
     row.addEventListener('click', (e) => {

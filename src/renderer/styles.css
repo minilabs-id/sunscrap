@@ -274,3 +274,38 @@ body {
   .kpi-strip { grid-template-columns: repeat(3, 1fr); row-gap: 14px; }
   .grid-2 { grid-template-columns: 1fr; }
 }
+
+/* ---------- dark mode (ikuti sistem) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --brand-ink: #e5e7eb;
+    --muted: #9ca3af;
+    --faint: #8a94a6;
+    --line: #374151;
+    --line-soft: #2a3038;
+    --surface: #1f2430;
+    --surface-sunken: #161a22;
+  }
+  body { color: var(--brand-ink); }
+  .auth-banner { background: #33280f; border-color: #8a6d1f; color: #fcd34d; }
+  .badge.ig { background: #3b1523; }
+  .badge.tk { background: #0f172a; }
+  .badge.lv-bersih { background: #052e1e; color: #34d399; }
+  .badge.lv-amati { background: #33280f; color: #fbbf24; }
+}
+
+/* ---------- cetak (buat laporan PDF) ---------- */
+@media print {
+  .titlebar, .sidebar, .toolbar, .pager, .page-actions, #modal-root, #toast-root, .browser-bar, .worker-widget {
+    display: none !important;
+  }
+  body { display: block; height: auto; overflow: visible; }
+  .layout { display: block; }
+  .main { padding: 0; height: auto; overflow: visible; }
+  .tab { display: none !important; }
+  .tab.active { display: block !important; }
+  .table { font-size: 10pt; }
+  .table th { position: static; }
+  .panel, .kpi-strip { break-inside: avoid; }
+}
