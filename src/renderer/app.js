@@ -25,6 +25,12 @@ function fmtPct(n) {
   if (n === null || n === undefined) return '—';
   return Number(n).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
 }
+function fmtWhen(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+}
 function esc(s) {
   return String(s === null || s === undefined ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -178,6 +184,14 @@ function renderWorker() {
       <div class="kpi"><div class="lbl">Hari ini</div><div class="num">${fmt(r.dailyVisits)} / ${fmt(r.dailyRail)}</div></div>
       <div class="kpi"><div class="lbl">Pace</div><div class="num">${esc(r.paceLabel || '—')}</div></div>
       <div class="kpi"><div class="lbl">Sesi</div><div class="num">${fmt(r.sessionTasks)} / ${fmt(r.sessionBreakAt)}</div></div>`;
+  }
+
+  // Banner login kedaluwarsa bila worker terhenti karena AUTH.
+  const banner = $('#auth-banner');
+  if (banner) {
+    const isAuth = w.lastError && /login|session|auth|kedaluwarsa|masuk|berakhir/i.test(String(w.lastError));
+    banner.hidden = !isAuth;
+    if (isAuth) $('#auth-banner-text').textContent = w.lastError;
   }
 }
 
@@ -383,14 +397,20 @@ function openAccount(username, platform) {
 async function loadProcess() {
   try {
     const s = await api.getQueueStats();
+    const eta = (s.pending || 0) + (s.running || 0);
+    const etaMin = eta > 0 ? Math.max(1, Math.round(eta * 6 / 60)) : 0;
+    const etaText = eta > 0 ? `<div class="sub">≈ ${etaMin} menit untuk ${fmt(eta)} tersisa</div>` : '<div class="sub">Antrean kosong</div>';
     $('#queue-stats').innerHTML =
       kpi(fmt(s.pending), 'Menunggu') + kpi(fmt(s.running), 'Berjalan') + kpi(fmt(s.ok), 'OK') + kpi(fmt(s.failed), 'Gagal');
+    let etaEl = $('#queue-eta');
+    if (!etaEl) { etaEl = document.createElement('div'); etaEl.id = 'queue-eta'; etaEl.className = 'muted'; $('#queue-stats').insertAdjacentElement('afterend', etaEl); }
+    etaEl.innerHTML = etaText;
 
     const latest = await api.getLatest({ limit: 20 });
     $('#latest-table').innerHTML = `
       <thead><tr><th>Waktu</th><th>Audit</th><th>Akun</th><th class="num">Follower</th><th class="num">Likes</th><th class="num">Views</th><th>Status</th></tr></thead>
       <tbody>${(latest || []).map((r) =>
-        `<tr><td>${esc((r.scraped_at || '').slice(0, 16).replace('T', ' '))}</td>
+        `<tr><td>${esc(fmtWhen(r.scraped_at))}</td>
         <td class="wrap">${esc(r.audit_name || '')}</td><td>@${esc(r.username || '—')}</td>
         <td class="num">${fmt(r.follower_count)}</td><td class="num">${fmt(r.likes)}</td><td class="num">${fmt(r.views)}</td>
         <td>${statusBadge(r.status)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Belum ada aktivitas.</td></tr>'}</tbody>`;
@@ -608,6 +628,8 @@ function bindEvents() {
   // proses
   $('#btn-login-ig').addEventListener('click', () => api.openLogin('instagram'));
   $('#btn-login-tk').addEventListener('click', () => api.openLogin('tiktok'));
+  $('#auth-banner-ig').addEventListener('click', () => api.openLogin('instagram'));
+  $('#auth-banner-tk').addEventListener('click', () => api.openLogin('tiktok'));
 
   // settings
   $('#btn-backup').addEventListener('click', async () => {
@@ -650,10 +672,12 @@ async function init() {
     else if (payload.type === 'data') schedulePoll();
   });
 
-  // polling ringan untuk data yang berubah karena worker
-  setInterval(() => { refreshWorker(); refreshDashboard(); }, 5000);
+  // polling ringan: worker selalu; tab aktif ikut disegarkan.
+  setInterval(() => {
+    refreshWorker();
+    if (state.tab === 'dashboard') refreshDashboard();
+    else if (state.tab === 'proses') loadProcess();
+  }, 5000);
 }
 
-window.closeModal = closeModal;
-window.openAccount = openAccount;
 init();

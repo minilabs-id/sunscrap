@@ -12,7 +12,9 @@
 
 const path = require('node:path');
 const fs = require('node:fs');
-const { DatabaseSync } = require('node:sqlite');
+const sqliteModule = require('node:sqlite');
+// Node 24 merename DatabaseSync -> Database; pakai nama baru bila tersedia.
+const DatabaseSync = sqliteModule.Database || sqliteModule.DatabaseSync;
 const util = require('./util');
 const intel = require('./intel');
 

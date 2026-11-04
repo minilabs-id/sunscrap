@@ -258,6 +258,10 @@ body {
 .avatar-fallback { width: 28px; height: 28px; border-radius: 50%; background: var(--line-soft); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
 .avatar-fallback.avatar-lg { width: 48px; height: 48px; font-size: 18px; }
 
+/* banner login kedaluwarsa */
+.auth-banner { display: flex; align-items: center; gap: 12px; justify-content: space-between; background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.auth-banner[hidden] { display: none; }
+
 /* ---------- browser ---------- */
 #tab-browser.active { display: flex; flex-direction: column; height: 100%; }
 .browser-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
