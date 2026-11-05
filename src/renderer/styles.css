@@ -6,50 +6,67 @@
 
 :root {
   color-scheme: light;
-  --bg: #eceff5;
+
+  /* Neutral — abu berhue halus (kunci tampilan "mahal") */
+  --bg: #f6f7f8;
   --surface: #ffffff;
-  --surface-2: #f7f9fc;
-  --surface-3: #eef1f7;
-  --sunken: #e3e7ee;
-  --line: #dfe4ec;
-  --line-strong: #c9d1dc;
-  --ink: #0b1220;
-  --ink-2: #39415a;
-  --ink-3: #5b6478;
+  --surface-2: #fafafa;
+  --surface-3: #f1f2f4;
+  --sunken: #e9ebef;
+  --line: #e6e8ec;
+  --line-strong: #d0d4da;
+
+  /* Teks */
+  --ink: #131416;
+  --ink-2: #4a4e55;
+  --ink-3: #6a6f77;
+
+  /* Brand (matahari) — identitas, bukan aksen fungsional */
   --sun: #f59e0b;
   --sun-ink: #b45309;
   --sun-deep: #d97706;
   --sun-soft: #fff4d6;
   --sun-wash: rgba(245, 158, 11, .12);
   --sun-border: rgba(245, 158, 11, .3);
-  --brand: #4338ca;
-  --brand-ink: #3730a3;
-  --brand-soft: #eef0ff;
-  --brand-line: #c7c5f5;
-  --brand-400: #6d64e0;
-  --ok: #047857;
+
+  /* Aksen fungsional tunggal — indigo */
+  --brand: #4f46e5;
+  --brand-ink: #4338ca;
+  --brand-soft: #eef2ff;
+  --brand-line: #c7d2fe;
+  --brand-400: #818cf8;
+
+  /* Status semantik */
+  --ok: #059669;
   --ok-soft: #ecfdf5;
-  --err: #b91c1c;
+  --err: #dc2626;
   --err-soft: #fef2f2;
-  --warn: #d97706;
-  --warn-soft: #fff7e8;
-  --ig: #be185d;
+  --warn: #b45309;
+  --warn-soft: #fffbeb;
+
+  /* Platform */
+  --ig: #db2777;
   --tk: #0e7490;
+
+  /* Radius */
   --r-sm: 8px;
   --r-md: 10px;
   --r-lg: 14px;
   --r-xl: 18px;
-  --sh-sm: 0 1px 2px rgba(11, 18, 32, .06);
-  --sh-md: 0 4px 14px rgba(11, 18, 32, .09);
-  --sh-lg: 0 16px 40px rgba(11, 18, 32, .16);
+
+  /* Elevasi — halus */
+  --sh-sm: 0 1px 2px rgba(16, 24, 40, .05);
+  --sh-md: 0 2px 8px rgba(16, 24, 40, .06);
+  --sh-lg: 0 12px 32px rgba(16, 24, 40, .12);
   --ease: cubic-bezier(.2, .7, .2, 1);
 
+  /* Tipografi */
   --fs-label: 11px;
   --fs-meta: 12px;
   --fs-table: 13px;
   --fs-body: 14px;
   --fs-title: 15px;
-  --fs-page: 23px;
+  --fs-page: 24px;
   --fs-kpi: 26px;
   --fs-hero: 44px;
 
@@ -76,25 +93,25 @@
 
 :root.dark {
   color-scheme: dark;
-  --bg: #0b0f1a;
-  --surface: #131a29;
-  --surface-2: #182134;
-  --surface-3: #1f2a40;
-  --sunken: #25304a;
-  --line: #26324a;
-  --line-strong: #35435f;
-  --ink: #f2f5fd;
-  --ink-2: #c6cede;
-  --ink-3: #a7b1c6;
+  --bg: #0e1015;
+  --surface: #16181d;
+  --surface-2: #1c1f26;
+  --surface-3: #24272f;
+  --sunken: #2a2e37;
+  --line: #262a32;
+  --line-strong: #353a45;
+  --ink: #f2f3f5;
+  --ink-2: #c9ccd4;
+  --ink-3: #9aa0ab;
   --sun: #fbbf24;
   --sun-ink: #fde68a;
   --sun-deep: #f59e0b;
   --sun-soft: #2a2410;
-  --brand: #a5a5ff;
-  --brand-ink: #c3c3ff;
-  --brand-soft: #1b1d3a;
-  --brand-line: #35376b;
-  --brand-400: #8b87ff;
+  --brand: #8f9bff;
+  --brand-ink: #b3bbff;
+  --brand-soft: #1c2040;
+  --brand-line: #2c3157;
+  --brand-400: #7a86f0;
   --ok: #34d399;
   --ok-soft: #052e1e;
   --err: #fca5a5;
@@ -103,9 +120,9 @@
   --warn-soft: #332810;
   --ig: #f472b6;
   --tk: #22d3ee;
-  --sh-sm: 0 1px 2px rgba(0, 0, 0, .4);
-  --sh-md: 0 6px 18px rgba(0, 0, 0, .45);
-  --sh-lg: 0 18px 48px rgba(0, 0, 0, .55);
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, .3);
+  --sh-md: 0 2px 8px rgba(0, 0, 0, .35);
+  --sh-lg: 0 16px 40px rgba(0, 0, 0, .5);
 }
 
 /* ---------- dasar ---------- */
@@ -117,7 +134,7 @@
 }
 html, body { margin: 0; height: 100%; overflow: hidden; }
 body {
-  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
   font-size: var(--fs-body);
   line-height: 1.6;
   color: var(--ink);
@@ -367,14 +384,14 @@ body {
 /* Hero sengaja selalu terang di mode gelap (keputusan desain di DESIGN.md);
    warna dipusatkan sebagai token agar tak ada hex literal tersebar. */
 :root.dark {
-  --hero-ink: #0b1220;
-  --hero-ink-2: #39415a;
-  --hero-ink-3: #475569;
+  --hero-ink: #131416;
+  --hero-ink-2: #4a4e55;
+  --hero-ink-3: #6a6f77;
   --hero-sun-ink: #b45309;
   --hero-sun-deep: #d97706;
-  --hero-brand-ink: #3730a3;
+  --hero-brand-ink: #4338ca;
   --hero-side-bg: rgba(255, 255, 255, .9);
-  --hero-chip-bg: rgba(11, 18, 32, .05);
+  --hero-chip-bg: rgba(16, 24, 40, .05);
   --hero-pill-br: rgba(245, 158, 11, .35);
   --hero-warn-bg: rgba(245, 158, 11, .12);
   --hero-warn-br: rgba(245, 158, 11, .3);
@@ -565,11 +582,13 @@ thead .th-sort.asc::after { content: "↑"; color: var(--brand); }
   cursor: pointer;
   background: transparent;
   color: var(--ink);
-  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
+.btn:active:not(:disabled) { transform: translateY(1px); }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn-primary { background: var(--brand); color: #fff; box-shadow: var(--sh-sm); }
 .btn-primary:hover:not(:disabled) { background: var(--brand-ink); }
+.btn-primary:active:not(:disabled) { box-shadow: none; }
 .btn-ghost { border-color: var(--line); background: var(--surface); }
 .btn-ghost:hover:not(:disabled) { background: var(--surface-2); }
 .btn-danger { background: var(--err); color: #fff; border-color: transparent; }
