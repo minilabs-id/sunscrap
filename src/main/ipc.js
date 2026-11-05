@@ -9,7 +9,9 @@ const { ipcMain, dialog, shell, BrowserWindow, app } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 
-function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updater }) {
+const clampDays = (v) => { const d = Number(v); return Number.isFinite(d) ? Math.max(7, Math.min(Math.floor(d), 120)) : 30; };
+
+function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updater, reviewStore }) {
   const push = (type, payload) => {
     try { broadcast(type, payload); } catch {}
   };
@@ -61,6 +63,26 @@ function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updat
     }
   });
 
+  /**
+   * Cek status login IG/TikTok dari cookie sesi di partisi tersembunyi.
+   * Mengembalikan BOOLEAN saja (tidak mengekspos nilai cookie).
+   */
+  ipcMain.handle('app:loginStatus', async () => {
+    const { session } = require('electron');
+    try {
+      const part = session.fromPartition('persist:sunscrap');
+      const cookies = await part.cookies.get({});
+      const has = (domainMatch, names) => cookies.some((c) =>
+        domainMatch.test(c.domain) && names.includes(c.name));
+      return {
+        instagram: has(/instagram\.com/i, ['sessionid', 'ds_user_id']),
+        tiktok: has(/tiktok\.com/i, ['sid_tt', 'sid_guard', 'sessionid']),
+      };
+    } catch {
+      return { instagram: false, tiktok: false };
+    }
+  });
+
   // ---- worker ----
   ipcMain.handle('worker:start', async () => { const s = await worker.start(); push('worker', s); return s; });
   ipcMain.handle('worker:stop', () => { const s = worker.stop(null); push('worker', s); return s; });
@@ -73,6 +95,15 @@ function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updat
 
   // ---- data baca ----
   ipcMain.handle('data:queueStats', () => db.getQueueStats());
+  ipcMain.handle('data:timeseries', (event, params) => {
+    const p = params && typeof params === 'object' ? params : {};
+    const days = clampDays(p.days);
+    const raw = p.auditId;
+    const hasAudit = raw !== null && raw !== undefined && raw !== '';
+    const auditId = hasAudit ? Number(raw) : null;
+    if (hasAudit && !Number.isFinite(auditId)) return { range_days: 0, days: [] };
+    try { return db.getTimeseries(auditId, days); } catch { return { range_days: 0, days: [] }; }
+  });
   ipcMain.handle('data:summary', (event, auditId) => {
     if (auditId === null || auditId === undefined) return db.getSummary(null);
     const id = num(auditId);
@@ -102,6 +133,28 @@ function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updat
     const ok = db.deleteAccount(platform, username);
     if (ok) { purgeAvatarFiles(platform, username); dataChanged(); }
     return { ok };
+  });
+
+  // ---- tinjauan manual (review decisions, tersimpan di review-state.json) ----
+  const reviewKey = (platform, username) => `${platform}:${username}`;
+  ipcMain.handle('review:list', () => (reviewStore ? reviewStore.get(null) : {}));
+  ipcMain.handle('review:set', (event, payload) => {
+    const p = payload && typeof payload === 'object' ? payload : {};
+    const platform = p.platform === 'instagram' || p.platform === 'tiktok' ? p.platform : null;
+    const username = typeof p.username === 'string' ? p.username : '';
+    const decision = ['bookmark', 'clear', 'flag'].includes(p.decision) ? p.decision : null;
+    if (!platform || !username || !decision) return { ok: false, error: 'data tinjauan tidak valid' };
+    if (!reviewStore) return { ok: false, error: 'penyimpanan tinjauan tidak tersedia' };
+    reviewStore.set({ [reviewKey(platform, username)]: { decision, note: typeof p.note === 'string' ? p.note.slice(0, 500) : '', at: new Date().toISOString() } });
+    return { ok: true };
+  });
+  ipcMain.handle('review:delete', (event, payload) => {
+    const p = payload && typeof payload === 'object' ? payload : {};
+    const platform = p.platform === 'instagram' || p.platform === 'tiktok' ? p.platform : null;
+    const username = typeof p.username === 'string' ? p.username : '';
+    if (!platform || !username) return { ok: false, error: 'data tinjauan tidak valid' };
+    if (reviewStore) reviewStore.remove([reviewKey(platform, username)]);
+    return { ok: true };
   });
 
   // ---- impor (membuka dialog native) ----

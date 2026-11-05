@@ -106,6 +106,53 @@ test('recordAccountProfile menyimpan akun + post + seri bulanan', () => {
   db.close();
 });
 
+test('getTimeseries berisi 30 hari berurutan dengan hari kosong diisi', () => {
+  const db = makeDb();
+  db.createAuditWithTasks([t1, t2], { name: 'ts' });
+  let task;
+  while ((task = db.getNextTask())) {
+    db.updateTaskResult(task.id, { status: 'OK', likes: 10, comments: 1, views: 100, followerCount: 1000 });
+  }
+  const res = db.getTimeseries(null, 30);
+  assert.equal(res.range_days, 30);
+  assert.equal(res.days.length, 30);
+  assert.equal(sumOfDays(res.days, 'scraped'), 2);
+  assert.equal(sumOfDays(res.days, 'views'), 200);
+  const dates = res.days.map((d) => d.date);
+  const sorted = [...dates].sort();
+  assert.deepEqual(dates, sorted);
+  db.close();
+});
+
+test('getTargets berisi delta_likes & delta_views terhadap snapshot sebelumnya', () => {
+  const db = makeDb();
+  db.createAuditWithTasks([t1], { name: 'delta' });
+  const task1 = db.getNextTask();
+  db.updateTaskResult(task1.id, { status: 'OK', likes: 100, comments: 5, views: 1000, followerCount: 9000 });
+  const auditId = db.getAudits()[0].id;
+  db.enqueueRun(auditId, 'manual', true);
+  const task2 = db.getNextTask();
+  assert.ok(task2);
+  db.updateTaskResult(task2.id, { status: 'OK', likes: 150, comments: 7, views: 1400, followerCount: 9000 });
+  const target = db.getTargets({ auditId }).items[0];
+  assert.equal(target.delta_likes, 50);
+  assert.equal(target.delta_views, 400);
+  db.close();
+});
+
+test('getAccountIntel mengembalikan distribusi level', () => {
+  const db = makeDb();
+  db.recordAccountProfile({ platform: 'instagram', username: 'aku', followerCount: 9000, posts: [{ id: 'P1', url: 'https://www.instagram.com/aku/p/P1/', postedAt: '2026-10-01T08:00:00Z', likes: 100 }] });
+  const res = db.getAccountIntel({});
+  assert.ok(res.summary, 'summary wajib ada');
+  assert.equal(typeof res.summary.levels, 'object');
+  const total = Object.values(res.summary.levels || {}).reduce((a, b) => a + b, 0);
+  assert.equal(total, res.summary.accounts);
+  db.close();
+});
+
+const sumOfDays = (days, field) => days.reduce((a, d) => a + (Number(d[field]) || 0), 0);
+
 test('getCompare is_new hanya untuk akun yang baru di periode terbaru', () => {
   const db = makeDb();
   db.createAuditWithTasks([t1], { name: 'Sep', period: '2026-09' });        // t1 = aku (IG)

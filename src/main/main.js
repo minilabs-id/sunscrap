@@ -35,8 +35,8 @@ const APP_VERSION = require('../../package.json').version;
 // Overlay tombol min/max/close harus mengikuti tema — putih di dark mode terlihat rusak.
 function titleBarOverlayFor(dark) {
   return dark
-    ? { color: '#1f2430', symbolColor: '#e5e7eb', height: 40 }
-    : { color: '#ffffff', symbolColor: '#101828', height: 40 };
+    ? { color: '#1f2430', symbolColor: '#e5e7eb', height: 46 }
+    : { color: '#ffffff', symbolColor: '#101828', height: 46 };
 }
 function systemPrefersDark() {
   try { return nativeTheme.shouldUseDarkColors; } catch { return false; }
@@ -65,6 +65,7 @@ let updater = null;
 let userData = null;
 let windowStore = null;
 let shuttingDown = false;
+let warnedTray = false; // beri tahu sekali saat jendela pertama kali diminimalkan ke tray
 
 // ---- file-backed storage (sinkron, proses utama) ----
 function createStorage(filePath) {
@@ -233,7 +234,7 @@ function buildAppMenu() {
 }
 
 function createMainWindow() {
-  const bounds = clampWindowBounds(windowStore ? windowStore.get([WINDOW_STATE]) : {});
+  const bounds = clampWindowBounds(windowStore ? windowStore.get() : {});
   mainWindow = new BrowserWindow({
     width: (bounds.width) || 1280,
     height: (bounds.height) || 860,
@@ -284,7 +285,21 @@ function createMainWindow() {
   };
   mainWindow.on('resize', saveBounds);
   mainWindow.on('move', saveBounds);
-  mainWindow.on('close', saveBounds);
+
+  // Tombol close (X) menyembunyikan ke tray supaya worker tetap jalan di latar;
+  // keluar permanen hanya lewat "Keluar" (tray) atau menu Berkas → Keluar.
+  mainWindow.on('close', (event) => {
+    saveBounds();
+    if (shuttingDown) return; // izinkan menutup saat aplikasi memang akan keluar
+    event.preventDefault();
+    mainWindow.hide();
+    if (!warnedTray) {
+      warnedTray = true;
+      const status = worker ? worker.getStatus() : null;
+      notify('sunscrap tetap berjalan di latar',
+        'Worker ' + (status && status.active ? 'masih AKTIF — hentikan lewat tray' : 'siaga') + '. Buka lagi lewat ikon tray.');
+    }
+  });
 
   mainWindow.on('closed', () => { mainWindow = null; });
   mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
@@ -381,6 +396,7 @@ async function boot() {
   });
 
   windowStore = createStorage(path.join(userData, WINDOW_STATE));
+  const reviewStore = createStorage(path.join(userData, 'review-state.json'));
 
   scraper = createScraper({ onLog: log });
 
@@ -395,7 +411,7 @@ async function boot() {
   updater = initUpdater({ log, broadcast, isPackaged: app.isPackaged });
   updater.init();
 
-  registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updater });
+  registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updater, reviewStore });
 
   ipcMain.handle('app:copyDiagnostics', () => { copyDiagnostics(); return { ok: true }; });
   ipcMain.handle('app:openDataFolder', () => { openDataFolder(); return { ok: true }; });

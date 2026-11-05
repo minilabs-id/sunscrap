@@ -119,8 +119,8 @@ dan secret `SIGNPATH_*` tersedia. Untuk mesin pribadi, `START_sunscrap.bat` bisa
 
 ## Status rilis
 
-Versi **1.0.0** (lihat [CHANGELOG.md](CHANGELOG.md)). Rilis publik pertama perlu dipasang manual; sejak
-versi ber-updater, pembaruan berikutnya otomatis.
+Versi **1.1.0** (lihat [CHANGELOG.md](CHANGELOG.md)) — dashboard v2 yang lebih modern, terang, dan responsif.
+Rilis publik pertama perlu dipasang manual; sejak versi ber-updater, pembaruan berikutnya otomatis.
 
 > **Peringatan jujur (ToS):** alat ini mengambil data dari halaman publik Instagram/TikTok *tanpa* API
 > resmi, yang dapat melanggar ketentuan layanan platform. Akun operator dapat dibatasi, ditantang login,

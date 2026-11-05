@@ -1007,6 +1007,11 @@ function createDatabase(dbPath) {
         SELECT s.id, s.target_id, s.likes, s.comments, s.views, s.shares, s.follower_count, s.scraped_at, s.post_date, s.caption,
                ROW_NUMBER() OVER (PARTITION BY s.target_id ORDER BY s.id DESC) AS rn
         FROM snapshots s
+      ),
+      prev_snapshots AS (
+        SELECT s.target_id, s.likes, s.comments, s.views, s.shares, s.follower_count, s.scraped_at,
+               ROW_NUMBER() OVER (PARTITION BY s.target_id ORDER BY s.id DESC) AS rn
+        FROM snapshots s
       )`;
 
     const conditions = ['1 = 1'];
@@ -1044,6 +1049,8 @@ function createDatabase(dbPath) {
       likes: 'COALESCE(ls.likes, -1)',
       comments: 'COALESCE(ls.comments, -1)',
       views: 'COALESCE(ls.views, -1)',
+      delta_likes: 'COALESCE(ls.likes - ps.likes, -999999999)',
+      delta_views: 'COALESCE(ls.views - ps.views, -999999999)',
       recent: 'COALESCE(lt.id, 0)',
     };
     const dir = String(params.dir).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
@@ -1068,6 +1075,9 @@ function createDatabase(dbPath) {
         lt.id AS task_id, COALESCE(lt.status, 'PENDING') AS status, lt.error_code, lt.error_message,
         COALESCE(lt.retry_count, 0) AS retry_count, lt.claimed_at, lt.scraped_at AS task_scraped_at,
         ls.likes, ls.comments, ls.views, ls.shares, ls.follower_count, ls.scraped_at AS snapshot_at, ls.post_date, ls.caption,
+        ps.likes AS prev_likes, ps.comments AS prev_comments, ps.views AS prev_views, ps.scraped_at AS prev_scraped_at,
+        CASE WHEN ps.likes IS NOT NULL AND ls.likes IS NOT NULL THEN ls.likes - ps.likes ELSE NULL END AS delta_likes,
+        CASE WHEN ps.views IS NOT NULL AND ls.views IS NOT NULL THEN ls.views - ps.views ELSE NULL END AS delta_views,
         CASE
           WHEN t.platform = 'tiktok' AND COALESCE(ls.views, 0) > 0
             THEN (COALESCE(ls.likes,0)+COALESCE(ls.comments,0)+COALESCE(ls.shares,0)) * 100.0 / ls.views
@@ -1079,6 +1089,7 @@ function createDatabase(dbPath) {
       JOIN audits a ON a.id = t.audit_id
       LEFT JOIN latest_tasks lt ON lt.target_id = t.id AND lt.rn = 1
       LEFT JOIN latest_snapshots ls ON ls.target_id = t.id AND ls.rn = 1
+      LEFT JOIN prev_snapshots ps ON ps.target_id = t.id AND ps.rn = 2
       ${where} ORDER BY ${order} LIMIT ? OFFSET ?`, ...cparams, limit, offset);
 
     const items = rows.map((r) => {
@@ -1484,6 +1495,8 @@ function createDatabase(dbPath) {
     const total = filtered.length;
     const shownItems = filtered.slice(offset, offset + limit);
     const shownKeys = new Set(shownItems.map((i) => i.key));
+    const levels = { pola_kembar: 0, pola_ternak: 0, amati: 0, bersih: 0 };
+    for (const item of items) { if (levels[item.level] !== undefined) levels[item.level]++; }
 
     return {
       items: shownItems,
@@ -1504,6 +1517,7 @@ function createDatabase(dbPath) {
         in_band: items.filter((i) => i.in_ternak_band).length,
         needs_refresh: items.filter((i) => i.needs_refresh).length,
         clusters: clusters.length,
+        levels,
         visit_budget: VISIT_BUDGET_PER_CYCLE,
       },
     };
@@ -1744,6 +1758,43 @@ function createDatabase(dbPath) {
     return { safety: path.basename(safety), safety_path: safety };
   }
 
+  // Seri waktu observasi per hari untuk grafik Dashboard. Mengisi hari kosong agar grafik mulus.
+  function getTimeseries(auditId, days = 30) {
+    const hasAudit = auditId !== null && auditId !== undefined && auditId !== '';
+    const aid = hasAudit ? Number(auditId) : null;
+    if (hasAudit && !Number.isFinite(aid)) return { range_days: 0, days: [] };
+    const span = Math.max(7, Math.min(Number(days) || 30, 120));
+    const conditions = ["s.scraped_at >= datetime('now', '-' || ? || ' days')"];
+    const params = [span];
+    if (aid !== null) { conditions.push('t.audit_id = ?'); params.push(aid); }
+    const rows = all(`
+      SELECT date(s.scraped_at) AS d,
+             COUNT(*) AS scraped,
+             COUNT(DISTINCT s.target_id) AS targets,
+             COALESCE(SUM(s.views), 0) AS views,
+             COALESCE(SUM(s.likes), 0) AS likes,
+             COALESCE(SUM(s.comments), 0) AS comments,
+             SUM(CASE WHEN s.status = 'OK' THEN 1 ELSE 0 END) AS ok_count,
+             SUM(CASE WHEN s.status = 'PARTIAL' THEN 1 ELSE 0 END) AS partial_count,
+             SUM(CASE WHEN s.status = 'FAILED' THEN 1 ELSE 0 END) AS failed_count
+      FROM snapshots s JOIN targets t ON t.id = s.target_id
+      WHERE ${conditions.join(' AND ')}
+      GROUP BY date(s.scraped_at)
+      ORDER BY d ASC`, ...params);
+    const byDate = new Map(rows.map((r) => [r.d, r]));
+    const now = new Date();
+    const out = [];
+    for (let i = span - 1; i >= 0; i--) {
+      const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i));
+      const key = day.toISOString().slice(0, 10);
+      const r = byDate.get(key);
+      out.push(r
+        ? { date: key, scraped: r.scraped, targets: r.targets, views: r.views, likes: r.likes, comments: r.comments, ok_count: r.ok_count, partial_count: r.partial_count, failed_count: r.failed_count }
+        : { date: key, scraped: 0, targets: 0, views: 0, likes: 0, comments: 0, ok_count: 0, partial_count: 0, failed_count: 0 });
+    }
+    return { range_days: span, days: out };
+  }
+
   return {
     dbPath,
     initSchema,
@@ -1754,7 +1805,7 @@ function createDatabase(dbPath) {
     getNextTask, updateTaskResult, recordAccountProfile,
     // read
     getAudits, getAudit, getQueueStats, getDashboardStats, getTargets, getLatest, getTargetHistory, getTargetWithAudit,
-    getSummary, getCompare, searchData, getAccountIntel, getAccountDetail, getAccountProfile,
+    getSummary, getCompare, searchData, getAccountIntel, getAccountDetail, getAccountProfile, getTimeseries,
     getAccountCache, getCachedPostMetrics, getExportRows, getExportCount,
     getDatabaseInfo, backupDatabase, inspectBackup, restoreDatabase,
     close,

@@ -23,7 +23,7 @@
   }
 
   function extractFromMetaTags() {
-    const result = { likes: null, comments: null, views: null, username: null };
+    const result = { likes: null, comments: null, views: null, username: null, caption: null, postDate: null };
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       const content = metaDesc.getAttribute('content') || '';
@@ -33,8 +33,22 @@
       if (commentsMatch) result.comments = parseCount(commentsMatch[1]);
       const viewsMatch = content.match(/([\d,.]+[KkMmBb]?)\s*Views?/i) || content.match(/([\d,.]+[KkMmBb]?)\s*Tayangan/i) || content.match(/([\d,.]+[KkMmBb]?)\s*Plays?/i);
       if (viewsMatch) result.views = parseCount(viewsMatch[1]);
+      // Username: bentuk lama "( @handle )" ATAU bentuk meta baru "… - handle on April 30, 2026: …"
       const userMatch = content.match(/\(@([a-zA-Z0-9_.-]+)\)/);
       if (userMatch) result.username = userMatch[1];
+      if (!result.username) {
+        const dash = content.match(/-\s*([A-Za-z0-9_.]+)\s+on\s+[A-Za-z]+ \d{1,2}, \d{4}/);
+        if (dash) result.username = dash[1];
+      }
+      // Tanggal unggah ada di meta ("… on April 30, 2026: …")
+      const dateMatch = content.match(/\bon\s+([A-Za-z]+ \d{1,2}, \d{4})\b/);
+      if (dateMatch) result.postDate = toIsoTime(dateMatch[1]);
+      // Caption = teks berkutip setelah titik-dua terakhir ("…: "CAPTION"")
+      const capMatch = content.match(/:\s*["“”]([\s\S]+)$/);
+      if (capMatch) {
+        const cap = capMatch[1].replace(/["“”]\s*$/, '').trim();
+        if (cap) result.caption = truncateText(cap, 500);
+      }
     }
     return result;
   }
@@ -330,8 +344,8 @@
     let likes = firstValue(metaData.likes, jsonData.likes, scriptData.likes, domData.likes);
     let comments = firstValue(metaData.comments, jsonData.comments, scriptData.comments, domData.comments);
     let views = firstValue(metaData.views, jsonData.views, scriptData.views, domData.views);
-    let caption = firstValue(jsonData.caption, scriptData.caption, domData.caption);
-    let postDate = firstValue(jsonData.postDate, scriptData.postDate, domData.postDate);
+    let caption = firstValue(metaData.caption, jsonData.caption, scriptData.caption, domData.caption);
+    let postDate = firstValue(metaData.postDate, jsonData.postDate, scriptData.postDate, domData.postDate);
     let followerCount = scriptData.followerCount ?? null;
 
     const isVideoContent = scriptData.isVideo || isVideoOrReelUrl(window.location.href)

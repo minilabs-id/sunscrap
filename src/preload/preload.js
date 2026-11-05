@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('sunscrap', {
   // data (baca)
   getSummary: (auditId) => invoke('data:summary', auditId),
   getQueueStats: () => invoke('data:queueStats'),
+  getTimeseries: (params) => invoke('data:timeseries', params || {}),
   getAudits: () => invoke('data:audits'),
   getTargets: (params) => invoke('data:targets', params),
   getAccounts: (params) => invoke('data:accounts', params),
@@ -65,6 +66,11 @@ contextBridge.exposeInMainWorld('sunscrap', {
   setTheme: (theme) => invoke('app:theme', theme),
   openExternal: (url) => invoke('app:openExternal', url),
   clearSession: () => invoke('app:clearSession'),
+  // tinjauan manual (review decisions)
+  reviewList: () => invoke('review:list'),
+  reviewSet: (payload) => invoke('review:set', payload),
+  reviewDelete: (payload) => invoke('review:delete', payload),
+  getLoginStatus: () => invoke('app:loginStatus'),
   copyDiagnostics: () => invoke('app:copyDiagnostics'),
   openDataFolder: () => invoke('app:openDataFolder'),
 });
