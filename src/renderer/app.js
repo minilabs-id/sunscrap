@@ -1228,12 +1228,46 @@ function showScoreHelp() {
 // ---------- search ----------
 let searchTimer = null;
 function hideSearchPop() { const pop = $('#search-pop'); if (pop) { pop.hidden = true; pop.innerHTML = ''; } }
+// ----- command palette: aksi cepat (Ctrl+K) -----
+function commandActions() {
+  const w = state.worker;
+  return [
+    { id: 'import', label: 'Import data', hint: 'Ctrl+I', run: () => openNewAudit() },
+    { id: 'export', label: 'Export data', hint: 'Ctrl+E', run: () => openExport() },
+    { id: 'worker', label: (w && w.active) ? 'Hentikan worker' : 'Mulai worker', hint: '', run: () => toggleWorker() },
+    { id: 'tab:dashboard', label: 'Buka Dashboard', hint: 'Ctrl+1', run: () => activateTab('dashboard') },
+    { id: 'tab:targets', label: 'Buka Target', hint: 'Ctrl+2', run: () => activateTab('targets') },
+    { id: 'tab:accounts', label: 'Buka Akun', hint: 'Ctrl+3', run: () => activateTab('accounts') },
+    { id: 'tab:proses', label: 'Buka Proses', hint: 'Ctrl+4', run: () => activateTab('proses') },
+    { id: 'tab:settings', label: 'Buka Pengaturan', hint: 'Ctrl+6', run: () => activateTab('settings') },
+    { id: 'backup', label: 'Cadangkan database', hint: 'Ctrl+Shift+B', run: () => handleMenuAction('backup') },
+    { id: 'theme', label: 'Ubah tema (terang/gelap)', hint: '', run: () => applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark') },
+  ];
+}
+function renderCommandActions(needle) {
+  const need = String(needle || '').toLowerCase().trim();
+  let list = commandActions();
+  if (need.length >= 2) list = list.filter((a) => a.label.toLowerCase().includes(need));
+  return list.slice(0, 7);
+}
+function commandActionHtml(needle) {
+  return renderCommandActions(needle).map((a) =>
+    `<div class="search-item" data-action="${esc(a.id)}"><span class="search-main">${esc(a.label)}</span><span class="end">${esc(a.hint || '')}</span></div>`).join('');
+}
+
 async function runSearch(query) {
   const pop = $('#search-pop');
   if (!pop) return;
   pop.hidden = false;
   const needle = String(query || '').trim();
-  if (needle.length < 2) { pop.innerHTML = '<div class="muted search-pad">Minimal 2 karakter…</div>'; return; }
+  const actionsHtml = commandActionHtml(needle);
+
+  if (needle.length < 2) {
+    pop.innerHTML = (actionsHtml ? `<div class="search-group">Aksi</div>${actionsHtml}` : '') +
+      `<div class="muted search-pad">Ketik 2+ karakter untuk mencari akun / link / tema…</div>`;
+    return;
+  }
+
   const seq = ++state.searchSeq;
   let res = null;
   try { res = await api.search(needle); } catch { res = null; }
@@ -1246,8 +1280,9 @@ async function runSearch(query) {
     `<div class="search-item" data-kind="account" data-platform="${esc(a.platform)}" data-username="${esc(a.username)}"><span class="badge ${a.platform === 'instagram' ? 'ig' : 'tk'}">${a.platform === 'instagram' ? 'IG' : 'TT'}</span><span class="search-main">@${esc(a.username)}</span><span class="end">${fmt(a.follower_count)} fol.</span></div>`).join('');
   const posts = (res.posts || []).slice(0, 6).map((p) =>
     `<div class="search-item" data-kind="post" data-url="${esc(p.post_url || '')}"><span class="badge ${p.platform === 'instagram' ? 'ig' : 'tk'}">${p.platform === 'instagram' ? 'IG' : 'TT'}</span><span class="search-main">${esc((p.caption || p.post_url || '(tanpa caption)').slice(0, 56))}</span><span class="end">${fmtCompact(p.views)} views</span></div>`).join('');
-  const html = group('Target', targets) + group('Akun', accounts) + group('Post', posts);
-  pop.innerHTML = html || `<div class="muted search-pad">Tidak ada hasil untuk “${esc(needle)}”.</div>`;
+  const dataHtml = group('Target', targets) + group('Akun', accounts) + group('Post', posts);
+  const actionsGroup = actionsHtml ? group('Aksi', actionsHtml) : '';
+  pop.innerHTML = actionsGroup + dataHtml || `<div class="muted search-pad">Tidak ada hasil untuk “${esc(needle)}”.</div>`;
 }
 function bindGlobalSearch() {
   const input = $('#global-search');
@@ -1259,6 +1294,13 @@ function bindGlobalSearch() {
     if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(input.value); }
   });
   pop.addEventListener('click', (e) => {
+    const actionItem = e.target.closest('[data-action]');
+    if (actionItem) {
+      hideSearchPop(); input.blur();
+      const act = commandActions().find((a) => a.id === actionItem.dataset.action);
+      if (act) act.run();
+      return;
+    }
     const item = e.target.closest('[data-kind]');
     if (!item) return;
     hideSearchPop(); input.blur();
