@@ -1098,7 +1098,7 @@ async function openExport() {
       <li><b>Audit:</b> ${esc(audit ? audit.name : 'Semua audit')}</li>
       <li><b>Status:</b> ${esc(statusLabel)}</li>
       <li><b>Baris:</b> ${fmt(count)}</li></ul>
-      <p class="muted">File .xlsx berisi kolom metrik + delta + rekap. Simpan di lokasi aman.</p></div>
+      <p class="muted">File .xlsx berisi kolom metrik + delta + keputusan tinjauan + rekap. Simpan di lokasi aman.</p></div>
     <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" id="confirm-export">Unduh .xlsx…</button></div>`);
   $('#confirm-export').addEventListener('click', async () => {
     closeModal();

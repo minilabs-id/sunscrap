@@ -41,6 +41,16 @@ function sanitizeCell(value) {
   return value;
 }
 
+const REVIEW_LABELS = { bookmark: 'Ditandai', clear: 'Bersih', flag: 'Dikonfirmasi' };
+
+// Cari keputusan tinjauan manual untuk sebuah baris export (level akun → baris target).
+function reviewFor(row, reviews) {
+  if (!reviews || !row) return null;
+  const rec = reviews[`${row.platform}:${row.username}`];
+  if (!rec) return null;
+  return { label: REVIEW_LABELS[rec.decision] || '', note: rec.note || '' };
+}
+
 const COLUMNS = [
   ['period', 'period'], ['audit_name', 'audit_name'], ['run_id', 'run_id'], ['platform', 'platform'],
   ['Tema', 'tema'], ['URL', 'url'], ['Username', 'username'],
@@ -50,12 +60,14 @@ const COLUMNS = [
   ['Δ Likes', 'delta_likes'], ['Δ Komentar', 'delta_comments'], ['Δ Views', 'delta_views'], ['Δ Followers', 'delta_follower_count'], ['Δ ER %', 'delta_engagement_rate_%'],
   ['Tgl. Unggah', 'post_date'], ['Caption', 'caption'], ['Status', 'status'],
   ['Error', 'error_code'], ['Pesan Error', 'error_message'], ['Retry', 'retry_count'], ['Scraped', 'scraped_at'], ['Prev Scraped', 'prev_scraped_at'],
+  ['Tinjauan', 'review_decision'], ['Catatan tinjauan', 'review_note'],
 ];
 
-function buildDataRows(rows) {
+function buildDataRows(rows, reviews) {
   return rows.map((row) => {
     const engagementRate = calcEr(row.platform, row.likes, row.comments, row.views, row.shares, row.follower_count);
     const prevEngagementRate = calcEr(row.platform, row.prev_likes, row.prev_comments, row.prev_views, row.prev_shares, row.prev_follower_count);
+    const review = reviewFor(row, reviews);
     const out = {
       ...row,
       'engagement_rate_%': engagementRate,
@@ -65,6 +77,8 @@ function buildDataRows(rows) {
       delta_views: difference(row.views, row.prev_views),
       delta_follower_count: difference(row.follower_count, row.prev_follower_count),
       'delta_engagement_rate_%': difference(engagementRate, prevEngagementRate),
+      review_decision: review ? review.label : null,
+      review_note: review ? review.note : null,
     };
     return out;
   });
@@ -136,7 +150,7 @@ function styleSheet(sheet, headerCount, { autofilter = false } = {}) {
  * Tulis export ke filePath. Return summary {rows, filePath, audit_label}.
  * Throws bila tidak ada data.
  */
-async function writeExport(db, { auditId, status, filePath }) {
+async function writeExport(db, { auditId, status, filePath, reviews }) {
   const rows = db.getExportRows(auditId, status);
   if (!rows.length) {
     throw new Error(status === 'FAILED' ? 'Belum ada snapshot gagal untuk diexport.'
@@ -144,7 +158,7 @@ async function writeExport(db, { auditId, status, filePath }) {
       : 'Belum ada hasil untuk diexport.');
   }
 
-  const dataRows = buildDataRows(rows);
+  const dataRows = buildDataRows(rows, reviews);
 
   const ExcelJS = require('exceljs');
   const workbook = new ExcelJS.Workbook();
@@ -183,4 +197,4 @@ async function writeExport(db, { auditId, status, filePath }) {
   return { rows: rows.length, filePath };
 }
 
-module.exports = { writeExport, calcEr, difference, sanitizeCell, recapRows };
+module.exports = { writeExport, calcEr, difference, sanitizeCell, recapRows, reviewFor };

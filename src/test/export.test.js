@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { sanitizeCell, calcEr, difference } = require('../main/export');
+const { sanitizeCell, calcEr, difference, reviewFor } = require('../main/export');
 
 test('sanitizeCell menetralkan formula injection', () => {
   for (const evil of ['=1+1', '+cmd', '-2+3', '@SUM(A1)', '\t=1', '\r=1']) {
@@ -27,4 +27,18 @@ test('difference null bila salah satu sisi kosong', () => {
   assert.equal(difference(100, 100), 0);
   assert.equal(difference(null, 100), null);
   assert.equal(difference(100, undefined), null);
+});
+
+test('reviewFor memetakan keputusan tinjauan ke baris export', () => {
+  const reviews = {
+    'instagram:alice': { decision: 'bookmark', note: 'cek lagi' },
+    'instagram:bob': { decision: 'clear', note: '' },
+    'tiktok:carol': { decision: 'flag', note: 'konten kembar' },
+  };
+  assert.deepEqual(reviewFor({ platform: 'instagram', username: 'alice' }, reviews), { label: 'Ditandai', note: 'cek lagi' });
+  assert.deepEqual(reviewFor({ platform: 'instagram', username: 'bob' }, reviews), { label: 'Bersih', note: '' });
+  assert.deepEqual(reviewFor({ platform: 'tiktok', username: 'carol' }, reviews), { label: 'Dikonfirmasi', note: 'konten kembar' });
+  assert.equal(reviewFor({ platform: 'instagram', username: 'x' }, reviews), null);
+  assert.equal(reviewFor({ platform: 'instagram', username: 'alice' }, null), null);
+  assert.equal(reviewFor(null, reviews), null);
 });

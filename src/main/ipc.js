@@ -307,7 +307,7 @@ function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updat
     const result = await dlg(parentOf(event), dialog.showSaveDialog, { title: 'Simpan export', defaultPath: defaultName, filters: [{ name: 'Excel', extensions: ['xlsx'] }] });
     if (result.canceled || !result.filePath) return { canceled: true };
     try {
-      const out = await require('./export').writeExport(db, { auditId: aid, status: status || null, filePath: result.filePath });
+      const out = await require('./export').writeExport(db, { auditId: aid, status: status || null, filePath: result.filePath, reviews: reviewStore ? reviewStore.get(null) : {} });
       return { ok: true, rows: out.rows, filePath: out.filePath };
     } catch (e) {
       return { error: e.message };
