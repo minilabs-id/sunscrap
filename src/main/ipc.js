@@ -9,7 +9,7 @@ const { ipcMain, dialog, shell, BrowserWindow, app } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 
-function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir }) {
+function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updater }) {
   const push = (type, payload) => {
     try { broadcast(type, payload); } catch {}
   };
@@ -35,6 +35,13 @@ function registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir }) {
   }
 
   const parentOf = (event) => BrowserWindow.fromWebContents(event.sender) || undefined;
+
+  // ---- pembaruan (GitHub Releases) ----
+  ipcMain.handle('update:state', () => (updater && typeof updater.getState === 'function'
+    ? updater.getState()
+    : { enabled: false, version: '?', status: 'dev' }));
+  ipcMain.handle('update:check', async () => (updater && typeof updater.checkNow === 'function' ? updater.checkNow() : null));
+  ipcMain.handle('update:install', () => (updater && typeof updater.installNow === 'function' ? { ok: updater.installNow() } : { ok: false }));
 
   // ---- aplikasi ----
   ipcMain.handle('app:openExternal', (event, url) => {

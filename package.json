@@ -6,6 +6,10 @@
   "main": "src/main/main.js",
   "author": "sunscrap",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/startupmini/sunscrap.git"
+  },
   "os": [
     "win32"
   ],
@@ -15,9 +19,11 @@
     "e2e": "node scripts/e2e.js",
     "dist": "electron-builder --win nsis",
     "dist:portable": "electron-builder --win portable",
-    "dist:dir": "electron-builder --win dir"
+    "dist:dir": "electron-builder --win dir",
+    "release": "electron-builder --win nsis --publish always"
   },
   "dependencies": {
+    "electron-updater": "^6.8.11",
     "exceljs": "^4.4.0"
   },
   "devDependencies": {
@@ -38,12 +44,19 @@
       "package.json"
     ],
     "asar": true,
+    "publish": {
+      "provider": "github",
+      "owner": "startupmini",
+      "repo": "sunscrap",
+      "releaseType": "release"
+    },
     "win": {
       "target": [
         "nsis"
       ],
       "icon": "build/icon.png",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false
     },
     "nsis": {
       "oneClick": false,
@@ -51,7 +64,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "artifactName": "sunscrap-setup-${version}.${ext}"
+      "artifactName": "sunscrap-setup-${version}.${ext}",
+      "differentialPackage": true
     },
     "portable": {
       "artifactName": "sunscrap-portable-${version}.${ext}"

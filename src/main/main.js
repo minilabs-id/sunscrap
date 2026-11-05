@@ -16,6 +16,7 @@ const { createScraper } = require('./scraper');
 const { createWorker } = require('./worker');
 const { createRateLimiter } = require('./rateLimiter');
 const { registerIpc } = require('./ipc');
+const { initUpdater } = require('./updater');
 const avatar = require('./avatar');
 
 // Skema kustom untuk menyajikan avatar lokal (tanpa akses CDN dari renderer).
@@ -29,7 +30,7 @@ const ICON_FILE = path.join(__dirname, '..', '..', 'assets', 'icon.png');
 const LIMITER_STATE = 'worker-state.json';
 const WINDOW_STATE = 'window-state.json';
 const RENDERER_INDEX_PATH = path.join(__dirname, '..', 'renderer', 'index.html');
-const APP_VERSION = '1.0.0';
+const APP_VERSION = require('../../package.json').version;
 
 // Overlay tombol min/max/close harus mengikuti tema — putih di dark mode terlihat rusak.
 function titleBarOverlayFor(dark) {
@@ -60,6 +61,7 @@ let tray = null;
 let db = null;
 let worker = null;
 let scraper = null;
+let updater = null;
 let userData = null;
 let windowStore = null;
 let shuttingDown = false;
@@ -315,6 +317,8 @@ function trayMenu() {
     { label: 'Login Instagram', click: () => scraper.openLogin('instagram') },
     { label: 'Login TikTok', click: () => scraper.openLogin('tiktok') },
     { type: 'separator' },
+    { label: 'Periksa pembaruan…', click: () => updater && updater.checkNow() },
+    { type: 'separator' },
     { label: 'Tentang sunscrap…', click: () => showAbout() },
     { label: 'Keluar', click: () => app.quit() },
   );
@@ -388,7 +392,10 @@ async function boot() {
     onChange: (status) => { refreshTraySoon(); broadcast('worker', status); },
   });
 
-  registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir });
+  updater = initUpdater({ log, broadcast, isPackaged: app.isPackaged });
+  updater.init();
+
+  registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir, updater });
 
   ipcMain.handle('app:copyDiagnostics', () => { copyDiagnostics(); return { ok: true }; });
   ipcMain.handle('app:openDataFolder', () => { openDataFolder(); return { ok: true }; });

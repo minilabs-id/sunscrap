@@ -56,6 +56,11 @@ contextBridge.exposeInMainWorld('sunscrap', {
     return () => ipcRenderer.removeListener('evt', handler);
   },
 
+  // pembaruan (GitHub Releases)
+  updateState: () => invoke('update:state'),
+  checkForUpdates: () => invoke('update:check'),
+  installUpdate: () => invoke('update:install'),
+
   // aplikasi
   setTheme: (theme) => invoke('app:theme', theme),
   openExternal: (url) => invoke('app:openExternal', url),

@@ -1,0 +1,64 @@
+name: Release
+
+# Rilis sunscrap ke GitHub Releases (Windows, NSIS).
+# - Push tag "v*"  → rilis langsung (artefak dari build CI, tidak dari mesin lokal)
+# - workflow_dispatch → build verifikasi "upload artifacts only" (tanpa rilis)
+#
+# Signing (SignPath Foundation): aktifkan setelah approval — lihat README → "Tanda tangan kode".
+# Saat belum di-sign, installer v1.0.0 tidak ditandatangani (SAC/SmartScreen akan memperingatkan);
+# itu BUKAN konfigurasi akhir — ikuti § Tanda tangan kode untuk meng-aktifkannya.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build saja (unggah artifacts, jangan buat rilis)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test # gagal → tidak rilis
+
+      # Signing (SignPath Foundation) — uncomment setelah approval (butuh secrets SIGNPATH_*):
+      # - uses: signpath/github-action-submit-signing-request@v1
+      #   with:
+      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+      #     organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+      #     project-slug: sunscrap
+      #     signing-policy-slug: release-signing
+      #     github-artifact-id: ...   # lihat docs SignPath untuk integrasi CI
+
+      - run: npx electron-builder --win nsis --publish always
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: npx electron-builder --win nsis --publish never
+        if: github.event_name == 'workflow_dispatch'
+
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: sunscrap-installer
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
+          if-no-files-found: error

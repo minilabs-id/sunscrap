@@ -625,6 +625,7 @@ async function loadProcess() {
 // ---------------- tab: settings ----------------
 async function loadSettings() {
   renderAudits();
+  refreshUpdatePanel();
   try {
     const info = await api.dbInfo();
     $('#db-info').innerHTML = `
@@ -817,6 +818,37 @@ async function refreshWorker() {
   }
 }
 
+// ---------------- pembaruan ----------------
+const UPDATE_STATUS_TEXT = (s) => ({
+  dev: 'Mode pengembangan — pembaruan nonaktif.',
+  idle: 'Belum ada informasi pembaruan.',
+  checking: 'Memeriksa pembaruan…',
+  uptodate: 'Anda memakai versi terbaru.',
+  available: `Versi ${s.availableVersion || ''} tersedia — mengunduh…`,
+  downloading: `Mengunduh… ${Math.round(s.percent || 0)}%`,
+  downloaded: `Versi ${s.availableVersion || ''} terunduh — klik "Muat ulang & perbarui" untuk memasang.`,
+  error: `Gagal memeriksa pembaruan${s.error ? `: ${s.error}` : ''} — coba lagi nanti.`,
+}[s.status] || s.status);
+
+function renderUpdate(s) {
+  if (!s) return;
+  const v = $('#update-version'); if (v) v.textContent = s.version || '—';
+  const st = $('#update-status'); if (st) st.textContent = UPDATE_STATUS_TEXT(s);
+  const prog = $('#update-progress');
+  if (prog) {
+    const show = s.status === 'downloading' || s.status === 'available';
+    prog.hidden = !show;
+    const bar = prog.querySelector('span');
+    if (bar) bar.style.width = `${Math.max(0, Math.min(100, s.percent || 0))}%`;
+  }
+  const install = $('#btn-install-update');
+  if (install) install.hidden = s.status !== 'downloaded';
+}
+
+async function refreshUpdatePanel() {
+  try { renderUpdate(await api.updateState()); } catch {}
+}
+
 let dbInfoCache = null;
 function renderStatusBar() {
   const w = state.worker;
@@ -927,6 +959,15 @@ function bindEvents() {
   $('#auth-banner-ig').addEventListener('click', () => api.openLogin('instagram').catch(() => toast('Gagal membuka jendela login.', 'error')));
   $('#auth-banner-tk').addEventListener('click', () => api.openLogin('tiktok').catch(() => toast('Gagal membuka jendela login.', 'error')));
 
+  // pembaruan
+  $('#btn-check-update').addEventListener('click', async () => {
+    const btn = $('#btn-check-update');
+    btn.disabled = true;
+    try { renderUpdate(await api.checkForUpdates()); } catch { toast('Gagal memeriksa pembaruan.', 'error'); } finally { btn.disabled = false; }
+  });
+  $('#btn-install-update').addEventListener('click', () => { api.installUpdate(); });
+  $('#btn-open-releases').addEventListener('click', () => api.openExternal('https://github.com/startupmini/sunscrap/releases'));
+
   // settings
   $('#btn-backup').addEventListener('click', async () => {
     try {
@@ -1009,12 +1050,14 @@ async function init() {
   bindGlobalSearch();
   await loadAudits();
   await refreshWorker();
+  await refreshUpdatePanel();
   await refreshDashboard();
 
   window.sunscrap.onEvent((payload) => {
     if (payload.type === 'worker') { state.worker = payload.payload; renderWorker(); }
     else if (payload.type === 'data') schedulePoll();
     else if (payload.type === 'menu') handleMenuAction(payload.payload && payload.payload.action);
+    else if (payload.type === 'update') renderUpdate(payload.payload);
   });
 
   // polling ringan: worker selalu; tab aktif ikut disegarkan.

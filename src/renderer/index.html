@@ -229,6 +229,23 @@
         </div>
       </div>
       <div class="panel">
+        <div class="panel-title">Pembaruan</div>
+        <div class="row-gap" style="justify-content: space-between; align-items: center; margin-bottom: 10px">
+          <div>
+            <div>Versi terpasang: <b id="update-version">—</b></div>
+            <div class="muted" id="update-status">Memuat…</div>
+          </div>
+          <div class="row-gap">
+            <button class="btn btn-ghost" id="btn-check-update">Cek pembaruan</button>
+            <button class="btn btn-primary" id="btn-install-update" hidden>Muat ulang &amp; perbarui</button>
+          </div>
+        </div>
+        <div class="bar" id="update-progress" hidden><span style="width:0%"></span></div>
+        <p class="muted" style="margin:10px 0 0">Pembaruan diunduh otomatis dari <b>GitHub Releases</b> (startupmini/sunscrap) dan dipasang saat aplikasi dibuka kembali.
+          <button class="btn btn-ghost" id="btn-open-releases" style="font-size:12px;padding:3px 8px">Lihat catatan rilis →</button>
+        </p>
+      </div>
+      <div class="panel">
         <div class="panel-title">Tampilan</div>
         <div class="row-gap" id="theme-picker">
           <label class="row-gap"><input type="radio" name="theme" class="theme-radio" data-theme="system" checked> Ikuti sistem</label>
