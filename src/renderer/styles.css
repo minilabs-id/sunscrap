@@ -46,10 +46,25 @@ body {
   -webkit-app-region: drag;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   padding: 0 150px 0 16px; /* sisa ruang untuk tombol min/max/close */
 }
+.titlebar-search {
+  -webkit-app-region: no-drag;
+  width: 260px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-sunken);
+  color: var(--brand-ink);
+  min-width: 0;
+}
+.titlebar-search:focus { outline: 2px solid var(--brand); outline-offset: -1px; background: var(--surface); }
 .titlebar-title { font-size: 13px; font-weight: 600; color: var(--brand-ink); }
 .layout { flex: 1; display: flex; min-height: 0; }
 
@@ -121,6 +136,7 @@ body {
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .page-head h1 { font-size: var(--fs-page); font-weight: 700; margin: 0; }
 .page-actions { display: flex; gap: 10px; align-items: center; }
+.page-actions .select { max-width: 240px; }
 
 /* ---------- components ---------- */
 .btn {
@@ -232,6 +248,15 @@ body {
 .pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 12px; }
 .legend { margin-left: auto; display: flex; gap: 12px; font-size: var(--fs-meta); color: var(--faint); align-items: center; }
 
+/* ---------- pencarian global (titlebar) ---------- */
+.search-pop { position: fixed; top: 44px; right: 150px; z-index: 60; width: 440px; max-height: 62vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-pop); }
+.search-group { padding: 8px 12px 3px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); font-weight: 700; }
+.search-item { display: flex; gap: 8px; align-items: center; padding: 6px 12px; cursor: pointer; font-size: var(--fs-meta); }
+.search-item:hover { background: var(--line-soft); }
+.search-item .muted { margin-left: auto; }
+.search-pad { padding: 14px 12px; }
+.search-pop[hidden] { display: none; }
+
 /* ---------- modal ---------- */
 .modal-root { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 50; }
 .modal-root.open { display: flex; }
@@ -311,6 +336,8 @@ body {
 :root.dark .auth-banner { background: #33280f; border-color: #8a6d1f; color: #fcd34d; }
 :root.dark .badge.ig { background: #3b1523; }
 :root.dark .badge.tk { background: #0f172a; }
+:root.dark .badge.lv-pola_kembar { background: #450a0a; color: #fca5a5; }
+:root.dark .badge.lv-pola_ternak { background: #431407; color: #fdba74; }
 :root.dark .badge.lv-bersih { background: #052e1e; color: #34d399; }
 :root.dark .badge.lv-amati { background: #33280f; color: #fbbf24; }
 

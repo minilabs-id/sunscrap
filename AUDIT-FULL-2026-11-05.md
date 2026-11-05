@@ -247,4 +247,62 @@ Karena skema didaftarkan `standard: true`, **seluruh** bentuk URL kehilangan kom
 
 ---
 
-*Audit hanya membaca & menjalankan kode yang ada; tidak ada perubahan file yang dilakukan pada `src/`. Laporan ini melengkapi — bukan menggantikan — `AUDIT.md`, `AUDIT-v3-2026-11-04.md`, `AUDIT-UIUX-*.md`, dan `audit-menu-2026-11-05/`.*
+*Audit awal (tanpa modifikasi) melengkapi — bukan menggantikan — `AUDIT.md`, `AUDIT-v3-2026-11-04.md`, `AUDIT-UIUX-*.md`, dan `audit-menu-2026-11-05/`.*
+
+---
+
+## 8. Status perbaikan — 5 Nov 2026 (sesi lanjut)
+
+Semua temuan diperbaiki kecuali item yang sengaja tidak dikerjakan (dicantumkan dengan alasan). Tes akhir: **53/53 pass**; `node --check` bersih di semua file berubah; `smoke.js` OK; perbaikan protokol avatar diverifikasi empiris di Electron (`sa-avatar:///instagram_aku.jpg → 200`; nama tidak dikenal → 404 benar).
+
+| Item | Status | Catatan |
+|---|---|---|
+| K-1 | Selesai | `restoreDatabase`: tolak `sourcePath == dbPath`; copy ke temp → verifikasi integrity + tabel → swap rename dengan rollback bila gagal; DB aktif tidak pernah di-unlink sebelum swap |
+| K-2 | Selesai | Temp-then-swap + pesan error memuat path safety backup; kegagalan tidak meninggalkan DB kosong |
+| K-3 | Selesai | Skema tanpa `standard`; renderer `sa-avatar:///<encodeURIComponent>`; handler `decodeURIComponent` + `basename`; avatar gagal (cache hilang/korup/remote) selalu jatuh ke fallback inisial via delegasi `error` |
+| K-4 | Selesai | `data:clearAll` menghapus seluruh `avatars/`; `account:delete` menghapus `avatars/<platform>_<username>.*`. `deleteAudit` sengaja TIDAK menghapus avatar (akun adalah cache lintas-audit, seperti tabel `accounts`) |
+| K-5 | Selesai | Restore menolak cadangan dengan `user_version ≠ 5` (lebih lama/lebih baru) dengan pesan jelas; `restorePreview` menampilkan `schema_version` + memperingatkan & men-disable tombol Pulihkan bila mismatch |
+| T-1 | Selesai | Avatar remote tidak pernah tersimpan lagi (gagal cache → `null`); allowlist host avatar CDN IG/FB/TikTok; cap 3 MB; magic bytes JPEG/PNG; validasi host setelah redirect; renderer tidak lagi merender `https?:` avatar; CSP tidak diubah |
+| T-2 | Selesai | Keduanya DIPAJANG: tombol “Kunjungi profil” per-audit di Pengaturan (memanggil `data:profileVisits`) + pencarian global di titlebar (Ctrl+K) dengan hasil Target/Akun/Post yang bisa diklik — `searchData` sekarang hidup |
+| T-3 | Selesai | `parseCsv` ditulis ulang sebagai state machine char-demi-char; newline di dalam sel berkutip dipertahankan (uji di `import.test.js`) |
+| T-4 | Selesai | `normalizeTargetUrl` membuang seluruh query & menyamakan `/reels/`→`/reel/` (uji regresi) |
+| T-5 | Selesai | Memo per `intelGen` untuk `cachedTargetCounts`, `getSummary`, `getCompare`; polling 5 dtk berhenti saat dokumen hidden; `getAudit` O(1) dedicated query |
+| T-6 | Selesai | `getExportCount` kini `COUNT(*)` dengan `WHERE attempt_rn = 1` — tanpa memuat baris |
+| T-7 | Selesai | `data:clearAll` memanggil `limiter.resetCounters()` (budget siklus/harian/sesi direset + dipersist) |
+| T-8 | Selesai | Jendela login memblokir `will-navigate` ke luar host IG/TikTok/OAuth umum (Google/Facebook/Apple/Microsoft/Twitter); sisanya `openExternal` |
+| M-1 | Selesai | Guard `Number.isFinite` di IPC (auditId/targetId/limit) dan di db (`getTargets`, `getLatest`, `getTargetHistory`, `getSummary`→null, `getExportRows/Count`); renderer: semua `api.*` kini punya `.catch`/try-catch + toast |
+| M-2 | Selesai | Semua LIKE user di-escape (`\`, `%`, `_`) + `ESCAPE '\'` |
+| M-3 | Selesai | `getDelay` clamp `!Number.isFinite → mean`; `sqrt` dijaga epsilon |
+| M-4 | Selesai | Overlay tombol window mengikuti tema via IPC `app:theme` (renderer→utama `setTitleBarOverlay`); warna saat boot dari `nativeTheme` |
+| M-5 | Selesai | Bounds tersimpan di-clamp ke workArea seluruh display; bila di luar semua layar → x/y dihapus (jendela muncul di layar utama) |
+| M-6 | Selesai | Preview restore menampilkan skema cadangan vs aplikasi + mismatch men-disable tombol Pulihkan |
+| M-7 | Selesai | Toast restore menampilkan `safety_path` (path penuh) |
+| M-8 | Selesai | `monitor.js`: dead var dihapus; shim `Database \|\| DatabaseSync`; mencetak `user_version` |
+| M-9 | Selesai | e2e memilih jendela yang URL-nya berakhir `index.html`, fallback `firstWindow` |
+| M-10 | Ditunda | Retensi snapshot = keputusan produk (butuh diskusi) — bukan bug; pertimbangkan opsi `export latest\|all` |
+| M-11 | Selesai | Sheet Rekap mencatat “Δ vs scrape: lintas audit/periode” & “Share: hanya TikTok” |
+| M-12 | Selesai | Lihat T-5 |
+| M-13 | Selesai | `MAX_TEMPLATE_FANOUT = 10` — template dengan >10 pemakai tidak lagi menautkan akun |
+| M-14 | Ditunda | uuid moderate via exceljs — fix menuntut downgrade breaking; risiko riil rendah; pantau rilis exceljs |
+| M-15 | Selesai (sebagian) | Guard skema K-5 + 2 tes baru (self-restore, cadangan skema lama) menutup kasus kritis; migrasi bertingkat per versi tetap pekerjaan terpisah |
+| M-16 | Selesai | Validasi payload/tipe di handler baca & tulis satu per satu (lihat ipc.js) |
+| M-17 | Selesai | `createStorage.remove` kini tmp+rename atomik |
+| M-18 | Selesai | `will-navigate` membandingkan `path.normalize(fileURLToPath(url))`, bukan string URL |
+| F-1 | Selesai | `parseWhen()` — string `YYYY-MM-DD HH:MM:SS` diparse sebagai UTC di renderer |
+| F-2 | Selesai | Badge dark untuk `lv-pola_kembar` & `lv-pola_ternak` |
+| F-3 | Selesai | `wireAvatarErrors` + fallback inisial (lihat K-3) |
+| F-4 | Selesai | `MutationObserver` dihapus; `scope="col"` kini statik di semua `<th>` |
+| F-5 | Selesai | ETA antrean memakai `paceLabel` limiter aktual; asumsi 6 dtk dihapus |
+| F-6 | Selesai | Settings ikut auto-refresh 5 dtk; refresh dashboard berhenti saat dokumen hidden |
+| F-7 | Selesai | `#btn-retry-failed` disabled sampai audit dipilih |
+| F-8 | Ditunda | `success_rate` semantics disarankan — bukan bug; dibiarkan seperti adanya |
+| F-9 | Selesai | Dicatat di sheet Rekap export (lihat M-11) |
+| F-12 | Selesai | `.page-actions .select { max-width: 240px }` |
+| F-13 | Ditunda | Duplikasi icon `build/` vs `assets/` (electron-builder butuh `build/icon.png`) |
+| F-14 | Di luar kode | Signing/notarization = keputusan rilis, bukan bug kode |
+| F-15 | Selesai | `.gitignore` += `*.tmp-*` |
+| F-16 | Ditunda | Commit dokumen audit di repo — pilihan Anda |
+
+**Verifikasi sesi ini:** `npm test` 53/53 · `node --check` semua file · `npx electron scripts/smoke.js` → SMOKE_OK · uji protokol avatar empiris (200/404) · tes restore self-guard & skema-lama (menyelamatkan data) · tes `backup + restore` round-trip (skema swap baru) · tes CSV multi-baris · tes query-string stripping.
+
+**Catatan jujur:** `npm run e2e` (GUI penuh) belum dijalankan di sesi ini — disarankan satu kali di mesin user untuk memastikan jendela baru (pencarian titlebar, tombol “Kunjungi profil”) tidak ada regresi visual.

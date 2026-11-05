@@ -51,7 +51,16 @@ async function main() {
     },
   });
 
-  const page = await app.firstWindow();
+  // Pilih jendela dashboard (bukan tray/login window), bukan sekadar window pertama.
+  let page = null;
+  const deadline = Date.now() + 10000;
+  while (Date.now() < deadline && !page) {
+    const wins = app.windows();
+    const hit = wins.find((w) => { try { return (w.webContents().getURL() || '').endsWith('index.html'); } catch { return false; } });
+    if (hit) page = hit;
+    else await new Promise((r) => setTimeout(r, 150));
+  }
+  if (!page) page = await app.firstWindow();
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + (e && e.message)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });

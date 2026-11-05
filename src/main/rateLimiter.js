@@ -155,6 +155,20 @@ function createRateLimiter(storage) {
       this.persistSession();
     },
 
+    /** Reset seluruh hitungan throttle (dipakai saat "Hapus semua data"). */
+    resetCounters() {
+      this.cycleVisits = 0;
+      this.dailyVisits = 0;
+      this.cycleId = null;
+      this.sessionTaskCount = 0;
+      this.totalTasksThisSession = 0;
+      this.consecutiveErrors = 0;
+      this.backoffMultiplier = 1;
+      this.sessionBreakThreshold = 30 + Math.floor(Math.random() * 21);
+      this.persistDaily();
+      this.persistSession();
+    },
+
     recordTaskCompleted() {
       this.sessionTaskCount++;
     },
@@ -195,10 +209,11 @@ function createRateLimiter(storage) {
       const { min, max } = this.MODES[this.currentMode];
       const u1 = Math.random();
       const u2 = Math.random();
-      const gaussian = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      const gaussian = Math.sqrt(-2 * Math.log(u1 || 1e-12)) * Math.cos(2 * Math.PI * u2);
       const mean = (min + max) / 2;
       const std = (max - min) / 6;
       let delay = mean + gaussian * std;
+      if (!Number.isFinite(delay)) delay = mean;
       delay = Math.max(min, Math.min(max, delay));
       delay *= this.getWarmupMultiplier();
       delay *= this.getFatigueMultiplier();

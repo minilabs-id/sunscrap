@@ -179,6 +179,8 @@ function normalizeTargetUrl(raw) {
 
   if (!looksLikePost(platform, parsed)) return null;
   parsed.hash = '';
+  parsed.search = ''; // link share IG/TikTok membawa ?igsh=/lang=/utm_* — buang agar post yang sama tidak jadi target duplikat
+  parsed.pathname = parsed.pathname.replace(/^\/reels\//i, '/reel/');
   parsed.protocol = 'https:';
   const canonical = parsed.href;
   if (canonical.length > 2048) return null;

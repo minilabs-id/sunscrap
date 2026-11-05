@@ -25,16 +25,22 @@ function fmtPct(n) {
   if (n === null || n === undefined) return '—';
   return Number(n).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
 }
-function fmtWhen(iso) {
-  if (!iso) return '—';
+/* Tulis saat dalam bentuk "YYYY-MM-DD HH:MM:SS" adalah UTC — parse sebagai UTC. */
+function parseWhen(iso) {
+  if (!iso) return null;
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/);
+  if (m) return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+function fmtWhen(iso) {
+  const d = parseWhen(iso);
+  if (!d) return '—';
   return d.toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
 }
 function relTime(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
+  const d = parseWhen(iso);
+  if (!d) return '—';
   const s = Math.floor((Date.now() - d.getTime()) / 1000);
   if (s < 60) return 'baru saja';
   if (s < 3600) return Math.floor(s / 60) + ' mnt lalu';
@@ -101,6 +107,67 @@ function bindBrowser() {
   $('#browser-tk').addEventListener('click', () => { ensureBrowser(); $('#browser-webview').loadURL('https://www.tiktok.com/'); });
 }
 
+// ---------------- pencarian global (titlebar) ----------------
+let searchTimer = null;
+let searchSeq = 0;
+
+function hideSearchPop() {
+  const pop = $('#search-pop');
+  if (pop) { pop.hidden = true; pop.innerHTML = ''; }
+}
+
+async function runSearch(query) {
+  const pop = $('#search-pop');
+  if (!pop) return;
+  pop.hidden = false;
+  const needle = String(query || '').trim();
+  if (needle.length < 2) { pop.innerHTML = '<div class="muted search-pad">Minimal 2 karakter…</div>'; return; }
+  const seq = ++searchSeq;
+  let res = null;
+  try { res = await api.search(needle); } catch { res = null; }
+  if (seq !== searchSeq) return; // respons kedaluwarsa, abaikan
+  if (!res) { pop.innerHTML = '<div class="muted search-pad">Pencarian gagal.</div>'; return; }
+  const group = (title, items) => (items && items.length ? `<div class="search-group">${title}</div>` + items : '');
+  const targets = (res.targets || []).slice(0, 6).map((t) =>
+    `<div class="search-item" data-kind="target" data-id="${t.target_id}"><span class="badge ${t.platform === 'instagram' ? 'ig' : 'tk'}">${t.platform === 'instagram' ? 'IG' : 'TT'}</span><span class="wrap">@${esc(t.username || '—')}</span><span class="muted">${esc(t.audit_name || '')}</span></div>`
+  ).join('');
+  const accounts = (res.accounts || []).slice(0, 6).map((a) =>
+    `<div class="search-item" data-kind="account" data-platform="${esc(a.platform)}" data-username="${esc(a.username)}"><span class="badge ${a.platform === 'instagram' ? 'ig' : 'tk'}">${a.platform === 'instagram' ? 'IG' : 'TT'}</span><span class="wrap">@${esc(a.username)}</span><span class="muted">${fmt(a.follower_count)} follower</span></div>`
+  ).join('');
+  const posts = (res.posts || []).slice(0, 6).map((p) =>
+    `<div class="search-item" data-kind="post" data-url="${esc(p.post_url || '')}"><span class="badge ${p.platform === 'instagram' ? 'ig' : 'tk'}">${p.platform === 'instagram' ? 'IG' : 'TT'}</span><span class="wrap">${esc((p.caption || p.post_url || '(tanpa caption)').slice(0, 70))}</span><span class="muted">${fmt(p.views)} views</span></div>`
+  ).join('');
+  const html = group('Target', targets) + group('Akun', accounts) + group('Post', posts);
+  pop.innerHTML = html || `<div class="muted search-pad">Tidak ada hasil untuk “${esc(needle)}”.</div>`;
+}
+
+function bindGlobalSearch() {
+  const input = $('#global-search');
+  const pop = $('#search-pop');
+  if (!input || !pop) return;
+  input.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => runSearch(input.value), 250);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { input.value = ''; hideSearchPop(); input.blur(); return; }
+    if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(input.value); }
+  });
+  pop.addEventListener('click', (e) => {
+    const item = e.target.closest('[data-kind]');
+    if (!item) return;
+    hideSearchPop();
+    input.blur();
+    if (item.dataset.kind === 'target') openTarget(Number(item.dataset.id));
+    else if (item.dataset.kind === 'account') openAccount(item.dataset.username, item.dataset.platform);
+    else if (item.dataset.kind === 'post' && item.dataset.url) window.sunscrap.openExternal(item.dataset.url);
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target === input) return;
+    if (!e.target.closest('#search-pop')) hideSearchPop();
+  });
+}
+
 function toast(message, kind = '') {
   const root = $('#toast-root');
   const node = document.createElement('div');
@@ -138,6 +205,12 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-close]')) closeModal();
 });
 document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    const si = $('#global-search');
+    if (si) si.focus();
+    return;
+  }
   if (e.key === 'Escape') { closeModal(); return; }
   // Fokus-trap dalam modal.
   const modal = document.querySelector('#modal-root.open .modal');
@@ -162,6 +235,8 @@ function applyTheme(theme) {
   document.documentElement.classList.toggle('dark', dark);
   document.documentElement.dataset.theme = theme;
   try { localStorage.setItem('sa_theme', theme); } catch {}
+  // sinkronkan overlay tombol window (min/max/close) di proses utama
+  try { if (window.sunscrap && window.sunscrap.setTheme) window.sunscrap.setTheme(dark ? 'dark' : 'light'); } catch {}
   // sinkronkan radio di Pengaturan bila ada
   const radio = document.querySelector(`.theme-radio[data-theme="${theme}"]`);
   if (radio) radio.checked = true;
@@ -174,7 +249,8 @@ function handleMenuAction(action) {
   if (action === 'import') openNewAudit();
   else if (action === 'export') openExport();
   else if (action === 'backup') {
-    api.dbBackup().then((r) => { if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast('Cadangan tersimpan.', 'ok'); });
+    api.dbBackup().then((r) => { if (r && r.error) toast(r.error, 'error'); else if (r && !r.canceled) toast('Cadangan tersimpan.', 'ok'); })
+      .catch(() => toast('Gagal membuat cadangan.', 'error'));
   } else if (action && action.startsWith('tab:')) {
     const tab = action.slice(4);
     const link = $$('.nav-link').find((l) => l.dataset.tab === tab);
@@ -245,9 +321,13 @@ function renderWorker() {
 }
 
 async function toggleWorker() {
-  if (state.worker && state.worker.active) await api.workerStop();
-  else await api.workerStart();
-  await refreshWorker();
+  try {
+    if (state.worker && state.worker.active) await api.workerStop();
+    else await api.workerStart();
+    await refreshWorker();
+  } catch (e) {
+    toast('Gagal mengubah status worker.', 'error');
+  }
 }
 
 // ---------------- tab: dashboard ----------------
@@ -274,7 +354,7 @@ function renderDashboard(summary) {
   ).join('') || '<div class="muted">Belum ada data.</div>';
 
   $('#platform-table').innerHTML = `
-    <thead><tr><th>Platform</th><th class="num">Target</th><th class="num">Views</th><th class="num">Likes</th><th class="num">Median ER</th></tr></thead>
+    <thead><tr><th scope="col">Platform</th><th scope="col" class="num">Target</th><th scope="col" class="num">Views</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Median ER</th></tr></thead>
     <tbody>${(summary.platforms || []).map((p) =>
       `<tr><td><span class="badge ${p.platform === 'instagram' ? 'ig' : 'tk'}">${p.platform}</span></td>
       <td class="num">${fmt(p.targets)}</td><td class="num">${fmt(p.views)}</td><td class="num">${fmt(p.likes)}</td><td class="num">${p.median_er !== null && p.median_er !== undefined ? fmtPct(p.median_er) : '—'}</td></tr>`
@@ -315,7 +395,12 @@ async function loadTargets() {
     limit: state.targets.limit,
     offset: state.targets.offset,
   };
-  const res = await api.getTargets(params);
+  let res = { items: [], total: 0 };
+  try {
+    res = await api.getTargets(params);
+  } catch (e) {
+    toast('Gagal memuat target.', 'error');
+  }
   state.targets.items = res.items || [];
   state.targets.total = res.total || 0;
   $('#targets-total').textContent = `${fmt(res.total)} target`;
@@ -339,7 +424,7 @@ async function loadTargets() {
   }).join('');
 
   $('#targets-table').innerHTML = `
-    <thead><tr><th></th><th>Pl.</th><th>Akun</th><th>Postingan</th><th class="num">Follower</th><th class="num">Likes</th><th class="num">Komen</th><th class="num">Views</th><th class="num">ER</th><th>Di-scrape</th><th>Status</th></tr></thead>
+    <thead><tr><th scope="col"></th><th scope="col">Pl.</th><th scope="col">Akun</th><th scope="col">Postingan</th><th scope="col" class="num">Follower</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Komen</th><th scope="col" class="num">Views</th><th scope="col" class="num">ER</th><th scope="col">Di-scrape</th><th scope="col">Status</th></tr></thead>
     <tbody>${tbody || `<tr><td colspan="11" class="muted">Tidak ada target.</td></tr>`}</tbody>`;
 
   $$('#targets-table tr[data-target]').forEach((row) => {
@@ -367,11 +452,24 @@ function statusBadge(status) {
 
 function avatarHtml(url, username, large = false) {
   const cls = large ? 'avatar-lg' : '';
-  const src = url && url.match(/^https?:/i) ? esc(url) : `sa-avatar://${esc(url)}`;
-  const icon = url
-    ? `<img class="avatar ${cls}" src="${src}" alt="" loading="lazy">`
-    : `<span class="avatar-fallback ${cls}">${esc((username || '?').slice(0, 1).toUpperCase())}</span>`;
-  return `<span class="avatar-wrap">${icon}</span>`;
+  // Hanya nama file lokal (hasil cache worker) yang dilayani protokol sa-avatar:///.
+  const local = url && !/^https?:\/\//i.test(url) ? String(url) : null;
+  const initial = esc((username || '?').slice(0, 1).toUpperCase());
+  if (!local) return `<span class="avatar-fallback ${cls}">${initial}</span>`;
+  return `<span class="avatar-wrap"><img class="avatar ${cls}" src="sa-avatar:///${encodeURIComponent(local)}" alt="" loading="lazy" data-fallback="${initial}"></span>`;
+}
+// Ganti <img> avatar yang gagal (file cache hilang/korup) dengan inisial.
+function swapBrokenAvatar(img) {
+  const span = document.createElement('span');
+  span.className = 'avatar-fallback' + (img.classList.contains('avatar-lg') ? ' avatar-lg' : '');
+  span.textContent = img.dataset.fallback || '?';
+  img.replaceWith(span);
+}
+function wireAvatarErrors(root = document) {
+  root.querySelectorAll('img.avatar').forEach((img) => {
+    if (img.complete && img.naturalWidth === 0) { swapBrokenAvatar(img); return; }
+    img.addEventListener('error', () => swapBrokenAvatar(img));
+  });
 }
 
 function updateRetrySelected() {
@@ -387,8 +485,8 @@ function openTarget(targetId) {
       <td class="wrap">${esc(s.error_message || '')}</td></tr>`).join('');
     openModal(`
       <div class="modal-head"><h3>Riwayat target</h3><button class="btn btn-ghost" data-close>✕</button></div>
-      <div class="modal-body"><table class="table"><thead><tr><th>Waktu</th><th>Status</th><th class="num">Follower</th><th class="num">Likes</th><th class="num">Komen</th><th class="num">Views</th><th>Error</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">Belum ada snapshot.</td></tr>'}</tbody></table></div>`);
-  });
+      <div class="modal-body"><table class="table"><thead><tr><th scope="col">Waktu</th><th scope="col">Status</th><th scope="col" class="num">Follower</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Komen</th><th scope="col" class="num">Views</th><th scope="col">Error</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">Belum ada snapshot.</td></tr>'}</tbody></table></div>`);
+  }).catch(() => toast('Gagal memuat riwayat target.', 'error'));
 }
 
 // ---------------- tab: accounts ----------------
@@ -402,7 +500,12 @@ async function loadAccounts() {
     limit: state.accounts.limit,
     offset: state.accounts.offset,
   };
-  const res = await api.getAccounts(params);
+  let res = { items: [], total: 0, summary: {} };
+  try {
+    res = await api.getAccounts(params);
+  } catch (e) {
+    toast('Gagal memuat daftar akun.', 'error');
+  }
   state.accounts.items = res.items || [];
   state.accounts.total = res.total || 0;
   $('#accounts-total').textContent = `${fmt(res.total)} akun · ${fmt((res.summary || {}).flagged)} terindikasi · ${fmt((res.summary || {}).clusters)} klaster`;
@@ -411,7 +514,7 @@ async function loadAccounts() {
   if (legend) legend.innerHTML = `<button class="btn btn-ghost" id="score-help" style="font-size:12px;padding:4px 8px">Bagaimana skor dihitung?</button>`;
 
   $('#accounts-table').innerHTML = `
-    <thead><tr><th>Akun</th><th>Level</th><th class="num">Skor</th><th class="num">Followers</th><th class="num">Reach</th><th class="num">Post</th><th class="num">Bulan</th><th>Indikasi</th></tr></thead>
+    <thead><tr><th scope="col">Akun</th><th scope="col">Level</th><th scope="col" class="num">Skor</th><th scope="col" class="num">Followers</th><th scope="col" class="num">Reach</th><th scope="col" class="num">Post</th><th scope="col" class="num">Bulan</th><th scope="col">Indikasi</th></tr></thead>
     <tbody>${state.accounts.items.map((a) =>
       `<tr class="clickable" data-account="${esc(a.username)}" data-platform="${esc(a.platform)}">
         <td>${avatarHtml(a.avatar_url, a.username)}<b>@${esc(a.username)}</b> <span class="muted">${esc(a.display_name || '')}</span></td>
@@ -424,6 +527,7 @@ async function loadAccounts() {
         <td class="wrap">${esc((a.flags || []).map((f) => f.label).join(', ') || '—')}</td>
       </tr>`).join('') || '<tr><td colspan="8" class="muted">Belum ada akun tersimpan. Jalankan worker untuk mengisi data.</td></tr>'}</tbody>`;
 
+  wireAvatarErrors($('#accounts-table'));
   $$('#accounts-table tr[data-account]').forEach((row) => row.addEventListener('click', () => openAccount(row.dataset.account, row.dataset.platform)));
   const helpBtn = $('#score-help');
   if (helpBtn) helpBtn.addEventListener('click', showScoreHelp);
@@ -461,14 +565,15 @@ function openAccount(username, platform) {
         <p class="muted">${esc(detail.bio || '(tanpa bio)')}${detail.region ? ' · ' + esc(detail.region) : ''}</p>
         <div class="panel"><div class="panel-title">Indikasi (${fmt(detail.score)} poin)</div>${flags || '<div class="muted">Tidak ada.</div>'}</div>
         ${siblings ? `<div class="panel"><div class="panel-title">Akun tertaut</div>${siblings}</div>` : ''}
-        ${history ? `<div class="panel"><div class="panel-title">Seri bulanan</div><table class="table"><thead><tr><th>Bulan</th><th class="num">Followers</th><th class="num">Post</th></tr></thead><tbody>${history}</tbody></table></div>` : ''}
+        ${history ? `<div class="panel"><div class="panel-title">Seri bulanan</div><table class="table"><thead><tr><th scope="col">Bulan</th><th scope="col" class="num">Followers</th><th scope="col" class="num">Post</th></tr></thead><tbody>${history}</tbody></table></div>` : ''}
       </div>
       <div class="modal-foot">
         <button class="btn btn-danger" id="del-account" style="margin-right:auto">Hapus data akun ini…</button>
         <button class="btn btn-ghost" data-close>Tutup</button>
       </div>`);
     $('#del-account').addEventListener('click', () => openDeleteAccount(detail.username, detail.platform));
-  });
+    wireAvatarErrors($('#modal-root'));
+  }).catch(() => toast('Gagal memuat detail akun.', 'error'));
 }
 
 function openDeleteAccount(username, platform) {
@@ -495,8 +600,11 @@ async function loadProcess() {
   try {
     const s = await api.getQueueStats();
     const eta = (s.pending || 0) + (s.running || 0);
-    const etaMin = eta > 0 ? Math.max(1, Math.round(eta * 6 / 60)) : 0;
-    const etaText = eta > 0 ? `<div class="sub">≈ ${etaMin} menit untuk ${fmt(eta)} tersisa</div>` : '<div class="sub">Antrean kosong</div>';
+    let pace = null;
+    try { const w = await api.workerStatus(); pace = w && w.rate && w.rate.paceLabel; } catch { pace = null; }
+    const etaText = eta > 0
+      ? `<div class="sub">${fmt(eta)} task tersisa${pace ? ` · pace ${esc(pace)}` : ''}</div>`
+      : '<div class="sub">Antrean kosong</div>';
     $('#queue-stats').innerHTML =
       kpi(fmt(s.pending), 'Menunggu') + kpi(fmt(s.running), 'Berjalan') + kpi(fmt(s.ok), 'OK', 'total') + kpi(fmt(s.failed), 'Gagal', 'total');
     let etaEl = $('#queue-eta');
@@ -505,7 +613,7 @@ async function loadProcess() {
 
     const latest = await api.getLatest({ limit: 20 });
     $('#latest-table').innerHTML = `
-      <thead><tr><th>Waktu</th><th>Audit</th><th>Akun</th><th class="num">Follower</th><th class="num">Likes</th><th class="num">Views</th><th>Status</th></tr></thead>
+      <thead><tr><th scope="col">Waktu</th><th scope="col">Audit</th><th scope="col">Akun</th><th scope="col" class="num">Follower</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Views</th><th scope="col">Status</th></tr></thead>
       <tbody>${(latest || []).map((r) =>
         `<tr><td>${esc(fmtWhen(r.scraped_at))}</td>
         <td class="wrap">${esc(r.audit_name || '')}</td><td>@${esc(r.username || '—')}</td>
@@ -530,7 +638,7 @@ async function loadSettings() {
 
 function renderAudits() {
   $('#audits-table').innerHTML = `
-    <thead><tr><th>Nama</th><th>Periode</th><th class="num">Target</th><th class="num">Ulang (hari)</th><th class="num">Menunggu</th><th>Status</th><th></th></tr></thead>
+    <thead><tr><th scope="col">Nama</th><th scope="col">Periode</th><th scope="col" class="num">Target</th><th scope="col" class="num">Ulang (hari)</th><th scope="col" class="num">Menunggu</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
     <tbody>${(state.audits || []).map((a) =>
       `<tr>
         <td><b>${esc(a.name)}</b></td><td>${esc(a.period || '—')}</td>
@@ -538,6 +646,7 @@ function renderAudits() {
         <td>${esc(a.latest_run_status || '—')}</td>
         <td class="row-gap" style="justify-content:flex-end">
           <button class="btn btn-ghost" data-act="rerun" data-id="${a.id}">Audit ulang</button>
+          <button class="btn btn-ghost" data-act="profile" data-id="${a.id}" title="Kunjungi profil akun yang datanya belum ada (follower, posting terbaru)">Kunjungi profil</button>
           <button class="btn btn-ghost" data-act="edit" data-id="${a.id}" data-name="${esc(a.name)}" data-repeat="${a.repeat_days}">Edit</button>
           <button class="btn btn-danger" data-act="delete" data-id="${a.id}">Hapus</button>
         </td>
@@ -546,23 +655,35 @@ function renderAudits() {
   $$('#audits-table [data-act]').forEach((btn) => btn.addEventListener('click', (e) => {
     const id = Number(btn.dataset.id);
     const act = btn.dataset.act;
-    if (act === 'rerun') { api.rerunAudit(id, true).then((r) => toast(r.message || 'Dijadwalkan ulang.')); }
-    else if (act === 'delete') {
+    if (act === 'rerun') {
+      api.rerunAudit(id, true)
+        .then((r) => toast((r && r.error) || 'Dijadwalkan ulang.'))
+        .catch(() => toast('Gagal menjadwalkan ulang.', 'error'));
+    } else if (act === 'profile') {
+      api.enqueueProfileVisits(id)
+        .then((r) => {
+          if (!r) return toast('Gagal menjadwalkan kunjungan profil.', 'error');
+          toast(r.error || (r.pending ? 'Kunjungan profil sudah antre.' : `Menjadwalkan ${fmt(r.created)} kunjungan profil.`), r.error ? 'error' : 'ok');
+        })
+        .catch(() => toast('Gagal menjadwalkan kunjungan profil.', 'error'));
+    } else if (act === 'delete') {
       const audit = (state.audits || []).find((a) => a.id === id);
       const targetCount = audit ? audit.target_count : 0;
       openModal(`<div class="modal-head"><h3>Hapus audit?</h3></div><div class="modal-body">
         <p>Audit <b>${esc(audit ? audit.name : id)}</b> beserta <b>${fmt(targetCount)} target</b> dan seluruh riwayat snapshots-nya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.</p>
       </div>
       <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-del">Hapus</button></div>`);
-      $('#confirm-del').addEventListener('click', async () => { await api.deleteAudit(id); closeModal(); await loadAudits(); });
+      $('#confirm-del').addEventListener('click', async () => { try { await api.deleteAudit(id); } catch { toast('Gagal menghapus audit.', 'error'); } closeModal(); await loadAudits(); });
     } else if (act === 'edit') {
       openModal(`<div class="modal-head"><h3>Edit audit</h3></div><div class="modal-body">
         <div class="field"><label>Nama</label><input id="edit-name" class="input" value="${esc(btn.dataset.name)}"></div>
         <div class="field"><label>Ulang (hari, 0 = manual)</label><input id="edit-repeat" class="input" type="number" min="0" max="365" value="${btn.dataset.repeat}"></div>
       </div><div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" id="confirm-edit">Simpan</button></div>`);
       $('#confirm-edit').addEventListener('click', async () => {
-        await api.updateAudit(id, { name: $('#edit-name').value, repeat_days: Number($('#edit-repeat').value) });
-        closeModal(); loadAudits();
+        try {
+          await api.updateAudit(id, { name: $('#edit-name').value, repeat_days: Number($('#edit-repeat').value) });
+          closeModal(); loadAudits();
+        } catch { toast('Gagal menyimpan perubahan.', 'error'); }
       });
     }
   }));
@@ -594,8 +715,10 @@ function openNewAudit() {
   $('#confirm-file').addEventListener('click', async () => {
     const opts = getOpts();
     let res;
-    if (opts.auditId) res = await api.appendTargets({ auditId: opts.auditId });
-    else res = await api.createAudit({ name: opts.name, repeat_days: opts.repeat_days });
+    try {
+      if (opts.auditId) res = await api.appendTargets({ auditId: opts.auditId });
+      else res = await api.createAudit({ name: opts.name, repeat_days: opts.repeat_days });
+    } catch (e) { toast('Import gagal.', 'error'); return; }
     closeModal();
     if (res.canceled) return;
     if (res.error) toast(res.error, 'error');
@@ -608,7 +731,10 @@ function openNewAudit() {
     const text = $('#new-links').value || '';
     if (!text.trim()) { toast('Tempel link dulu, atau pakai "Import file…".', 'error'); return; }
     const opts = getOpts();
-    const res = await api.importLinks({ text, name: opts.name, repeat_days: opts.repeat_days, auditId: opts.auditId });
+    let res;
+    try {
+      res = await api.importLinks({ text, name: opts.name, repeat_days: opts.repeat_days, auditId: opts.auditId });
+    } catch (e) { toast('Import gagal.', 'error'); return; }
     closeModal();
     if (res.error) toast(res.error, 'error');
     else toast(`Import ${fmt(res.inserted)} target (${fmt(res.duplicates)} duplikat, ${fmt(res.skipped)} dilewati).`, 'ok');
@@ -630,7 +756,8 @@ async function openExport() {
   const status = statusToExport(val);
   const audit = (state.audits || []).find((a) => a.id === state.auditId);
   const statusLabel = { done: 'Selesai (OK + sebagian)', ok: 'OK', partial: 'Sebagian', failed: 'Gagal' }[val] || 'Semua status';
-  const count = await api.exportCount({ auditId: state.auditId || null, status });
+  let count = null;
+  try { count = await api.exportCount({ auditId: state.auditId || null, status }); } catch { count = null; }
   openModal(`
     <div class="modal-head"><h3>Export data</h3><button class="btn btn-ghost" data-close>✕</button></div>
     <div class="modal-body">
@@ -648,13 +775,22 @@ async function openExport() {
     </div>`);
   $('#confirm-export').addEventListener('click', async () => {
     closeModal();
-    const r = await api.exportExcel({ auditId: state.auditId || null, status });
-    if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast(`Export selesai: ${fmt(r.rows)} baris.`, 'ok');
+    try {
+      const r = await api.exportExcel({ auditId: state.auditId || null, status });
+      if (r && r.error) toast(r.error, 'error'); else if (r && !r.canceled) toast(`Export selesai: ${fmt(r.rows)} baris.`, 'ok');
+    } catch { toast('Export gagal.', 'error'); }
   });
 }
 
 async function loadAudits() {
-  state.audits = await api.getAudits();
+  let audits = null;
+  try {
+    audits = await api.getAudits();
+  } catch (e) {
+    console.error('getAudits gagal:', e);
+    return; // pertahankan data lama bila gagal — dropdown tidak dikosongkan
+  }
+  state.audits = audits;
   // Reset audit terpilih bila sudah terhapus.
   if (state.auditId && !state.audits.some((a) => a.id === state.auditId)) state.auditId = null;
   const sel = $('#global-audit');
@@ -665,14 +801,20 @@ async function loadAudits() {
     sel.innerHTML = `<option value="">Semua audit</option>` + state.audits.map((a) => `<option value="${a.id}" ${a.id === current ? 'selected' : ''}>${esc(a.name)}</option>`).join('');
     sel.dataset.key = idsKey;
   }
+  const retryFailedBtn = $('#btn-retry-failed');
+  if (retryFailedBtn) retryFailedBtn.disabled = !state.auditId;
   if (state.tab === 'settings') renderAudits();
   updateTitlebarContext();
 }
 
 async function refreshWorker() {
-  state.worker = await api.workerStatus();
-  renderWorker();
-  renderStatusBar();
+  try {
+    state.worker = await api.workerStatus();
+    renderWorker();
+    renderStatusBar();
+  } catch (e) {
+    console.error('refreshWorker gagal:', e);
+  }
 }
 
 let dbInfoCache = null;
@@ -694,7 +836,11 @@ function renderStatusBar() {
 
 async function refreshDashboard() {
   if (state.tab !== 'dashboard') return;
-  try { renderDashboard(await api.getSummary(state.auditId)); await Promise.all([loadRiskAccounts(), loadComparePanel()]); } catch {}
+  try {
+    const summary = await api.getSummary(state.auditId);
+    if (summary) renderDashboard(summary);
+    await Promise.all([loadRiskAccounts(), loadComparePanel()]);
+  } catch (e) { console.error('refreshDashboard gagal:', e); }
 }
 
 async function loadComparePanel() {
@@ -750,16 +896,20 @@ function bindEvents() {
   $('#targets-next').addEventListener('click', () => { if ((state.targets.offset + state.targets.limit) < state.targets.total) { state.targets.offset += state.targets.limit; loadTargets(); } });
   $('#btn-retry-failed').addEventListener('click', async () => {
     if (!state.auditId) { toast('Pilih audit dulu.'); return; }
-    const r = await api.retryFailed(state.auditId);
-    toast(r.message || `Dijadwalkan ulang ${fmt(r.created)} target.`);
-    loadTargets();
+    try {
+      const r = await api.retryFailed(state.auditId);
+      toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} target.`, r && r.error ? 'error' : 'ok');
+      loadTargets();
+    } catch (e) { toast('Gagal menjadwalkan ulang.', 'error'); }
   });
   $('#btn-retry-selected').addEventListener('click', async () => {
     if (!state.targets.selected.size) return;
     if (!state.auditId) { toast('Pilih audit dulu di dropdown atas.'); return; }
-    const r = await api.retryTargets(state.auditId, Array.from(state.targets.selected));
-    toast(r.message || `Dijadwalkan ulang ${fmt(r.created)} target.`);
-    state.targets.selected.clear(); updateRetrySelected(); loadTargets();
+    try {
+      const r = await api.retryTargets(state.auditId, Array.from(state.targets.selected));
+      toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} target.`, r && r.error ? 'error' : 'ok');
+      state.targets.selected.clear(); updateRetrySelected(); loadTargets();
+    } catch (e) { toast('Gagal menjadwalkan ulang target terpilih.', 'error'); }
   });
   $('#btn-export').addEventListener('click', openExport);
 
@@ -772,21 +922,25 @@ function bindEvents() {
   $('#accounts-next').addEventListener('click', () => { if ((state.accounts.offset + state.accounts.limit) < state.accounts.total) { state.accounts.offset += state.accounts.limit; loadAccounts(); } });
 
   // proses
-  $('#btn-login-ig').addEventListener('click', () => api.openLogin('instagram'));
-  $('#btn-login-tk').addEventListener('click', () => api.openLogin('tiktok'));
-  $('#auth-banner-ig').addEventListener('click', () => api.openLogin('instagram'));
-  $('#auth-banner-tk').addEventListener('click', () => api.openLogin('tiktok'));
+  $('#btn-login-ig').addEventListener('click', () => api.openLogin('instagram').catch(() => toast('Gagal membuka jendela login.', 'error')));
+  $('#btn-login-tk').addEventListener('click', () => api.openLogin('tiktok').catch(() => toast('Gagal membuka jendela login.', 'error')));
+  $('#auth-banner-ig').addEventListener('click', () => api.openLogin('instagram').catch(() => toast('Gagal membuka jendela login.', 'error')));
+  $('#auth-banner-tk').addEventListener('click', () => api.openLogin('tiktok').catch(() => toast('Gagal membuka jendela login.', 'error')));
 
   // settings
   $('#btn-backup').addEventListener('click', async () => {
-    const r = await api.dbBackup();
-    if (r.error) toast(r.error, 'error'); else if (!r.canceled) toast('Cadangan tersimpan.', 'ok');
+    try {
+      const r = await api.dbBackup();
+      if (r && r.error) toast(r.error, 'error'); else if (r && !r.canceled) toast('Cadangan tersimpan.', 'ok');
+    } catch { toast('Gagal membuat cadangan.', 'error'); }
   });
   $('#btn-restore').addEventListener('click', async () => {
-    const prev = await api.restorePreview();
+    let prev = null;
+    try { prev = await api.restorePreview(); } catch { toast('Gagal membaca cadangan.', 'error'); return; }
     if (prev.canceled) return;
     if (prev.error) { toast(prev.error, 'error'); return; }
     const c = prev.counts || {};
+    const schemaMismatch = prev.schema_version !== undefined && prev.schema_version !== null && Number(prev.schema_version) !== 5;
     openModal(`
       <div class="modal-head"><h3>Pulihkan dari cadangan</h3><button class="btn btn-ghost" data-close>✕</button></div>
       <div class="modal-body">
@@ -794,15 +948,17 @@ function bindEvents() {
         <ul style="margin:0 0 8px 18px">
           <li><b>File:</b> ${esc(prev.file)}</li>
           <li>Audit ${fmt(c.audits)} · Target ${fmt(c.targets)} · Snapshot ${fmt(c.snapshots)} · Akun ${fmt(c.accounts)}</li>
+          <li>Skema: v${esc(prev.schema_version ?? '?')} (aplikasi ini: v5)</li>
         </ul>
-        <p class="muted">Data aktif dicadangkan otomatis dulu sebelum diganti. Tindakan ini tidak bisa dibatalkan.</p>
+        ${schemaMismatch ? `<p class="muted" style="border-left:3px solid var(--err);padding-left:10px;color:var(--err)"><b>Tidak kompatibel:</b> cadangan dibuat dengan skema v${esc(prev.schema_version)}. Pemulihan ditolak — aplikasi hanya memulihkan cadangan skema v5.</p>` : '<p class="muted">Data aktif dicadangkan otomatis dulu sebelum diganti. Tindakan ini tidak bisa dibatalkan.</p>'}
       </div>
-      <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-restore">Pulihkan</button></div>`);
+      <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-restore" ${schemaMismatch ? 'disabled' : ''}>Pulihkan</button></div>`);
     $('#confirm-restore').addEventListener('click', async () => {
-      const r = await api.restoreCommit(prev.path);
+      let r = null;
+      try { r = await api.restoreCommit(prev.path); } catch { toast('Gagal memulihkan data.', 'error'); return; }
       closeModal();
-      if (r.error) toast(r.error, 'error');
-      else { toast('Data dipulihkan. Safety backup: ' + r.safety_backup, 'ok'); await pollUpdate(); }
+      if (r && r.error) toast(r.error, 'error');
+      else if (r) { toast('Data dipulihkan. Safety backup: ' + (r.safety_path || r.safety_backup), 'ok'); await pollUpdate(); }
     });
   });
   $('#btn-clear-session').addEventListener('click', () => {
@@ -813,16 +969,17 @@ function bindEvents() {
       </div>
       <div class="modal-foot"><button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger" id="confirm-clear-session">Hapus sesi</button></div>`);
     $('#confirm-clear-session').addEventListener('click', async () => {
-      const r = await api.clearSession();
+      let r = null;
+      try { r = await api.clearSession(); } catch { r = { ok: false, error: 'Gagal menghapus sesi.' }; }
       closeModal();
-      if (r.ok) toast('Sesi login dihapus. Login ulang lewat tray/Browser.', 'ok'); else toast(r.error || 'Gagal hapus sesi.', 'error');
+      if (r && r.ok) toast('Sesi login dihapus. Login ulang lewat tray/Browser.', 'ok'); else toast((r && r.error) || 'Gagal hapus sesi.', 'error');
     });
   });
 
   // Tampilan & privasi
   $$('#theme-picker .theme-radio').forEach((r) => r.addEventListener('change', () => { if (r.checked) applyTheme(r.dataset.theme); }));
-  $('#btn-diag').addEventListener('click', async () => { await api.copyDiagnostics(); toast('Info diagnostik disalin ke clipboard.', 'ok'); });
-  $('#btn-open-data').addEventListener('click', () => api.openDataFolder());
+  $('#btn-diag').addEventListener('click', async () => { try { await api.copyDiagnostics(); toast('Info diagnostik disalin ke clipboard.', 'ok'); } catch { toast('Gagal menyalin info diagnostik.', 'error'); } });
+  $('#btn-open-data').addEventListener('click', () => api.openDataFolder().catch(() => {}));
   $('#btn-clear').addEventListener('click', () => {
     openModal(`<div class="modal-head"><h3>Hapus semua data</h3></div><div class="modal-body">
       <p>Semua audit, target, snapshot, dan data akun akan dihapus <b>permanen</b>. Tindakan ini tidak bisa dibatalkan.</p>
@@ -834,8 +991,10 @@ function bindEvents() {
     $('#clear-confirm').addEventListener('input', checkEnabled);
     checkEnabled();
     $('#confirm-clear').addEventListener('click', async () => {
-      if ($('#clear-backup').checked) { await api.dbBackup(); }
-      await api.clearAll();
+      if ($('#clear-backup').checked) {
+        try { await api.dbBackup(); } catch { toast('Cadangan gagal dibuat — penghapusan dibatalkan demi keamanan.', 'error'); return; }
+      }
+      try { await api.clearAll(); } catch { toast('Gagal menghapus data.', 'error'); return; }
       closeModal();
       toast('Data dihapus.', 'ok');
       await pollUpdate();
@@ -847,6 +1006,7 @@ async function init() {
   applyTheme((typeof localStorage !== 'undefined' && localStorage.getItem('sa_theme')) || 'system');
   bindEvents();
   bindBrowser();
+  bindGlobalSearch();
   await loadAudits();
   await refreshWorker();
   await refreshDashboard();
@@ -859,18 +1019,12 @@ async function init() {
 
   // polling ringan: worker selalu; tab aktif ikut disegarkan.
   setInterval(() => {
+    if (document.hidden) return;
     refreshWorker();
     if (state.tab === 'dashboard') refreshDashboard();
     else if (state.tab === 'proses') loadProcess();
+    else if (state.tab === 'settings') loadSettings();
   }, 5000);
 }
-
-// aksesibilitas: pastikan semua <th> di tabel punya scope="col"
-const thObserver = new MutationObserver(() => {
-  for (const th of document.querySelectorAll('thead th')) {
-    if (!th.hasAttribute('scope')) th.setAttribute('scope', 'col');
-  }
-});
-thObserver.observe(document.body, { childList: true, subtree: true });
 
 init();

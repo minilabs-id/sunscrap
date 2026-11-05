@@ -9,7 +9,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { BrowserWindow, session } = require('electron');
-const { allowedTarget, platformForHost } = require('./policy');
+const { allowedTarget, platformForHost, ALLOWED_HOSTS } = require('./policy');
 
 const CONTENT_DIR = path.join(__dirname, '..', 'scraper-content');
 const PARTITION = 'persist:sunscrap';
@@ -164,6 +164,16 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
     openLogin(platform) {
       const target = LOGIN_URLS[platform];
       if (!target) return null;
+      // Host yang boleh tetap ada di jendela login (IG/TikTok + penyedia OAuth umum).
+      const isLoginHost = (rawUrl) => {
+        let host;
+        try { host = new URL(rawUrl).hostname.toLowerCase(); } catch { return false; }
+        if (ALLOWED_HOSTS.has(host)) return true;
+        return [
+          '.google.com', '.facebook.com', '.apple.com', '.microsoft.com', '.twitter.com', '.x.com',
+          'accounts.google.com', 'login.microsoftonline.com',
+        ].some((suffix) => host === suffix.slice(1) || host.endsWith(suffix));
+      };
       const win = new BrowserWindow({
         width: 1100, height: 820,
         title: `Login ${platform}`,
@@ -173,6 +183,13 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
         if (allowedTarget(url)) require('electron').shell.openExternal(url);
         else say(`Popup diblokir: ${url}`);
         return { action: 'deny' };
+      });
+      win.webContents.on('will-navigate', (event, url) => {
+        if (!isLoginHost(url)) {
+          event.preventDefault();
+          say(`Navigasi keluar jendela login dibuka di browser luar: ${url}`);
+          try { require('electron').shell.openExternal(url); } catch {}
+        }
       });
       win.loadURL(target);
       return win;

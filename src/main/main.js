@@ -7,8 +7,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-  app, BrowserWindow, Menu, Notification, Tray, nativeImage, shell, dialog, protocol, ipcMain,
+  app, BrowserWindow, Menu, Notification, Tray, nativeImage, shell, dialog, protocol, ipcMain, nativeTheme, screen,
 } = require('electron');
+const { fileURLToPath } = require('node:url');
 
 const { createDatabase } = require('./db');
 const { createScraper } = require('./scraper');
@@ -18,15 +19,41 @@ const { registerIpc } = require('./ipc');
 const avatar = require('./avatar');
 
 // Skema kustom untuk menyajikan avatar lokal (tanpa akses CDN dari renderer).
+// Sengaja TIDAK `standard`: skema standard dinormalkan Chromium menjadi
+// sa-avatar://nama/ (host=nama, path='/') sehingga handler selalu 404 (K-3).
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'sa-avatar', privileges: { standard: true, secure: true, supportFetchAPI: true } },
+  { scheme: 'sa-avatar', privileges: { secure: true, supportFetchAPI: true } },
 ]);
 
 const ICON_FILE = path.join(__dirname, '..', '..', 'assets', 'icon.png');
 const LIMITER_STATE = 'worker-state.json';
 const WINDOW_STATE = 'window-state.json';
-const RENDERER_INDEX = 'file://' + path.join(__dirname, '..', 'renderer', 'index.html').replace(/\\/g, '/');
+const RENDERER_INDEX_PATH = path.join(__dirname, '..', 'renderer', 'index.html');
 const APP_VERSION = '1.0.0';
+
+// Overlay tombol min/max/close harus mengikuti tema — putih di dark mode terlihat rusak.
+function titleBarOverlayFor(dark) {
+  return dark
+    ? { color: '#1f2430', symbolColor: '#e5e7eb', height: 40 }
+    : { color: '#ffffff', symbolColor: '#101828', height: 40 };
+}
+function systemPrefersDark() {
+  try { return nativeTheme.shouldUseDarkColors; } catch { return false; }
+}
+
+/** Bila layar eksternal dicabut, posisi tersimpan bisa berada di luar semua workArea → hilangkan x/y agar jendela muncul di layar utama. */
+function clampWindowBounds(bounds) {
+  const b = { ...(bounds || {}) };
+  const needsClamp = typeof b.x === 'number' || typeof b.y === 'number';
+  const visible = !needsClamp || screen.getAllDisplays().some((d) => {
+    const wa = d.workArea;
+    const xOk = typeof b.x !== 'number' || (b.x >= wa.x - 200 && b.x < wa.x + wa.width - 100);
+    const yOk = typeof b.y !== 'number' || (b.y >= wa.y - 100 && b.y < wa.y + wa.height - 100);
+    return xOk && yOk;
+  });
+  if (!visible) { delete b.x; delete b.y; }
+  return b;
+}
 
 let mainWindow = null;
 let tray = null;
@@ -65,7 +92,12 @@ function createStorage(filePath) {
     remove(keys) {
       const list = Array.isArray(keys) ? keys : [keys];
       for (const key of list) delete data[key];
-      try { fs.writeFileSync(filePath, JSON.stringify(data)); } catch {}
+      try {
+        fs.mkdirSync(path.dirname(filePath), { recursive: true });
+        const tmp = filePath + '.tmp';
+        fs.writeFileSync(tmp, JSON.stringify(data));
+        fs.renameSync(tmp, filePath);
+      } catch {}
     },
   };
 }
@@ -199,7 +231,7 @@ function buildAppMenu() {
 }
 
 function createMainWindow() {
-  const bounds = windowStore ? windowStore.get([WINDOW_STATE]) : {};
+  const bounds = clampWindowBounds(windowStore ? windowStore.get([WINDOW_STATE]) : {});
   mainWindow = new BrowserWindow({
     width: (bounds.width) || 1280,
     height: (bounds.height) || 860,
@@ -211,7 +243,7 @@ function createMainWindow() {
     icon: ICON_FILE,
     autoHideMenuBar: true,
     titleBarStyle: 'hidden',
-    titleBarOverlay: { color: '#ffffff', symbolColor: '#101828', height: 40 },
+    titleBarOverlay: titleBarOverlayFor(systemPrefersDark()),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload', 'preload.js'),
       nodeIntegration: false,
@@ -234,9 +266,9 @@ function createMainWindow() {
   // navigasi lain dibuka di browser luar.
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (String(url).startsWith('file:')) {
-      if (decodeURIComponent(url.split('?')[0].split('#')[0]) !== decodeURIComponent(RENDERER_INDEX)) {
-        event.preventDefault();
-      }
+      let target = null;
+      try { target = path.normalize(fileURLToPath(url)).toLowerCase(); } catch {}
+      if (target !== path.normalize(RENDERER_INDEX_PATH).toLowerCase()) event.preventDefault();
       return;
     }
     event.preventDefault();
@@ -333,7 +365,8 @@ async function boot() {
   fs.mkdirSync(avatarDir, { recursive: true });
   protocol.handle('sa-avatar', (request) => {
     try {
-      const file = avatar.resolveAvatar(avatarDir, new URL(request.url).pathname.replace(/^\//, ''));
+      const name = decodeURIComponent(new URL(request.url).pathname.replace(/^\//, ''));
+      const file = avatar.resolveAvatar(avatarDir, name);
       if (!file) return new Response('', { status: 404 });
       const buf = fs.readFileSync(file);
       const type = path.extname(file).toLowerCase() === '.png' ? 'image/png' : 'image/jpeg';
@@ -355,10 +388,15 @@ async function boot() {
     onChange: (status) => { refreshTraySoon(); broadcast('worker', status); },
   });
 
-  registerIpc({ db, worker, scraper, broadcast });
+  registerIpc({ db, worker, scraper, broadcast, limiter, avatarDir });
 
   ipcMain.handle('app:copyDiagnostics', () => { copyDiagnostics(); return { ok: true }; });
   ipcMain.handle('app:openDataFolder', () => { openDataFolder(); return { ok: true }; });
+  // Renderer memberi tahu tema aktif agar overlay tombol window menyesuaikan.
+  ipcMain.handle('app:theme', (event, theme) => {
+    try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setTitleBarOverlay(titleBarOverlayFor(theme === 'dark')); } catch {}
+    return { ok: true };
+  });
 
   createMainWindow();
 

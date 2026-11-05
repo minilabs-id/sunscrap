@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld('sunscrap', {
   },
 
   // aplikasi
+  setTheme: (theme) => invoke('app:theme', theme),
   openExternal: (url) => invoke('app:openExternal', url),
   clearSession: () => invoke('app:clearSession'),
   copyDiagnostics: () => invoke('app:copyDiagnostics'),

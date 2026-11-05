@@ -8,7 +8,10 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="titlebar"><span class="titlebar-title" id="titlebar-context">Dashboard</span></div>
+  <div class="titlebar">
+    <span class="titlebar-title" id="titlebar-context">Dashboard</span>
+    <input id="global-search" class="titlebar-search" type="search" placeholder="Cari akun / link / tema… (Ctrl+K)" aria-label="Pencarian global" autocomplete="off" />
+  </div>
   <div class="layout">
   <aside class="sidebar">
     <div class="brand"><span class="brand-sun">☀</span> sunscrap</div>
@@ -260,6 +263,7 @@
     <span id="sb-version" class="sb-dim">v1.0.0</span>
   </div>
 
+  <div id="search-pop" class="search-pop" hidden></div>
   <div id="modal-root" class="modal-root"></div>
   <div id="toast-root"></div>
   <script src="app.js"></script>

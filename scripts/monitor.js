@@ -14,19 +14,21 @@ function main() {
     console.log('DB belum ada:', dbPath, '(aplikasi belum membuatnya?)');
     return;
   }
-  const { DatabaseSync } = require('node:sqlite');
+  const sqlite = require('node:sqlite');
+  const DatabaseSync = sqlite.Database || sqlite.DatabaseSync;
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA busy_timeout=5000; PRAGMA query_only=ON;');
 
   const one = (sql) => db.prepare(sql).get();
   const cnt = (t) => (one(`SELECT COUNT(*) AS n FROM ${t}`) || {}).n || 0;
 
-  const tasks = one("SELECT status, COUNT(*) AS n FROM tasks GROUP BY status");
   const byStatus = one(`
     SELECT SUM(status='PENDING') p, SUM(status='RUNNING') r, SUM(status='OK') ok,
            SUM(status='PARTIAL') pa, SUM(status='FAILED') f FROM tasks`);
+  const ver = one('PRAGMA user_version');
 
   console.log('=== STATUS DATABASE ===');
+  console.log('schema: v' + ((ver && ver.user_version) || 0));
   console.log('audits:', cnt('audits'), '| targets:', cnt('targets'), '| tasks:', cnt('tasks'), '| snapshots:', cnt('snapshots'), '| accounts:', cnt('accounts'), '| account_posts:', cnt('account_posts'));
   console.log('tasks by status:', JSON.stringify(byStatus));
 

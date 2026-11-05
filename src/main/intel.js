@@ -21,6 +21,8 @@ const BIO_CONTACT_MIN_DIGITS = 10; // nomor HP Indonesia ≥ 10 digit; 8 digit t
 // Fan-out cutoff: token/ref/template yang dipakai > MAX_FANOUT akun adalah "umum"
 // (hotline publik, konten viral), bukan bukti pasangan — mencegah ledakan C(n,2) edge.
 const MAX_FANOUT = 50;
+// Template caption yang dipakai >10 akun dianggap generik (konten viral), bukan bukti pasangan.
+const MAX_TEMPLATE_FANOUT = 10;
 const CAPTION_TEMPLATE_PREFIX = 40;
 const FLAT_FOLLOWER_BANDS = [[TERNAK_BAND_MIN, TERNAK_BAND_MAX], [20000, 100000]];
 const FLAT_FOLLOWER_TOLERANCE = 0.03;
@@ -183,7 +185,10 @@ function findAccountLinks(accounts, postsByAccount) {
       if (template) (byTemplate[template] ||= new Set()).add(key);
     }
   }
-  for (const keys of Object.values(byTemplate)) _pairOff(keys, 'template', links);
+  for (const keys of Object.values(byTemplate)) {
+    if (keys.size > MAX_TEMPLATE_FANOUT) continue; // caption generik lintas banyak akun, bukan bukti
+    _pairOff(keys, 'template', links);
+  }
 
   return links;
 }
@@ -466,6 +471,7 @@ module.exports = {
   TERNAK_BAND_MIN, TERNAK_BAND_MAX, VIEW_REACH_FLOOR, IG_LIKE_REACH_FLOOR,
   UPLOAD_BURST_MIN_COUNT, UPLOAD_BURST_WINDOW_MINUTES, FLAT_FOLLOWER_TOLERANCE,
   RISK_LEVELS, RISK_FLOORS, CACHE_TTL_MINUTES: 7 * 24 * 60,
+  MAX_FANOUT, MAX_TEMPLATE_FANOUT,
   _accountKey, _number, _median, bioContactTokens, captionTemplateKey,
   sharedCaptionTemplates, findAccountLinks, buildClusters, riskLevel, analyseAccount, snapshotFromRows,
 };

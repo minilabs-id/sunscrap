@@ -66,33 +66,37 @@ function sniffSeparator(text) {
   return best;
 }
 
-/** Parser CSV sederhana yang sadar kutipan. */
+/** Parser CSV yang sadar kutip — sel berkutip boleh berisi newline. */
 function parseCsv(text, separator) {
   const rows = [];
-  const lines = text.split(/\r?\n/);
-  for (const line of lines) {
-    if (line.trim() === '') continue;
-    const cells = [];
-    let cur = '';
-    let inQuote = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (inQuote) {
-        if (ch === '"') {
-          if (line[i + 1] === '"') { cur += '"'; i++; } else { inQuote = false; }
-        } else cur += ch;
-      } else if (ch === '"') {
-        inQuote = true;
-      } else if (ch === separator) {
-        cells.push(cur); cur = '';
-      } else {
-        cur += ch;
-      }
+  const cells = [];
+  let cur = '';
+  let inQuote = false;
+  const flushCell = () => { cells.push(cur); cur = ''; };
+  const flushRow = () => {
+    if (cells.length || cur.length) { flushCell(); rows.push(cells.splice(0, cells.length)); }
+    else { cur = ''; }
+  };
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuote) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { cur += '"'; i++; } else { inQuote = false; }
+      } else { cur += ch; }
+      continue;
     }
-    cells.push(cur);
-    rows.push(cells);
+    if (ch === '"') { inQuote = true; continue; }
+    if (ch === separator) { flushCell(); continue; }
+    if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      flushRow();
+      continue;
+    }
+    cur += ch;
   }
-  return rows;
+  flushRow();
+  // Buang baris yang sepenuhnya kosong (semua sel kosong).
+  return rows.filter((r) => r.some((c) => c.trim() !== ''));
 }
 
 function rowsFromCsv(buffer, maxRows) {

@@ -4,6 +4,7 @@ node_modules/
 # Build output
 release/
 dist/
+*.tmp-*
 
 # Runtime data (created on first run)
 *.db

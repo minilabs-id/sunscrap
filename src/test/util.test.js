@@ -15,6 +15,15 @@ test('normalizeTargetUrl menolak profil & host lain', () => {
   assert.equal(util.normalizeTargetUrl('https://notinstagram.com/p/abc'), null);
 });
 
+test('normalizeTargetUrl membuang query pelacak & menyamakan /reels/ → /reel/', () => {
+  const a = util.normalizeTargetUrl('https://www.instagram.com/reel/CODE/?igsh=AAA');
+  const b = util.normalizeTargetUrl('https://www.instagram.com/reel/CODE/?igsh=BBB&lang=id');
+  assert.equal(a.url, b.url);
+  assert.equal(a.url.includes('igsh'), false);
+  assert.equal(util.normalizeTargetUrl('https://www.instagram.com/reels/CODE/').url, 'https://www.instagram.com/reel/CODE/');
+  assert.equal(util.normalizeTargetUrl('https://www.tiktok.com/@u/video/7123456789?lang=id-ID').url, 'https://www.tiktok.com/@u/video/7123456789');
+});
+
 test('cleanUsername & cleanInt', () => {
   assert.equal(util.cleanUsername('@Salsa_Abc (Tiktok)'), 'salsa_abc');
   assert.equal(util.cleanUsername(null), null);

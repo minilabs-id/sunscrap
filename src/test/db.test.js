@@ -147,6 +147,37 @@ test('deleteAccount menghapus data akun + post + history', () => {
   db.close();
 });
 
+test('restoreDatabase menolak sumber yang sama dengan database aktif (K-1)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sadb-self-'));
+  const p = path.join(dir, 'a.db');
+  const db = createDatabase(p);
+  db.createAuditWithTasks([t1], { name: 'x' });
+  assert.throws(() => db.restoreDatabase(p), /sama dengan database aktif/i);
+  assert.equal(db.getAudits().length, 1); // data aktif tidak tersentuh
+  db.close();
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('restoreDatabase menolak cadangan skema lebih lama (K-5)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sadb-old-'));
+  const backup = path.join(dir, 'old-schema.db');
+  const sqlite = require('node:sqlite');
+  const RawDb = sqlite.Database || sqlite.DatabaseSync;
+  const src = new RawDb(backup);
+  src.exec(`CREATE TABLE audits(id INTEGER PRIMARY KEY, name TEXT);
+            CREATE TABLE targets(id INTEGER PRIMARY KEY);
+            CREATE TABLE tasks(id INTEGER PRIMARY KEY, status TEXT);
+            CREATE TABLE snapshots(id INTEGER PRIMARY KEY);
+            PRAGMA user_version = 3;`);
+  src.close();
+  const db = createDatabase(path.join(dir, 'main.db'));
+  db.createAuditWithTasks([t1], { name: 'x' });
+  assert.throws(() => db.restoreDatabase(backup), /skema/i);
+  assert.equal(db.getAudits().length, 1); // data aktif tidak tersentuh
+  db.close();
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('backupDatabase + restoreDatabase mengembalikan data', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sadb-'));
   const db = createDatabase(path.join(dir, 'main.db'));

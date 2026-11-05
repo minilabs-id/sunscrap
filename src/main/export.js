@@ -117,6 +117,8 @@ function recapRows(db, auditId) {
 
   add('Catatan', 'Rumus ER Instagram', '(likes + komentar) / followers × 100');
   add('Catatan', 'Rumus ER TikTok', '(likes + komentar + share) / views × 100');
+  add('Catatan', 'Share', 'Hanya tersedia untuk TikTok — Instagram tidak mengekspos angka share');
+  add('Catatan', 'Δ vs scrape', 'Dibanding scrape terakhir target yang sama — bisa lintas audit/periode');
   add('Catatan', 'Median, bukan rata-rata', 'Median dipakai agar satu postingan viral tidak menggeser seluruh angka');
   return rows;
 }

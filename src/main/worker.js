@@ -17,12 +17,16 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
   const clock = timers && typeof timers.setTimeout === 'function' ? timers : { setTimeout, clearTimeout };
 
   // Simpan profil + unduh avatar ke disk lokal (sekali per akun).
+  // Bila gagal → avatar_url = NULL, jangan simpan URL remote (bocor privasi + diblokir CSP).
   async function recordProfile(profile, fallbackUsername, fallbackPlatform) {
-    if (profile && profile.avatarUrl && avatarDir) {
+    if (profile) {
       const platform = profile.platform || fallbackPlatform;
       const username = profile.username || fallbackUsername;
-      const local = await cacheAvatar(profile.avatarUrl, avatarDir, `${platform}_${username}`);
-      if (local) profile.avatarUrl = local;
+      let local = null;
+      if (profile.avatarUrl && avatarDir) {
+        local = await cacheAvatar(profile.avatarUrl, avatarDir, `${platform}_${username}`);
+      }
+      profile.avatarUrl = local || null;
     }
     db.recordAccountProfile(profile);
   }

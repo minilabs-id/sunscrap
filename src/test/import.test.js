@@ -41,6 +41,22 @@ test('parseLinksText dibatasi maxRows + flag truncated (F-10)', () => {
   assert.equal(r.truncated, true);
 });
 
+test('parseImportFile CSV sel berkutip berisi newline', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'saimp-ml-'));
+  const filePath = path.join(dir, 'multiline.csv');
+  fs.writeFileSync(
+    filePath,
+    'Link;Tema\n"https://www.instagram.com/x/p/A1/";"baris satu\nbaris dua"\nhttps://www.tiktok.com/@y/video/9;biasa\n',
+    'utf8',
+  );
+  const parsed = await imp.parseImportFile(filePath, 10000);
+  assert.ok(parsed);
+  assert.equal(parsed.tasks.length, 2);
+  assert.equal(parsed.tasks[0].tema, 'baris satu\nbaris dua');
+  assert.equal(parsed.tasks[1].url, 'https://www.tiktok.com/@y/video/9');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('parseImportFile menolak file tanpa kolom Link', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'saimp-'));
   const filePath = path.join(dir, 'nourl.csv');

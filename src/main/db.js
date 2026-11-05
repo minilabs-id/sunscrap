@@ -39,6 +39,10 @@ function createDatabase(dbPath) {
   function norm(...args) {
     return args.map((a) => (a === undefined ? null : a));
   }
+  function escapeLike(value) {
+    // Escape wildcard LIKE (SQLite ESCAPE '\') — input user tidak boleh jadi wildcard tak terduga.
+    return String(value).replace(/[\\%_]/g, (m) => '\\' + m);
+  }
   function all(sql, ...args) {
     return conn.prepare(sql).all(...norm(...args));
   }
@@ -896,7 +900,11 @@ function createDatabase(dbPath) {
     return plain(data);
   }
 
-  function cachedTargetCounts(cursorless = null, maxAgeMinutes = POST_CACHE_TTL_MINUTES) {
+  let cachedCountsMemo = { gen: -1, maxAge: POST_CACHE_TTL_MINUTES, value: {} };
+  function cachedTargetCounts(maxAgeMinutes = POST_CACHE_TTL_MINUTES) {
+    if (cachedCountsMemo.gen === intelGen && cachedCountsMemo.maxAge === maxAgeMinutes && cachedCountsMemo.value) {
+      return cachedCountsMemo.value;
+    }
     const cutoff = new Date(Date.now() - maxAgeMinutes * 60000).toISOString().replace(/\.\d{3}Z$/, 'Z');
     const rows = all(`
       SELECT t.audit_id AS audit_id, COUNT(*) AS cached_count
@@ -908,7 +916,9 @@ function createDatabase(dbPath) {
                OR substr(t.url, 1, instr(t.url || '?', '?') - 1) = p.post_url)
       )
       GROUP BY t.audit_id`, cutoff);
-    return Object.fromEntries(rows.map((r) => [r.audit_id, r.cached_count]));
+    const value = Object.fromEntries(rows.map((r) => [r.audit_id, r.cached_count]));
+    cachedCountsMemo = { gen: intelGen, maxAge: maxAgeMinutes, value };
+    return value;
   }
 
   function getAudits() {
@@ -926,7 +936,19 @@ function createDatabase(dbPath) {
   }
 
   function getAudit(auditId) {
-    return getAudits().find((a) => a.id === Number(auditId)) || null;
+    const id = Number(auditId);
+    if (!Number.isFinite(id) || id <= 0) return null;
+    const row = one(`
+      SELECT a.*,
+        (SELECT COUNT(*) FROM targets t WHERE t.audit_id = a.id) AS target_count,
+        (SELECT COUNT(DISTINCT t.username) FROM targets t WHERE t.audit_id = a.id AND t.username IS NOT NULL AND t.username <> '') AS account_count,
+        (SELECT COUNT(*) FROM tasks tk WHERE tk.audit_id = a.id AND tk.status = 'PENDING') AS pending_count,
+        (SELECT COUNT(*) FROM tasks tk WHERE tk.audit_id = a.id AND tk.status = 'RUNNING') AS running_count,
+        (SELECT status FROM runs r WHERE r.audit_id = a.id ORDER BY r.id DESC LIMIT 1) AS latest_run_status
+      FROM audits a WHERE a.id = ?`, id);
+    if (!row) return null;
+    const cached = cachedTargetCounts();
+    return auditRowToDict(row, cached[id] || 0);
   }
 
   function getQueueStats() {
@@ -973,7 +995,8 @@ function createDatabase(dbPath) {
 
   function getTargets(params = {}) {
     const limit = clampLimit(params.limit, 1, 200, 50);
-    const offset = Math.max(0, Number(params.offset || 0));
+    const offRaw = Number(params.offset);
+    const offset = Number.isFinite(offRaw) && offRaw > 0 ? Math.floor(offRaw) : 0;
     const base = `
       WITH latest_tasks AS (
         SELECT tk.id, tk.target_id, tk.status, tk.error_code, tk.error_message, tk.retry_count, tk.claimed_at, tk.scraped_at,
@@ -988,7 +1011,11 @@ function createDatabase(dbPath) {
 
     const conditions = ['1 = 1'];
     const cparams = [];
-    if (params.auditId) { conditions.push('t.audit_id = ?'); cparams.push(Number(params.auditId)); }
+    if (params.auditId !== undefined && params.auditId !== null && params.auditId !== '') {
+      const aid = Number(params.auditId);
+      if (!Number.isFinite(aid)) return { items: [], total: 0, limit, offset };
+      conditions.push('t.audit_id = ?'); cparams.push(aid);
+    }
     if (params.platform === 'instagram' || params.platform === 'tiktok') { conditions.push('t.platform = ?'); cparams.push(params.platform); }
     if (params.status) {
       const s = String(params.status).toLowerCase();
@@ -998,9 +1025,12 @@ function createDatabase(dbPath) {
       else if (['failed', 'pending', 'running'].includes(s)) { conditions.push("COALESCE(lt.status, 'PENDING') = ?"); cparams.push(s.toUpperCase()); }
     }
     if (params.q) {
-      const like = '%' + String(params.q).trim() + '%';
-      conditions.push("(t.username LIKE ? OR t.url LIKE ? OR COALESCE(t.tema, '') LIKE ? OR a.name LIKE ?)");
-      cparams.push(like, like, like, like);
+      const needle = String(params.q).trim();
+      if (needle) {
+        const like = '%' + escapeLike(needle) + '%';
+        conditions.push("(t.username LIKE ? ESCAPE '\\' OR t.url LIKE ? ESCAPE '\\' OR COALESCE(t.tema, '') LIKE ? ESCAPE '\\' OR a.name LIKE ? ESCAPE '\\')");
+        cparams.push(like, like, like, like);
+      }
     }
     const issue = params.issue;
     if (issue === 'no_followers') conditions.push('ls.id IS NOT NULL AND ls.follower_count IS NULL');
@@ -1065,7 +1095,11 @@ function createDatabase(dbPath) {
     const l = clampLimit(limit, 1, 50, 10);
     const conditions = ['s.attempt_rn = 1'];
     const params = [];
-    if (auditId) { conditions.push('t.audit_id = ?'); params.push(Number(auditId)); }
+    if (auditId !== undefined && auditId !== null && auditId !== '') {
+      const aid = Number(auditId);
+      if (!Number.isFinite(aid)) return [];
+      conditions.push('t.audit_id = ?'); params.push(aid);
+    }
     const where = 'WHERE ' + conditions.join(' AND ');
     const rows = all(`
       WITH attempts AS (
@@ -1093,6 +1127,8 @@ function createDatabase(dbPath) {
   }
 
   function getTargetHistory(targetId, limit = 50) {
+    const tid = Number(targetId);
+    if (!Number.isFinite(tid)) return [];
     const l = clampLimit(limit, 1, 200, 50);
     const rows = all(`
       WITH attempts AS (
@@ -1101,7 +1137,7 @@ function createDatabase(dbPath) {
       )
       SELECT id, target_id, run_id, task_id, scraped_at, status, error_code, error_message,
              likes, comments, views, shares, follower_count, post_date, caption
-      FROM attempts WHERE attempt_rn = 1 ORDER BY id DESC LIMIT ?`, Number(targetId), l);
+      FROM attempts WHERE attempt_rn = 1 ORDER BY id DESC LIMIT ?`, tid, l);
     return rows.map(plain);
   }
 
@@ -1129,9 +1165,14 @@ function createDatabase(dbPath) {
     return Math.round(result * 100) / 100;
   }
 
+  let summaryMemo = { gen: -1, key: null, value: null };
   function getSummary(auditId) {
-    const where = auditId ? 'WHERE t.audit_id = ?' : '';
-    const params = auditId ? [Number(auditId)] : [];
+    const idNum = auditId === null || auditId === undefined ? null : Number(auditId);
+    if (auditId !== null && auditId !== undefined && !Number.isFinite(idNum)) return null;
+    const memoKey = String(idNum === null ? 'all' : idNum);
+    if (summaryMemo.gen === intelGen && summaryMemo.key === memoKey) return summaryMemo.value;
+    const where = idNum !== null ? 'WHERE t.audit_id = ?' : '';
+    const params = idNum !== null ? [idNum] : [];
     const rows = all(`
       WITH latest_snapshots AS (
         SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.target_id ORDER BY s.id DESC) AS rn FROM snapshots s
@@ -1253,8 +1294,8 @@ function createDatabase(dbPath) {
     const scraped = platforms.reduce((s, p) => s + p.scraped, 0);
     const verified = statusCounts.OK + statusCounts.PARTIAL;
 
-    return {
-      audit_id: auditId || null,
+    const result = {
+      audit_id: idNum,
       generated_at: isoNow(),
       kpi: {
         targets: rows.length, scraped, verified,
@@ -1273,16 +1314,23 @@ function createDatabase(dbPath) {
       posts: { top_views: rankedViews, top_er: rankedEr },
       quality,
     };
+    summaryMemo = { gen: intelGen, key: memoKey, value: result };
+    return result;
   }
 
+  let compareMemo = { gen: -1, key: null, value: null };
   function getCompare(months = 6, period) {
     months = Math.max(2, Math.min(Number(months || 6) || 6, 24));
+    const selected = cleanPeriod(period);
+    const memoKey = `${months}|${selected || ''}`;
+    if (compareMemo.gen === intelGen && compareMemo.key === memoKey && compareMemo.value) return compareMemo.value;
     const periodRows = all("SELECT DISTINCT period FROM audits WHERE period IS NOT NULL AND period <> '' ORDER BY period DESC");
     let periods = periodRows.map((r) => r.period).slice(0, months);
-    const selected = cleanPeriod(period);
     if (selected && !periods.includes(selected)) periods = ([selected, ...periods]).slice(0, months);
     if (!periods.length) {
-      return { periods: [], latest_period: null, accounts: [], summary: { accounts: 0, new_accounts: 0, missing_latest: 0 } };
+      const empty = { periods: [], latest_period: null, accounts: [], summary: { accounts: 0, new_accounts: 0, missing_latest: 0 } };
+      compareMemo = { gen: intelGen, key: memoKey, value: empty };
+      return empty;
     }
     const ph = periods.map(() => '?').join(',');
     const rows = all(`
@@ -1339,29 +1387,31 @@ function createDatabase(dbPath) {
       items.push(row);
     }
     items.sort((a, b) => (a.missing_latest - b.missing_latest) || (b.views_total - a.views_total) || a.handle.localeCompare(b.handle));
-    return {
+    const result = {
       periods, latest_period: latestPeriod, accounts: items,
       summary: { accounts: items.length, new_accounts: items.filter((i) => i.is_new).length, missing_latest: items.filter((i) => i.missing_latest).length },
     };
+    compareMemo = { gen: intelGen, key: memoKey, value: result };
+    return result;
   }
 
   function searchData(query, limit = 20) {
     const needle = String(query || '').trim();
     const l = clampLimit(limit, 1, 50, 20);
     if (needle.length < 2) return { query: needle, targets: [], accounts: [], posts: [] };
-    const like = '%' + needle + '%';
-    const handle = '%' + needle.replace(/^@/, '') + '%';
+    const like = '%' + escapeLike(needle) + '%';
+    const handle = '%' + escapeLike(needle.replace(/^@/, '')) + '%';
     const targets = all(`
       SELECT t.id AS target_id, t.audit_id, a.name AS audit_name, a.period, t.platform, t.username, t.url, t.tema, t.last_status AS status, t.last_scraped_at
       FROM targets t JOIN audits a ON a.id = t.audit_id
-      WHERE t.username LIKE ? OR t.url LIKE ? OR COALESCE(t.tema, '') LIKE ? ORDER BY t.id DESC LIMIT ?`, handle, like, like, l).map(plain);
+      WHERE t.username LIKE ? ESCAPE '\\' OR t.url LIKE ? ESCAPE '\\' OR COALESCE(t.tema, '') LIKE ? ESCAPE '\\' ORDER BY t.id DESC LIMIT ?`, handle, like, like, l).map(plain);
     const accounts = all(`
       SELECT platform, username, follower_count, display_name, bio, region, post_count, following_count, fetched_at
-      FROM accounts WHERE username LIKE ? OR COALESCE(display_name, '') LIKE ? OR COALESCE(bio, '') LIKE ?
+      FROM accounts WHERE username LIKE ? ESCAPE '\\' OR COALESCE(display_name, '') LIKE ? ESCAPE '\\' OR COALESCE(bio, '') LIKE ? ESCAPE '\\'
       ORDER BY fetched_at DESC LIMIT ?`, handle, like, like, l).map(plain);
     const posts = all(`
       SELECT platform, username, post_url, posted_at, likes, comments, views, shares, caption
-      FROM account_posts WHERE post_url LIKE ? OR COALESCE(caption, '') LIKE ? OR username LIKE ?
+      FROM account_posts WHERE post_url LIKE ? ESCAPE '\\' OR COALESCE(caption, '') LIKE ? ESCAPE '\\' OR username LIKE ? ESCAPE '\\'
       ORDER BY posted_at DESC LIMIT ?`, like, like, handle, l).map(plain);
     return { query: needle, targets, accounts, posts };
   }
@@ -1509,9 +1559,11 @@ function createDatabase(dbPath) {
   }
 
   function getExportRows(auditId, status) {
+    const aid = auditId === null || auditId === undefined ? null : Number(auditId);
+    if (auditId !== null && auditId !== undefined && !Number.isFinite(aid)) return [];
     const conditions = [];
     const params = [];
-    if (auditId) { conditions.push('t.audit_id = ?'); params.push(Number(auditId)); }
+    if (aid !== null) { conditions.push('t.audit_id = ?'); params.push(aid); }
     if (status === 'DONE') { conditions.push("s.status IN ('OK','PARTIAL')"); }
     else if (status) { conditions.push('s.status = ?'); params.push(status); }
     const where = 'WHERE s.attempt_rn = 1' + (conditions.length ? ' AND ' + conditions.join(' AND ') : '');
@@ -1539,7 +1591,21 @@ function createDatabase(dbPath) {
   }
 
   function getExportCount(auditId, status) {
-    return getExportRows(auditId, status).length;
+    // Hitung langsung dengan COUNT(*) — jangan memuat seluruh baris ke memori (T-6).
+    const aid = auditId === null || auditId === undefined ? null : Number(auditId);
+    if (auditId !== null && auditId !== undefined && !Number.isFinite(aid)) return 0;
+    const conditions = [];
+    const params = [];
+    if (aid !== null) { conditions.push('t.audit_id = ?'); params.push(aid); }
+    if (status === 'DONE') { conditions.push("s.status IN ('OK','PARTIAL')"); }
+    else if (status) { conditions.push('s.status = ?'); params.push(status); }
+    const where = 'WHERE s.attempt_rn = 1' + (conditions.length ? ' AND ' + conditions.join(' AND ') : '');
+    const row = one(`
+      WITH attempts AS (
+        SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.target_id, s.run_id ORDER BY s.id DESC) AS attempt_rn FROM snapshots s
+      )
+      SELECT COUNT(*) AS n FROM attempts s JOIN targets t ON t.id = s.target_id ${where}`, ...params);
+    return row ? row.n : 0;
   }
 
   // ---- database info / backup ----
@@ -1611,26 +1677,71 @@ function createDatabase(dbPath) {
     }
   }
 
-  /** Ganti seluruh data dengan cadangan (validasi dulu + safety copy DB aktif). */
+  /** Ganti seluruh data dengan cadangan.
+   *  - Menolak bila sumber = database aktif (K-1) — sebelumnya menghapus DB aktif lalu gagal copy.
+   *  - Menolak bila skema cadangan ≠ SCHEMA_VERSION aplikasi (K-5) — mencegah DB berhenti diam-diam.
+   *  - Menyalin ke temp + verifikasi integrity dulu, baru swap rename; DB aktif tidak pernah hilang (K-2). */
   function restoreDatabase(sourcePath) {
-    inspectBackup(sourcePath);
+    const meta = inspectBackup(sourcePath);
+    if (path.resolve(sourcePath) === path.resolve(dbPath)) {
+      throw new Error('Cadangan tidak boleh sama dengan database aktif — pilih file cadangan lain.');
+    }
+    const backupSchema = Number(meta.schema_version) || 0;
+    if (backupSchema > SCHEMA_VERSION) {
+      throw new Error(`Cadangan dibuat dengan skema v${backupSchema} (lebih baru dari aplikasi ini v${SCHEMA_VERSION}). Perbarui aplikasi sebelum memulihkan.`);
+    }
+    if (backupSchema < SCHEMA_VERSION) {
+      throw new Error(`Cadangan dibuat dengan skema v${backupSchema} (lebih lama dari v${SCHEMA_VERSION}). Pulihkan dengan versi aplikasi yang cocok.`);
+    }
     const safety = path.join(path.dirname(dbPath), `pre_restore_${Date.now()}.db`);
-    backupDatabase(safety);
-    conn.close();
+    backupDatabase(safety); // VACUUM INTO safety — konsisten, termasuk isi -wal
+
+    const tmpDest = `${dbPath}.restore-tmp-${Date.now()}`;
+    const liveOld = `${dbPath}.live-old-${Date.now()}`;
+    let verifyConn = null;
     try {
-      for (const stale of [dbPath, dbPath + '-wal', dbPath + '-shm']) {
-        try { if (fs.existsSync(stale)) fs.unlinkSync(stale); } catch {}
+      fs.copyFileSync(sourcePath, tmpDest);
+      // Verifikasi hasil salinan sebelum menyentuh DB aktif.
+      verifyConn = new DatabaseSync(tmpDest, { readOnly: true });
+      const check = verifyConn.prepare('PRAGMA integrity_check').get();
+      const ok = Object.values(check)[0];
+      if (ok !== 'ok') throw new Error('Salinan cadangan rusak (integrity check gagal).');
+      const backupTables = new Set(verifyConn.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r) => Object.values(r)[0]));
+      const missingTmp = RESTORE_REQUIRED_TABLES.filter((t) => !backupTables.has(t));
+      if (missingTmp.length) throw new Error('Salinan cadangan tidak lengkap (tabel ' + missingTmp.join(', ') + ' hilang).');
+    } catch (e) {
+      if (verifyConn) { try { verifyConn.close(); } catch {} }
+      try { if (fs.existsSync(tmpDest)) fs.unlinkSync(tmpDest); } catch {}
+      throw new Error(`Pemulihan dibatalkan; data aktif TIDAK diubah. Safety backup: ${safety}`);
+    }
+    if (verifyConn) { try { verifyConn.close(); } catch {} }
+
+    conn.close();
+    // Buang -wal/-shm milik DB lama sebelum membuka DB baru (data pending ada di safety).
+    for (const stale of [dbPath + '-wal', dbPath + '-shm']) {
+      try { if (fs.existsSync(stale)) fs.unlinkSync(stale); } catch {}
+    }
+    let swapError = null;
+    try {
+      fs.renameSync(dbPath, liveOld); // 1. geser yang lama ke samping
+      try {
+        fs.renameSync(tmpDest, dbPath); // 2. tukar dengan cadangan
+      } catch (e) {
+        try { fs.renameSync(liveOld, dbPath); } catch {} // rollback bila rename gagal
+        swapError = e;
       }
-      fs.copyFileSync(sourcePath, dbPath);
+      if (!swapError) { try { fs.unlinkSync(liveOld); } catch {} }
     } finally {
+      // Selalu buka ulang koneksi (lama sudah di-close); bila rollback, ini DB lama.
       conn = new DatabaseSync(dbPath);
       conn.exec('PRAGMA journal_mode=WAL');
       conn.exec('PRAGMA busy_timeout=30000');
       conn.exec('PRAGMA foreign_keys=ON');
-      initSchema();
-      markIntelDirty();
     }
-    return { safety: path.basename(safety) };
+    if (swapError) throw new Error(`Pemulihan gagal; data aktif dikembalikan. Safety backup: ${safety}`);
+    if (fs.existsSync(dbPath)) initSchema(); // stamp user_version = SCHEMA_VERSION (cadangan sudah divalidasi)
+    markIntelDirty();
+    return { safety: path.basename(safety), safety_path: safety };
   }
 
   return {
