@@ -20,3 +20,6 @@ Thumbs.db
 .DS_Store
 .vscode/
 .idea/
+
+# Local UI screenshots (dev helper)
+.screens/
