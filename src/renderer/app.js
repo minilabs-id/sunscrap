@@ -299,7 +299,7 @@ function renderHero(summary, ts) {
   // bars
   const trendVals = ts?.days?.map((d) => d.views || 0) || [0];
   const barMax = Math.max(...trendVals, 1);
-  $('#hero-bars').innerHTML = trendVals.slice(-14).map((v) => `<i style="height:${Math.max(8, Math.round((v / barMax) * 100))}px" title="${idID(v)} views"></i>`).join('');
+  $('#hero-bars').innerHTML = trendVals.slice(-14).map((v) => `<i style="height:${Math.max(6, Math.round((v / barMax) * 100))}%" title="${idID(v)} views"></i>`).join('');
 
   // warning line
   const failed = k.failed || 0;
@@ -442,10 +442,10 @@ function renderDonut(summary) {
   const svg = $('#status-donut');
   if (!svg) return;
   svg.innerHTML =
-    `<circle cx="80" cy="80" r="62" fill="none" stroke="var(--sunken)" stroke-width="20"/>` +
+    `<circle cx="80" cy="80" r="62" fill="none" stroke="var(--sunken)" stroke-width="18"/>` +
     DONUT_SEGS.map((s) => {
       const len = segSum ? (counts[s.k] / segSum) * CIRC : 0;
-      const seg = `<circle class="seg" data-key="${s.key}" cx="80" cy="80" r="62" fill="none" stroke="${s.color}" stroke-width="20" stroke-dasharray="${len.toFixed(2)} ${CIRC.toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" stroke-linecap="round" opacity="1"></circle>`;
+      const seg = `<circle class="seg" data-key="${s.key}" cx="80" cy="80" r="62" fill="none" stroke="${s.color}" stroke-width="18" stroke-dasharray="${len.toFixed(2)} ${CIRC.toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" stroke-linecap="butt" opacity="1"></circle>`;
       acc += len;
       return seg;
     }).join('') +
