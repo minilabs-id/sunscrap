@@ -815,6 +815,18 @@ thead .th-sort.asc::after { content: "↑"; color: var(--brand); }
 .login-status .okdot { color: var(--ok); }
 .login-status .offdot { color: var(--err); }
 
+/* ---------- onboarding ---------- */
+.onboarding-card { border-left: 3px solid var(--sun); }
+.ob-steps { display: flex; flex-direction: column; gap: 8px; }
+.ob-step { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2); }
+.ob-step.done { border-color: var(--ok); background: var(--ok-soft); }
+.ob-num { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-3); color: var(--ink-3); font-weight: 800; font-size: 12px; }
+.ob-step.done .ob-num { background: var(--ok); color: #fff; }
+.ob-body { flex: 1; min-width: 0; }
+.ob-body b { font-size: 13px; }
+.ob-body .muted { display: block; margin-top: 1px; }
+.ob-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
 /* ---------- print ---------- */
 @media print {
   .titlebar, .sidebar, .toolbar, .pager, .page-actions, #modal-root, #toast-root, .browser-bar, .worker-widget, .statusbar { display: none !important; }

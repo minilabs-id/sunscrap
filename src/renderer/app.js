@@ -1167,8 +1167,48 @@ async function loadAudits() {
   if (state.tab === 'settings') renderAudits();
   updateTitlebarContext();
 }
+async function renderOnboarding() {
+  const host = $('#onboarding-host');
+  if (!host) return;
+  const hasAudits = (state.audits || []).length > 0;
+  if (hasAudits) { host.hidden = true; host.innerHTML = ''; return; }
+
+  let login = { instagram: false, tiktok: false };
+  try { login = await api.getLoginStatus() || login; } catch { /* loginStatus gagal — anggap belum login */ }
+  const workerActive = !!(state.worker && state.worker.active);
+  const k = (state.summary && state.summary.kpi) || {};
+  const processed = (k.scraped || 0) > 0;
+
+  const steps = [
+    { done: login.instagram || login.tiktok, title: 'Login Instagram / TikTok', sub: login.instagram || login.tiktok ? 'Sesi aktif' : 'Buka jendela login (atau lewat tray)', actions: `<button class="btn btn-ghost btn-sm" id="ob-ig">Login IG</button><button class="btn btn-ghost btn-sm" id="ob-tk">Login TikTok</button>` },
+    { done: hasAudits, title: 'Import data', sub: 'CSV/XLSX dengan kolom Link, atau tempel langsung', actions: `<button class="btn btn-primary btn-sm" id="ob-import">＋ Import data</button>` },
+    { done: workerActive, title: 'Mulai worker', sub: 'Worker mengunjungi akun & mengumpulkan metrik secara berkala', actions: `<button class="btn btn-ghost btn-sm" id="ob-worker">${workerActive ? 'Hentikan' : 'Mulai worker'}</button>` },
+    { done: processed, title: 'Lihat hasil', sub: 'Pantau delta & skor risiko akun, lalu export', actions: `<button class="btn btn-ghost btn-sm" id="ob-proses">Buka Proses</button>` },
+  ];
+
+  host.hidden = false;
+  host.innerHTML = `
+    <div class="card onboarding-card">
+      <div class="card-head"><div><div class="card-title">Mulai di sini</div><div class="card-sub">Empat langkah singkat untuk audit pertama Anda</div></div></div>
+      <div class="ob-steps">${steps.map((s, i) => `
+        <div class="ob-step ${s.done ? 'done' : ''}">
+          <span class="ob-num">${s.done ? '✔' : (i + 1)}</span>
+          <div class="ob-body"><b>${esc(s.title)}</b><span class="muted">${esc(s.sub)}</span></div>
+          <div class="ob-actions">${s.actions}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+
+  const ig = $('#ob-ig'); if (ig) ig.addEventListener('click', () => api.openLogin('instagram').catch(() => toast('Gagal membuka login.', 'error')));
+  const tk = $('#ob-tk'); if (tk) tk.addEventListener('click', () => api.openLogin('tiktok').catch(() => toast('Gagal membuka login.', 'error')));
+  const imp = $('#ob-import'); if (imp) imp.addEventListener('click', openNewAudit);
+  const wk = $('#ob-worker'); if (wk) wk.addEventListener('click', toggleWorker);
+  const pr = $('#ob-proses'); if (pr) pr.addEventListener('click', () => activateTab('proses'));
+}
+
 async function refreshDashboard() {
   if (state.tab !== 'dashboard') return;
+  renderOnboarding();
   try {
     const summary = await api.getSummary(state.auditId);
     if (summary) {
