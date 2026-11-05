@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "start": "electron .",
-    "test": "node --test src/test/",
+    "test": "node --test \"src/test/**/*.test.js\"",
     "e2e": "node scripts/e2e.js",
     "dist": "electron-builder --win nsis",
     "dist:portable": "electron-builder --win portable",

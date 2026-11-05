@@ -89,7 +89,7 @@ Penjelasan lengkap: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Pengujian
 
 ```bash
-npm test          # node --test src/test/ (tes murni: db, intel, throttle, policy, cache, util, import, export)
+npm test          # node --test "src/test/**/*.test.js" (tes murni: db, intel, throttle, policy, cache, util, import, export)
 npm run e2e       # kendarai UI nyata (Electron + Playwright): import file & tempel link
 npx electron scripts/smoke.js   # smoke runtime tanpa jendela
 ```
