@@ -211,7 +211,7 @@ function buildAppMenu() {
         { label: 'Target', accelerator: 'CmdOrCtrl+2', click: () => send('tab:targets') },
         { label: 'Akun', accelerator: 'CmdOrCtrl+3', click: () => send('tab:accounts') },
         { label: 'Proses', accelerator: 'CmdOrCtrl+4', click: () => send('tab:proses') },
-        { label: 'Browser', accelerator: 'CmdOrCtrl+5', click: () => send('tab:browser') },
+        { label: 'Sesi', accelerator: 'CmdOrCtrl+5', click: () => send('tab:browser') },
         { label: 'Pengaturan', accelerator: 'CmdOrCtrl+6', click: () => send('tab:settings') },
       ],
     },

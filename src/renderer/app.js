@@ -9,7 +9,7 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 const state = createState();
 
-const TAB_LABELS = { dashboard: 'Dashboard', targets: 'Target', accounts: 'Akun', browser: 'Browser', proses: 'Proses', settings: 'Pengaturan' };
+const TAB_LABELS = { dashboard: 'Dashboard', targets: 'Target', accounts: 'Akun', browser: 'Sesi', proses: 'Proses', settings: 'Pengaturan' };
 const STATE_STATUS_MAP = { ok: 'ok', partial: 'partial', failed: 'failed', pending: 'pending', done: 'done', '': '' };
 
 // ---------- helpers ----------
@@ -174,7 +174,7 @@ function activateTab(name) {
   updateTitlebarContext();
   if (name === 'targets') loadTargets();
   if (name === 'accounts') loadAccounts();
-  if (name === 'browser') ensureBrowser();
+  if (name === 'browser') { ensureBrowser(); renderLoginStatus(); }
   if (name === 'proses') loadProcess();
   if (name === 'settings') loadSettings();
 }
@@ -952,7 +952,7 @@ function openDeleteAccount(username, platform) {
 
 // ---------- proses ----------
 async function renderLoginStatus() {
-  const el = $('#login-status');
+  const el = $('#session-login-status');
   if (!el) return;
   try {
     const status = await api.getLoginStatus();
@@ -965,7 +965,6 @@ async function renderLoginStatus() {
   }
 }
 async function loadProcess() {
-  renderLoginStatus();
   try {
     const s = await api.getQueueStats();
     const pending = s.pending || 0, running = s.running || 0, ok = s.ok || 0, partial = s.partial || 0, failed = s.failed || 0;
@@ -1547,8 +1546,8 @@ function bindEvents() {
   const scoreHelp = $('#score-help-btn'); if (scoreHelp) scoreHelp.addEventListener('click', showScoreHelp);
 
   // proses buttons
-  $('#btn-login-ig').addEventListener('click', () => api.openLogin('instagram').catch(() => toast('Gagal membuka jendela login.', 'error')));
-  $('#btn-login-tk').addEventListener('click', () => api.openLogin('tiktok').catch(() => toast('Gagal membuka jendela login.', 'error')));
+  $('#btn-session-ig').addEventListener('click', () => api.openLogin('instagram').catch(() => toast('Gagal membuka jendela login.', 'error')));
+  $('#btn-session-tk').addEventListener('click', () => api.openLogin('tiktok').catch(() => toast('Gagal membuka jendela login.', 'error')));
   $('#auth-banner-ig').addEventListener('click', () => api.openLogin('instagram').catch(() => toast('Gagal membuka jendela login.', 'error')));
   $('#auth-banner-tk').addEventListener('click', () => api.openLogin('tiktok').catch(() => toast('Gagal membuka jendela login.', 'error')));
 
@@ -1658,6 +1657,7 @@ async function init() {
     refreshWorker();
     if (state.tab === 'dashboard') refreshDashboard();
     else if (state.tab === 'proses') loadProcess();
+    else if (state.tab === 'browser') renderLoginStatus();
     else if (state.tab === 'settings') loadSettings();
   }, 5000);
 }

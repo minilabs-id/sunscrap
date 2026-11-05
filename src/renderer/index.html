@@ -54,7 +54,7 @@
         <div class="nav-group">Alat</div>
         <button class="nav-link" data-tab="browser">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></svg>
-          Browser
+          Sesi &amp; Login
         </button>
         <div class="nav-group">Sistem</div>
         <button class="nav-link" data-tab="settings">
@@ -324,11 +324,6 @@
               <text x="100" y="104" text-anchor="middle" font-size="10" fill="var(--ink-3)">per menit</text>
             </svg>
             <div class="page-sub" id="worker-detail" style="text-align:center;margin-top:6px"></div>
-            <div id="login-status" class="login-status" aria-live="polite">Status login: —</div>
-            <div class="row-gap" style="justify-content:center;margin-top:12px">
-              <button class="btn btn-ghost btn-sm" id="btn-login-ig">Login Instagram</button>
-              <button class="btn btn-ghost btn-sm" id="btn-login-tk">Login TikTok</button>
-            </div>
           </div>
           <div class="card" aria-label="Antrean">
             <div class="card-head"><div><div class="card-title">Antrean</div><div class="card-sub" id="queue-eta">Memuat…</div></div></div>
@@ -345,7 +340,15 @@
 
       <!-- ============ BROWSER ============ -->
       <section class="tab" id="tab-browser" role="tabpanel" aria-label="Browser">
-        <header class="page-head"><div><h1>Browser</h1><div class="page-sub">Sesi login tersembunyi · partition persist:sunscrap</div></div></header>
+        <header class="page-head"><div><h1>Sesi &amp; Login</h1><div class="page-sub">Login &amp; jelajah sesi persisten IG/TikTok</div></div></header>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-head"><div><div class="card-title">Status sesi</div><div class="card-sub">Dipakai worker &amp; browser di bawah</div></div></div>
+          <div id="session-login-status" class="login-status" aria-live="polite">Memuat…</div>
+          <div class="row-gap" style="margin-top:10px">
+            <button class="btn btn-ghost btn-sm" id="btn-session-ig">Login Instagram</button>
+            <button class="btn btn-ghost btn-sm" id="btn-session-tk">Login TikTok</button>
+          </div>
+        </div>
         <div class="browser-bar">
           <button class="btn btn-ghost nav-btn" id="browser-back" title="Mundur">‹</button>
           <button class="btn btn-ghost nav-btn" id="browser-fwd" title="Maju">›</button>
