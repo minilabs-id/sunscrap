@@ -815,6 +815,17 @@ thead .th-sort.asc::after { content: "↑"; color: var(--brand); }
 .login-status .okdot { color: var(--ok); }
 .login-status .offdot { color: var(--err); }
 
+/* ---------- insights (dashboard, collapsible) ---------- */
+.insights { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--sh-sm); margin-bottom: 16px; }
+.insights-summary { display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; list-style: none; user-select: none; color: var(--ink); }
+.insights-summary::-webkit-details-marker { display: none; }
+.insights-summary .insights-title { font-size: var(--fs-title); font-weight: 800; letter-spacing: -0.01em; }
+.insights-summary .insights-sub { font-size: var(--fs-meta); color: var(--ink-3); }
+.insights-chev { margin-left: auto; color: var(--ink-3); transition: transform var(--dur-fast) var(--ease); }
+.insights[open] .insights-chev { transform: rotate(90deg); }
+.insights[open] { padding-bottom: 16px; }
+.insights > .grid-equal, .insights > .card { margin-left: 16px; margin-right: 16px; }
+
 /* ---------- onboarding ---------- */
 .onboarding-card { border-left: 3px solid var(--sun); }
 .ob-steps { display: flex; flex-direction: column; gap: 8px; }
