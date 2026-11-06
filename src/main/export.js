@@ -123,6 +123,26 @@ function recapRows(db, auditId) {
     add('Akun', '@' + handle, a.views, `${a.platform} · ${a.posts} postingan · median ER ${a.median_er !== null && a.median_er !== undefined ? a.median_er : '—'}%`);
   }
 
+  // ---- temuan autentisitas (skor risiko + klaster) ----
+  try {
+    const intel = db.getAccountIntel({ sort: 'risk', limit: 200 });
+    const levels = (intel.summary && intel.summary.levels) || {};
+    add('Autentisitas', 'Akun terindikasi', (intel.summary && intel.summary.flagged) || 0, 'skor di atas ambang "amati"');
+    add('Autentisitas', 'Pola kembar', levels.pola_kembar || 0, 'bukti kuat: konten/kontak sama lintas akun');
+    add('Autentisitas', 'Pola ternak', levels.pola_ternak || 0, 'sinyal penggembungan / keseragaman');
+    add('Autentisitas', 'Amati', levels.amati || 0, 'perlu pemantauan');
+    add('Autentisitas', 'Bersih', levels.bersih || 0, 'tidak terdeteksi sinyal mencurigakan');
+    const strongClusters = (intel.clusters || []).filter((c) => c.strong);
+    if (strongClusters.length) {
+      add('Autentisitas', 'Klaster kuat', strongClusters.length, 'kelompok akun dengan bukti bersama');
+      strongClusters.slice(0, 10).forEach((c, i) => {
+        const handles = (c.members || []).slice(0, 3).map((m) => '@' + String(m).split(':').pop()).join(', ');
+        add('Autentisitas', `Klaster ${i + 1} · ${c.size} akun`, handles, (c.reasons || []).join(' · '));
+      });
+    }
+    add('Autentisitas', 'Catatan', 'Indikasi otomatis dari data publik — bukan vonis', 'wajib verifikasi manual sebelum tindakan');
+  } catch (e) { /* intel tak tersedia — lewati */ }
+
   add('Kualitas data', 'Akun tanpa followers', summary.quality.without_followers, 'ER Instagram tidak bisa dihitung untuk akun ini');
   add('Kualitas data', 'Akun sebagian terbaca (PARTIAL)', summary.quality.partial);
   add('Kualitas data', 'Akun TikTok tanpa views', summary.quality.missing_views);
