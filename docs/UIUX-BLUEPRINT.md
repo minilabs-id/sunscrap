@@ -146,3 +146,30 @@ Setiap komponen punya 4 state: **empty · loading · error · data**.
 ---
 
 **Kesimpulan blueprint**: produk ini paling pas dirancang sebagai **"monitoring + triage + report"** yang *action-first* — membuka ke inbox aksi (bukan metrik), memakai **tabel sebagai visualisasi utama** dengan chart hanya untuk tren & distribusi, dan satu sistem warna **monokrom + satu aksen + status semantik**. Fondasi token-nya sudah saya tanam; langkah berikutnya adalah menyusun ulang IA ke pola di atas, dimulai dari **Inbox**.
+
+---
+
+# Revisi v2 (setelah riset lebih dalam)
+
+## Evaluasi critical terhadap v1
+
+| # | Klaim v1 | Verdict |
+|---|---|---|
+| 1 | Action-first | ✅ Benar arahnya, tapi bentuknya salah untuk pengguna periodik |
+| 2 | "Inbox jadi layar pertama" | ⚠️ Salah bentuk — dicek berkala, inbox sering kosong → janggal |
+| 3 | Table = visualisasi utama | ✅ Benar |
+| 4 | Donut selalu salah | ⚠️ Terlalu keras — donut OK untuk 2–3 segmen terpisah jelas |
+| 5 | Quadrant followers×ER = pembeda | ⚠️ Bukan pembeda; pembeda = klaster/kembar (similarity) |
+| 6 | Triage keyboard-first | ✅ Benar (Linear menegaskan) |
+| 7 | Proses→status global | ❌ Job panjang wajib punya surface Runtime penuh |
+| 8 | Export = by-product | ❌ Report adalah deliverable utama |
+| 9 | (hilang) authenticity + evidence/transparency | ❌ Ini inti nilai alat |
+
+## Koreksi v2
+
+- **A. Entry = "Command Center"** (bukan inbox kosong): status strip + panel "perlu tindakan" + health.
+- **B. Skor Kualitas/Autentisitas** jadi kelas satu: angka agregat (1–100 à la HypeAuditor) + panel bukti + "indikasi, bukan vonis". **Cluster view** (akun tertaut + bukti) jadi pembeda utama.
+- **C. "Runtime" surface penuh** (progress, budget, queue, retry/cancel, log error) — bukan indikator global.
+- **D. "Report" sebagai deliverable** terstruktur (ringkasan → autentisitas → engagement → rekomendasi).
+- **E. Keyboard navigasi ala Linear** (`G+1…6`, `G+T`, `Ctrl+K` palette) + density mode.
+- **F. Donut presisi**: 3 segmen bermakna **atau** stacked bar; "success rate" gauge valid.
