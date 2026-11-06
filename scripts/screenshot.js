@@ -28,7 +28,7 @@ async function main() {
   }
   if (!page) page = await app.firstWindow();
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForSelector('#kpi-strip', { timeout: 10000 });
+  await page.waitForSelector('#kpi-grid', { timeout: 10000 });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.waitForTimeout(1400);
 

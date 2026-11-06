@@ -66,7 +66,7 @@ async function main() {
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
 
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForSelector('#kpi-strip', { timeout: 10000 });
+  await page.waitForSelector('#kpi-grid', { timeout: 10000 });
   await page.waitForTimeout(1200);
 
   // ---- A. Import via tempel link (3 link) ----

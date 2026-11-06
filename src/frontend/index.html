@@ -4,126 +4,162 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: sa-avatar:; object-src 'none'; base-uri 'none';" />
+  <meta name="color-scheme" content="light dark" />
   <title>sunscrap</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- ════════ TITLEBAR — draggable, command bar terpusat ════════ -->
   <header class="titlebar">
-    <nav class="crumb" aria-label="Konteks"><span class="crumb-bread">sunscrap</span><span class="crumb-sep" aria-hidden="true">›</span><span class="titlebar-context" id="titlebar-context">Dashboard</span></nav>
-    <input id="global-search" class="titlebar-search" type="search" placeholder="Cari akun / link / tema… (Ctrl+K)" aria-label="Pencarian global" autocomplete="off" />
-    <button class="iconbtn" id="btn-theme-toggle" title="Ubah tema (terang/gelap)" aria-label="Ubah tema">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z"/></svg>
-    </button>
+    <div class="tb-brand">
+      <svg viewBox="0 0 32 32" width="20" height="20" role="img" aria-label="sunscrap">
+        <g fill="#FFCC66">
+          <rect x="13.6" y="0.6" width="4.8" height="7.6" rx="2.4"/>
+          <rect x="13.6" y="23.8" width="4.8" height="7.6" rx="2.4"/>
+          <rect x="0.6" y="13.6" width="7.6" height="4.8" rx="2.4"/>
+          <rect x="23.8" y="13.6" width="7.6" height="4.8" rx="2.4"/>
+          <rect x="22.2" y="4.3" width="4.6" height="7.4" rx="2.3" transform="rotate(45 24.5 8)"/>
+          <rect x="5.2" y="20.7" width="4.6" height="7.4" rx="2.3" transform="rotate(45 7.5 24.4)"/>
+          <rect x="22.2" y="20.3" width="4.6" height="7.4" rx="2.3" transform="rotate(-45 24.5 24)"/>
+          <rect x="5.2" y="4.0" width="4.6" height="7.4" rx="2.3" transform="rotate(-45 7.5 7.7)"/>
+        </g>
+        <circle cx="16" cy="16" r="8.6" fill="#FFE966"/>
+      </svg>
+      <span class="tb-wordmark">sun<em>scrap</em></span>
+      <span class="tb-sep" aria-hidden="true">/</span>
+      <span class="tb-context" id="titlebar-context">Ringkasan</span>
+    </div>
+
+    <label class="tb-search" for="global-search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="global-search" type="text" placeholder="Cari akun, link, atau tema…" aria-label="Pencarian global (Ctrl+K)" autocomplete="off" spellcheck="false" />
+      <kbd class="tb-kbd">Ctrl K</kbd>
+    </label>
+
+    <div class="tb-right">
+      <label class="audit-picker" title="Cakupan audit — berlaku untuk Ringkasan, Target, dan Akun">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+        <select id="global-audit" aria-label="Pilih audit"></select>
+      </label>
+      <button class="iconbtn" id="btn-theme-toggle" title="Ganti tema (terang/gelap)" aria-label="Ganti tema">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
   </header>
 
-  <div class="layout">
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="brand">
-        <svg class="brand-mark" viewBox="0 0 32 32" role="img" aria-label="logo sunscrap" aria-hidden="true">
-          <circle cx="16" cy="16" r="7.4" fill="#f59e0b"></circle>
-          <g stroke="#d97706" stroke-width="2.2" stroke-linecap="round">
-            <path d="M16 1.5v5.2M16 25.3v5.2M1.5 16h5.2M25.3 16h5.2M5.8 5.8l3.7 3.7M22.5 22.5l3.7 3.7M26.2 5.8l-3.7 3.7M9.5 22.5l-3.7 3.7"></path>
-          </g>
-          <circle cx="16" cy="16" r="3.6" fill="#0b1220"></circle>
-        </svg>
-        <div>
-          <div class="brand-text">sun<span style="color:var(--sun-deep)">scrap</span></div>
-          <div class="brand-sub">social intel</div>
-        </div>
-      </div>
-      <nav class="nav" aria-label="Navigasi utama">
-        <div class="nav-group">Utama</div>
-        <button class="nav-link active" data-tab="dashboard" aria-current="page">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-          Dashboard
+  <div class="app">
+    <!-- ════════ SIDEBAR — NavigationView ════════ -->
+    <aside class="sidebar" aria-label="Navigasi utama">
+      <div class="nav-group">Kerja</div>
+      <nav class="nav" aria-label="Pekerjaan">
+        <button class="nav-link active" data-tab="dashboard" aria-current="page" title="Ringkasan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg>
+          <span class="nav-text">Ringkasan</span>
         </button>
-        <div class="nav-group">Pekerjaan</div>
-        <button class="nav-link" data-tab="targets">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-          Target <span class="nav-badge" id="nav-targets-count" hidden></span>
+        <button class="nav-link" data-tab="targets" title="Target">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22"/></svg>
+          <span class="nav-text">Target</span>
+          <span class="nav-badge" id="nav-targets-count" hidden></span>
         </button>
-        <button class="nav-link" data-tab="accounts">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
-          Akun <span class="nav-badge warn" id="nav-accounts-count" hidden></span>
-        </button>
-        <button class="nav-link" data-tab="proses">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2.5-6 4 12 2.5-6H21"/></svg>
-          Proses
-        </button>
-        <div class="nav-group">Alat</div>
-        <button class="nav-link" data-tab="browser">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18"/></svg>
-          Sesi &amp; Login
-        </button>
-        <div class="nav-group">Sistem</div>
-        <button class="nav-link" data-tab="settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1l-.4-2.5h-4l-.4 2.5a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1Z"/></svg>
-          Pengaturan
+        <button class="nav-link" data-tab="accounts" title="Akun">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4.2 3.4-6.5 7.5-6.5s7.5 2.3 7.5 6.5"/></svg>
+          <span class="nav-text">Akun</span>
+          <span class="nav-badge warn" id="nav-accounts-count" hidden></span>
         </button>
       </nav>
-      <div class="worker-widget" aria-label="Status worker">
-        <div class="worker-widget-head"><span class="dot" id="worker-dot"></span><span id="worker-label">Siaga</span></div>
-        <div class="worker-rail-sub" id="worker-sub"></div>
-        <div class="worker-rail-track" role="progressbar" aria-label="Progres siklus worker" aria-valuemin="0" aria-valuemax="100"><i id="worker-rail-fill"></i></div>
-        <button id="worker-toggle" class="btn btn-primary btn-block btn-sm">Mulai worker</button>
+
+      <div class="nav-group">Operasi</div>
+      <nav class="nav" aria-label="Operasi">
+        <button class="nav-link" data-tab="proses" title="Proses">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2.5-6.5 4 13L16 12h5"/></svg>
+          <span class="nav-text">Proses</span>
+        </button>
+        <button class="nav-link" data-tab="browser" title="Sesi &amp; Login">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.1 3.6 3.1 14.4 0 18M12 3c-3.1 3.6-3.1 14.4 0 18"/></svg>
+          <span class="nav-text">Sesi &amp; Login</span>
+        </button>
+      </nav>
+
+      <div class="nav-group">Sistem</div>
+      <nav class="nav" aria-label="Sistem">
+        <button class="nav-link" data-tab="settings" title="Pengaturan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 12a7.6 7.6 0 0 0-.15-1.35l2-1.55-2-3.46-2.35 1a7.5 7.5 0 0 0-2.33-1.35L14.2 2.4H9.8l-.37 2.9a7.5 7.5 0 0 0-2.33 1.35l-2.35-1-2 3.46 2 1.55A7.6 7.6 0 0 0 4.6 12c0 .46.05.9.15 1.35l-2 1.55 2 3.46 2.35-1a7.5 7.5 0 0 0 2.33 1.35l.37 2.9h4.4l.37-2.9a7.5 7.5 0 0 0 2.33-1.35l2.35 1 2-3.46-2-1.55c.1-.45.15-.9.15-1.35z"/></svg>
+          <span class="nav-text">Pengaturan</span>
+        </button>
+      </nav>
+
+      <div class="side-foot">
+        <div class="worker-card" aria-label="Status worker">
+          <div class="worker-card-top"><span class="dot" id="worker-dot"></span><span id="worker-label">Siaga</span></div>
+          <div class="worker-card-sub" id="worker-sub">Worker belum berjalan</div>
+          <div class="meter" role="progressbar" aria-label="Progres siklus worker" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="worker-meter"><i id="worker-rail-fill"></i></div>
+          <button id="worker-toggle" class="btn btn-primary btn-block btn-sm"><span>Mulai worker</span></button>
+        </div>
       </div>
     </aside>
 
-    <!-- MAIN -->
+    <!-- ════════ KONTEN ════════ -->
     <main class="main">
       <div class="auth-banner" id="auth-banner" hidden>
         <span id="auth-banner-text">Sesi login kedaluwarsa.</span>
-        <div class="row-gap">
+        <div class="row-gap" style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" id="auth-banner-ig">Login Instagram</button>
           <button class="btn btn-ghost btn-sm" id="auth-banner-tk">Login TikTok</button>
         </div>
       </div>
 
-      <!-- ============ DASHBOARD ============ -->
-      <section class="tab active" id="tab-dashboard" role="tabpanel" aria-label="Dashboard">
+      <!-- ─────────── RINGKASAN ─────────── -->
+      <section class="tab active" id="tab-dashboard" role="tabpanel" aria-label="Ringkasan">
         <header class="page-head">
           <div>
-            <h1>Dashboard</h1>
+            <h1>Ringkasan</h1>
             <div class="page-sub" id="dash-sub">Memuat ringkasan…</div>
           </div>
           <div class="page-actions">
-            <select id="global-audit" class="select" aria-label="Pilih audit"></select>
-            <button class="btn btn-primary" id="btn-new-audit">＋ Import data</button>
+            <button class="btn btn-primary" id="btn-new-audit">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M4 21h16"/></svg>
+              Import data
+            </button>
           </div>
         </header>
 
         <div id="onboarding-host" hidden></div>
 
-        <div id="command-strip" class="command-strip"></div>
-
-        <!-- HERO -->
-        <div class="hero" aria-label="Ringkasan performa utama">
-          <div class="hero-grid">
-            <div>
-              <p class="eyebrow">Total Views <span class="live-pill">LIVE</span></p>
-              <div class="hero-reach"><span id="hero-views-num">—</span><span id="hero-views-unit"> juta</span></div>
-              <p class="hero-sub" id="hero-sub">Memuat agregat dari database lokal…</p>
-              <div class="hero-chips" id="hero-chips"></div>
-              <div class="hero-trend" id="hero-bars" role="img" aria-label="Tren views per hari"></div>
-              <p class="hero-warn" id="hero-warn" hidden></p>
-            </div>
-            <div class="hero-side">
-              <h3>Pulse Kampanye</h3>
-              <div class="hero-side-row"><div>Instagram<small id="hero-ig-sub">—</small></div><b id="hero-ig-pct">—</b></div>
-              <div class="hero-side-row"><div>TikTok<small id="hero-tk-sub">—</small></div><b id="hero-tk-pct">—</b></div>
-              <div class="hero-side-row"><div>Keberhasilan<small>OK + sebagian / terproses</small></div><b id="hero-success">—</b></div>
-              <div class="hero-side-row"><div>Perlu tinjauan<small>akun butuh keputusan manual</small></div><b id="hero-review">—</b></div>
-            </div>
-          </div>
+        <!-- Action-first: pekerjaan yang menunggu keputusan -->
+        <div class="attention" id="attention-row" aria-label="Perlu tindakan">
+          <button class="attention-item" id="att-review" data-tone="warn">
+            <span class="attention-num" id="att-review-num">—</span>
+            <span class="attention-body">
+              <span class="attention-title">Perlu tinjauan</span>
+              <span class="attention-sub">Akun terindikasi belum dijawab</span>
+            </span>
+            <svg class="attention-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button class="attention-item" id="att-failed" data-tone="err">
+            <span class="attention-num" id="att-failed-num">—</span>
+            <span class="attention-body">
+              <span class="attention-title">Target gagal</span>
+              <span class="attention-sub">Biasanya terkena throttle — coba ulang</span>
+            </span>
+            <svg class="attention-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button class="attention-item" id="att-pending" data-tone="ok">
+            <span class="attention-num" id="att-pending-num">—</span>
+            <span class="attention-body">
+              <span class="attention-title">Belum diproses</span>
+              <span class="attention-sub">Menunggu giliran worker</span>
+            </span>
+            <svg class="attention-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
         </div>
 
-        <div class="kpi-strip" id="kpi-strip" aria-label="KPI utama"></div>
+        <!-- KPI murni -->
+        <div class="kpi-grid" id="kpi-grid" aria-label="Metrik utama"></div>
 
-        <div class="grid-2">
+        <div class="grid-hero">
           <div class="card" aria-label="Tren aktivitas 30 hari">
-            <div class="card-head">
-              <div><div class="card-title">Tren aktivitas</div><div class="card-sub">30 hari terakhir · pilih metrik</div></div>
+            <div class="card-hd">
+              <div><div class="card-title">Tren 30 hari</div><div class="card-sub">Aktivitas worker per hari · pilih metrik</div></div>
               <div class="mini-tabs" role="tablist" aria-label="Metrik tren">
                 <button role="tab" data-metric="views" aria-selected="true">Views</button>
                 <button role="tab" data-metric="likes" aria-selected="false">Likes</button>
@@ -137,8 +173,8 @@
                 <line class="grid-line" x1="36" y1="120" x2="650" y2="120"/>
                 <line class="grid-line" x1="36" y1="160" x2="650" y2="160"/>
                 <line class="axis-line" x1="36" y1="190" x2="650" y2="190"/>
-                <path id="trend-area" d="M36,190 L650,190 Z" fill="var(--brand-soft)" stroke="none"/>
-                <path id="trend-line" d="" fill="none" stroke="var(--brand)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+                <path id="trend-area" d="M36,190 L650,190 Z" fill="var(--accent-soft)" stroke="none"/>
+                <path id="trend-line" d="" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
                 <g id="trend-y"></g>
                 <g id="trend-cells"></g>
                 <g id="trend-axis-x"></g>
@@ -146,44 +182,34 @@
               </svg>
               <div class="chart-tooltip" id="chart-tooltip" hidden role="tooltip"></div>
             </div>
-            <div class="page-sub" id="trend-sub">—</div>
+            <div class="page-sub" id="trend-sub" style="margin-top:8px">—</div>
           </div>
 
-          <div class="card" aria-label="Komposisi status task">
-            <div class="card-head">
-              <div><div class="card-title">Komposisi status task</div><div class="card-sub">Klik segmen untuk filter tabel Target</div></div>
+          <div class="card" aria-label="Komposisi status target">
+            <div class="card-hd">
+              <div><div class="card-title">Komposisi</div><div class="card-sub">Klik segmen untuk memfilter Target</div></div>
               <button class="btn btn-ghost btn-sm" id="btn-clear-status-filter">Tampilkan semua</button>
             </div>
-            <div class="donut-row">
-              <svg id="status-donut" class="donut-svg" viewBox="0 0 160 160" role="img" aria-label="Donut komposisi status"></svg>
-              <ul class="legend-list" id="donut-legend"></ul>
+            <div class="stackbar" id="stackbar" role="group" aria-label="Komposisi status target"></div>
+            <div class="legend-rows" id="stack-legend"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card" aria-label="Tema teratas">
+            <div class="card-hd">
+              <div><div class="card-title">Tema teratas</div><div class="card-sub">Klik baris untuk memfilter Target per tema</div></div>
+              <div class="mini-tabs" role="tablist" aria-label="Urutkan tema">
+                <button role="tab" data-tema-sort="views" aria-selected="true">Views</button>
+                <button role="tab" data-tema-sort="er" aria-selected="false">ER</button>
+              </div>
             </div>
+            <table class="tema-table" id="tema-table"></table>
           </div>
-        </div>
 
-        <div class="grid-equal">
-          <div class="card" aria-label="Funnel audit">
-            <div class="card-head"><div><div class="card-title">Funnel audit</div><div class="card-sub">Dari impor sampai terverifikasi</div></div></div>
-            <div id="funnel-list"></div>
-            <div class="page-sub" id="funnel-sub" style="margin-top:10px"></div>
-          </div>
-          <div class="card" aria-label="Per platform">
-            <div class="card-head"><div><div class="card-title">Per platform</div><div class="card-sub">Instagram vs TikTok · Views · Likes · Komen · ER</div></div></div>
-            <div id="platform-compare"></div>
-          </div>
-        </div>
-
-        <details class="insights" id="dashboard-insights">
-          <summary class="insights-summary">
-            <span class="insights-title">Insights</span>
-            <span class="insights-sub">top konten · intel · tema · kualitas · periode</span>
-            <span class="insights-chev" aria-hidden="true">▸</span>
-          </summary>
-
-        <div class="grid-equal">
           <div class="card" aria-label="Top konten">
-            <div class="card-head">
-              <div><div class="card-title">Top konten</div><div class="card-sub">Berdasarkan views tertinggi</div></div>
+            <div class="card-hd">
+              <div><div class="card-title">Top konten</div><div class="card-sub">Berdasarkan data snapshot terakhir</div></div>
               <div class="mini-tabs" role="tablist" aria-label="Urutkan top konten">
                 <button role="tab" data-posts-tab="views" aria-selected="true">Views</button>
                 <button role="tab" data-posts-tab="er" aria-selected="false">ER</button>
@@ -192,86 +218,97 @@
             <div id="top-views"></div>
             <div id="top-er" hidden></div>
           </div>
-
-          <div class="card" aria-label="Snapshot intel">
-            <div class="card-head"><div><div class="card-title">Snapshot intel</div><div class="card-sub">Distribusi level risiko + klaster terkuat</div></div><button class="btn btn-ghost btn-sm" id="btn-open-accounts">Buka Akun</button></div>
-            <div id="risk-accounts"></div>
-            <div id="cluster-preview" class="cluster-card"></div>
-          </div>
         </div>
 
-        <div class="grid-equal">
-          <div class="card" aria-label="Performa tema">
-            <div class="card-head">
-              <div><div class="card-title">Performa tema</div><div class="card-sub">Views / ER per tema kampanye</div></div>
-              <div class="mini-tabs" role="tablist" aria-label="Urutkan tema">
-                <button role="tab" data-tema-sort="views" aria-selected="true">Views</button>
-                <button role="tab" data-tema-sort="er" aria-selected="false">ER</button>
-              </div>
-            </div>
-            <table class="tema-table" id="tema-table"></table>
+        <div class="grid-2" style="margin-bottom:0">
+          <div class="card" aria-label="Per platform">
+            <div class="card-hd"><div><div class="card-title">Per platform</div><div class="card-sub">Instagram vs TikTok · views · likes · komentar · median ER</div></div></div>
+            <div id="platform-compare"></div>
           </div>
           <div class="card" aria-label="Kualitas data">
-            <div class="card-head"><div><div class="card-title">Kualitas data</div><div class="card-sub">Setiap baris = aksi, bukan cuma angka</div></div></div>
+            <div class="card-hd"><div><div class="card-title">Kualitas data</div><div class="card-sub">Setiap baris adalah aksi</div></div></div>
             <div id="quality-list"></div>
           </div>
         </div>
 
-        <div class="card" aria-label="Perbandingan periode">
-          <div class="card-head"><div><div class="card-title">Perbandingan periode</div><div class="card-sub">Views per periode + akun baru/hilang</div></div></div>
+        <div class="card" id="compare-card" aria-label="Perbandingan antar periode" hidden style="margin-top:var(--sp-4)">
+          <div class="card-hd"><div><div class="card-title">Perbandingan periode</div><div class="card-sub">Akun baru &amp; hilang antar periode impor</div></div></div>
           <div id="compare-panel" class="muted">Memuat…</div>
         </div>
-        </details>
       </section>
 
-      <!-- ============ TARGET ============ -->
+      <!-- ─────────── TARGET ─────────── -->
       <section class="tab" id="tab-targets" role="tabpanel" aria-label="Target">
         <header class="page-head">
-          <div><h1>Target</h1><div class="page-sub"><span id="targets-total">0 target</span></div></div>
-          <div class="page-actions"></div>
+          <div>
+            <h1>Target</h1>
+            <div class="page-sub"><span id="targets-total">0 target</span></div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost" id="btn-export">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+              Export
+            </button>
+            <button class="btn btn-ghost" id="btn-retry-failed">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 3v5h-5"/></svg>
+              Ulangi yang gagal
+            </button>
+            <button class="btn btn-primary" id="btn-retry-selected" disabled>Ulangi terpilih</button>
+          </div>
         </header>
+
         <div class="toolbar">
-          <input id="target-q" class="input" placeholder="Cari username / link / tema" aria-label="Cari target" />
+          <label class="search-box">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="target-q" placeholder="Cari username / link / tema…" aria-label="Cari target" autocomplete="off" spellcheck="false" />
+          </label>
           <div class="chip-row" role="group" aria-label="Filter status">
             <button class="filter-chip" data-status="" aria-pressed="true">Semua</button>
-            <button class="filter-chip" data-status="done" aria-pressed="false">Selesai</button>
             <button class="filter-chip" data-status="ok" aria-pressed="false">OK</button>
             <button class="filter-chip" data-status="partial" aria-pressed="false">Sebagian</button>
             <button class="filter-chip" data-status="failed" aria-pressed="false">Gagal</button>
             <button class="filter-chip" data-status="pending" aria-pressed="false">Menunggu</button>
           </div>
-          <div class="chip-row" role="group" aria-label="Filter kualitas">
+          <div class="chip-row" role="group" aria-label="Filter masalah data">
             <button class="filter-chip" data-issue="no_followers" aria-pressed="false">Tanpa followers</button>
             <button class="filter-chip" data-issue="no_views" aria-pressed="false">TikTok tanpa views</button>
           </div>
-          <div class="toolbar-actions">
-            <select id="target-platform" class="select" aria-label="Filter platform">
-              <option value="">Semua platform</option>
-              <option value="instagram">Instagram</option>
-              <option value="tiktok">TikTok</option>
-            </select>
-            <button class="btn btn-ghost" id="btn-retry-failed">Ulangi gagal</button>
-            <button class="btn btn-ghost" id="btn-export">Export</button>
-            <button class="btn btn-primary" id="btn-retry-selected" disabled>Ulangi terpilih</button>
-          </div>
+          <select id="target-platform" class="select" aria-label="Filter platform">
+            <option value="">Semua platform</option>
+            <option value="instagram">Instagram</option>
+            <option value="tiktok">TikTok</option>
+          </select>
         </div>
+
         <div class="table-wrap">
           <table class="table" id="targets-table"></table>
         </div>
         <div class="pager">
           <button class="btn btn-ghost btn-sm" id="targets-prev">‹ Prev</button>
-          <span class="muted" id="targets-page">1</span>
+          <span class="muted" id="targets-page">Hal 1</span>
           <button class="btn btn-ghost btn-sm" id="targets-next">Next ›</button>
         </div>
       </section>
 
-      <!-- ============ AKUN ============ -->
+      <!-- ─────────── AKUN ─────────── -->
       <section class="tab" id="tab-accounts" role="tabpanel" aria-label="Akun">
         <header class="page-head">
-          <div><h1>Akun</h1><div class="page-sub"><span id="accounts-total">0 akun</span></div></div>
+          <div>
+            <h1>Akun</h1>
+            <div class="page-sub"><span id="accounts-total">0 akun</span></div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost" id="score-help-btn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2-2.4 3.3"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>
+              Cara skor dihitung
+            </button>
+          </div>
         </header>
         <div class="toolbar">
-          <input id="account-q" class="input" placeholder="Cari akun / nama / bio" aria-label="Cari akun" />
+          <label class="search-box">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="account-q" placeholder="Cari akun / nama / bio…" aria-label="Cari akun" autocomplete="off" spellcheck="false" />
+          </label>
           <select id="account-level" class="select" aria-label="Filter level">
             <option value="">Semua level</option>
             <option value="pola_kembar">Terindikasi kuat</option>
@@ -290,72 +327,91 @@
             <option value="instagram">Instagram</option>
             <option value="tiktok">TikTok</option>
           </select>
-          <button class="btn btn-ghost btn-sm" id="score-help-btn">Bagaimana skor dihitung?</button>
-          <button class="filter-chip" id="account-review-only" aria-pressed="false" title="Akun terindikasi yang belum ditinjau (belum clear/flag)">Perlu tinjauan</button>
+          <button class="filter-chip" id="account-review-only" aria-pressed="false" title="Akun terindikasi yang belum dijawab (clear/flag)">Perlu tinjauan</button>
         </div>
-        <div class="table-wrap" style="max-height:none; margin-bottom:14px">
+        <div class="table-wrap" style="max-height:56vh; margin-bottom:var(--sp-4)">
           <table class="table" id="accounts-table"></table>
         </div>
-        <div class="pager" style="margin-bottom:14px">
+        <div class="pager" style="margin-bottom:var(--sp-4)">
           <button class="btn btn-ghost btn-sm" id="accounts-prev">‹ Prev</button>
-          <span class="muted" id="accounts-page">1</span>
+          <span class="muted" id="accounts-page">Hal 1</span>
           <button class="btn btn-ghost btn-sm" id="accounts-next">Next ›</button>
         </div>
-        <div class="grid-equal">
-          <div class="card" aria-label="Distribusi risiko" style="margin-bottom:0">
-            <div class="card-head"><div><div class="card-title">Distribusi risiko</div><div class="card-sub">Level dari mesin intel</div></div></div>
+        <div class="grid-2" style="margin-bottom:0">
+          <div class="card" aria-label="Distribusi risiko">
+            <div class="card-hd"><div><div class="card-title">Distribusi risiko</div><div class="card-sub">Level dari mesin intel</div></div></div>
             <div id="risk-bars"></div>
           </div>
-          <div class="card" aria-label="Klaster utama" style="margin-bottom:0">
-            <div class="card-head"><div><div class="card-title">Klaster utama</div><div class="card-sub">Diurutkan dari bukti kuat ke lemah</div></div></div>
+          <div class="card" aria-label="Klaster utama">
+            <div class="card-hd"><div><div class="card-title">Klaster utama</div><div class="card-sub">Diurutkan dari bukti kuat ke lemah</div></div></div>
             <div id="clusters-list"></div>
           </div>
         </div>
       </section>
 
-      <!-- ============ PROSES ============ -->
+      <!-- ─────────── PROSES ─────────── -->
       <section class="tab" id="tab-proses" role="tabpanel" aria-label="Proses">
-        <header class="page-head"><div><h1>Proses</h1><div class="page-sub">Pace worker, antrean, dan aktivitas terbaru</div></div></header>
+        <header class="page-head">
+          <div>
+            <h1>Proses</h1>
+            <div class="page-sub">Pace worker, antrean, dan aktivitas terbaru</div>
+          </div>
+        </header>
         <div class="grid-2">
           <div class="card" aria-label="Pace worker">
-            <div class="card-head"><div><div class="card-title">Pace &amp; budget</div><div class="card-sub">Monitoring rate limiter real-time</div></div><span class="live-pill" style="color:var(--ok);border-color:var(--line);background:var(--ok-soft)">LIVE</span></div>
-            <svg viewBox="0 0 200 130" style="width:190px;max-width:100%;display:block;margin:auto" role="img" aria-label="Gauge pace">
-              <path d="M20,110 A80,80 0 0 1 180,110" fill="none" stroke="var(--sunken)" stroke-width="14" stroke-linecap="round"/>
-              <path id="pace-gauge-fill" d="M20,110 A80,80 0 0 1 180,110" fill="none" stroke="var(--sun)" stroke-width="14" stroke-linecap="round" stroke-dasharray="164 251"/>
-              <text id="pace-num" x="100" y="84" text-anchor="middle" font-size="26" font-weight="800" fill="var(--ink)">—</text>
-              <text x="100" y="104" text-anchor="middle" font-size="10" fill="var(--ink-3)">per menit</text>
-            </svg>
-            <div class="page-sub" id="worker-detail" style="text-align:center;margin-top:6px"></div>
+            <div class="card-hd">
+              <div><div class="card-title">Pace &amp; budget</div><div class="card-sub">Monitoring rate limiter real-time</div></div>
+              <span class="pill ok">LIVE</span>
+            </div>
+            <div class="pace-wrap">
+              <div>
+                <div class="pace-num" id="pace-num">—</div>
+                <div class="pace-unit">per menit</div>
+              </div>
+              <div class="pace-budget">
+                <div class="pace-row"><span class="muted">Siklus</span><b id="pb-cycle">—</b></div>
+                <div class="bar" aria-hidden="true"><span id="pace-meter"></span></div>
+                <div class="pace-row"><span class="muted">Harian</span><b id="pb-daily">—</b></div>
+                <div class="pace-row"><span class="muted">Sesi</span><b id="pb-session">—</b></div>
+                <div class="pace-row"><span class="muted">Mode</span><b id="pb-mode">—</b></div>
+              </div>
+            </div>
+            <div class="page-sub" id="worker-detail" style="margin-top:var(--sp-3)"></div>
           </div>
           <div class="card" aria-label="Antrean">
-            <div class="card-head"><div><div class="card-title">Antrean</div><div class="card-sub" id="queue-eta">Memuat…</div></div></div>
-            <div class="queue-track" id="queue-bar" role="img" aria-label="Komposisi antrean"></div>
+            <div class="card-hd"><div><div class="card-title">Antrean</div><div class="card-sub" id="queue-eta">Memuat…</div></div></div>
+            <div class="queue-bar" id="queue-bar" role="img" aria-label="Komposisi antrean"></div>
             <div class="queue-legend" id="queue-legend"></div>
-            <div class="kpi-strip" id="queue-stats" style="grid-template-columns:repeat(4,1fr);margin:14px 0 0;gap:10px"></div>
+            <div class="queue-stats" id="queue-stats"></div>
           </div>
         </div>
         <div class="card" aria-label="Aktivitas terbaru">
-          <div class="card-head"><div><div class="card-title">Aktivitas terbaru</div><div class="card-sub">Delta vs kunjungan sebelumnya</div></div></div>
+          <div class="card-hd"><div><div class="card-title">Aktivitas terbaru</div><div class="card-sub">Delta vs kunjungan sebelumnya</div></div></div>
           <div class="table-wrap" style="box-shadow:none;border:0;max-height:none"><table class="table" id="latest-table"></table></div>
         </div>
       </section>
 
-      <!-- ============ BROWSER ============ -->
-      <section class="tab" id="tab-browser" role="tabpanel" aria-label="Browser">
-        <header class="page-head"><div><h1>Sesi &amp; Login</h1><div class="page-sub">Login &amp; jelajah sesi persisten IG/TikTok</div></div></header>
-        <div class="card" style="margin-bottom:12px">
-          <div class="card-head"><div><div class="card-title">Status sesi</div><div class="card-sub">Dipakai worker &amp; browser di bawah</div></div></div>
+      <!-- ─────────── SESI & LOGIN ─────────── -->
+      <section class="tab" id="tab-browser" role="tabpanel" aria-label="Sesi dan Login">
+        <header class="page-head">
+          <div>
+            <h1>Sesi &amp; Login</h1>
+            <div class="page-sub">Login &amp; jelajah sesi persisten Instagram/TikTok — tersimpan lokal</div>
+          </div>
+        </header>
+        <div class="card" style="margin-bottom:var(--sp-4)">
+          <div class="card-hd"><div><div class="card-title">Status sesi</div><div class="card-sub">Dipakai worker &amp; browser di bawah</div></div></div>
           <div id="session-login-status" class="login-status" aria-live="polite">Memuat…</div>
-          <div class="row-gap" style="margin-top:10px">
-            <button class="btn btn-ghost btn-sm" id="btn-session-ig">Login Instagram</button>
-            <button class="btn btn-ghost btn-sm" id="btn-session-tk">Login TikTok</button>
+          <div class="row-gap" style="display:flex;gap:8px;margin-top:var(--sp-3)">
+            <button class="btn btn-ghost" id="btn-session-ig">Login Instagram</button>
+            <button class="btn btn-ghost" id="btn-session-tk">Login TikTok</button>
           </div>
         </div>
         <div class="browser-bar">
-          <button class="btn btn-ghost nav-btn" id="browser-back" title="Mundur">‹</button>
-          <button class="btn btn-ghost nav-btn" id="browser-fwd" title="Maju">›</button>
-          <button class="btn btn-ghost nav-btn" id="browser-reload" title="Muat ulang">⟳</button>
-          <input id="browser-url" class="input" placeholder="https://www.instagram.com/…" aria-label="URL" />
+          <button class="btn btn-ghost nav-btn" id="browser-back" title="Mundur" aria-label="Mundur">‹</button>
+          <button class="btn btn-ghost nav-btn" id="browser-fwd" title="Maju" aria-label="Maju">›</button>
+          <button class="btn btn-ghost nav-btn" id="browser-reload" title="Muat ulang" aria-label="Muat ulang">⟳</button>
+          <input id="browser-url" class="input" style="flex:1" placeholder="https://www.instagram.com/…" aria-label="URL" autocomplete="off" spellcheck="false" />
           <button class="btn btn-ghost" id="browser-go">Buka</button>
           <button class="btn btn-ghost" id="browser-ig">Instagram</button>
           <button class="btn btn-ghost" id="browser-tk">TikTok</button>
@@ -363,60 +419,58 @@
         <div class="browser-wrap"><webview id="browser-webview" partition="persist:sunscrap"></webview></div>
       </section>
 
-      <!-- ============ SETTINGS ============ -->
+      <!-- ─────────── PENGATURAN ─────────── -->
       <section class="tab" id="tab-settings" role="tabpanel" aria-label="Pengaturan">
-        <header class="page-head"><div><h1>Pengaturan</h1><div class="page-sub">Audit, database, pembaruan, dan privasi — semuanya lokal</div></div></header>
+        <header class="page-head">
+          <div>
+            <h1>Pengaturan</h1>
+            <div class="page-sub">Audit, database, pembaruan, dan privasi — semuanya lokal</div>
+          </div>
+        </header>
 
-        <div class="card">
-          <div class="card-head"><div><div class="card-title">Audit</div><div class="card-sub">Audit ulang / kunjungi profil / edit</div></div></div>
+        <div class="card" style="margin-bottom:var(--sp-4)">
+          <div class="card-hd"><div><div class="card-title">Audit</div><div class="card-sub">Audit ulang / kunjungi profil / edit / hapus</div></div></div>
           <div class="table-wrap" style="box-shadow:none;border:0;max-height:none"><table class="table" id="audits-table"></table></div>
         </div>
 
-        <div class="grid-equal">
+        <div class="settings-grid">
           <div class="card">
-            <div class="card-head"><div><div class="card-title">Database</div><div class="card-sub">sunscrap.db · skema v5 · tersimpan lokal</div></div></div>
-            <div id="db-info" class="row-gap"></div>
-            <div class="row-gap" style="margin-top:14px">
-              <button class="btn btn-ghost" id="btn-backup">Cadangkan database</button>
-              <button class="btn btn-ghost" id="btn-restore">Pulihkan dari cadangan…</button>
+            <div class="card-hd"><div><div class="card-title">Database</div><div class="card-sub">sunscrap.db · skema v5 · tersimpan lokal</div></div></div>
+            <div id="db-info" class="db-info"></div>
+            <div class="row-gap" style="display:flex;gap:8px;margin-top:var(--sp-4)">
+              <button class="btn btn-ghost" id="btn-backup">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3.2"/><path d="M4 6v12c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2V6"/><path d="M4 12c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2"/></svg>
+                Cadangkan database
+              </button>
+              <button class="btn btn-ghost" id="btn-restore">Pulihkan…</button>
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><div><div class="card-title">Pembaruan</div><div class="card-sub">Otomatis dari GitHub Releases</div></div></div>
-            <div class="row-gap" style="justify-content:space-between;align-items:flex-start">
-              <div><div class="page-sub">Versi terpasang</div><div id="update-version" style="font-size:22px;font-weight:800">—</div></div>
-            </div>
-            <div class="muted" id="update-status" style="margin-top:8px">Memuat…</div>
-            <div class="bar" id="update-progress" hidden><span style="width:0%"></span></div>
-            <div class="row-gap" style="margin-top:12px">
-              <button class="btn btn-ghost" id="btn-check-update">Cek pembaruan</button>
+            <div class="card-hd"><div><div class="card-title">Pembaruan</div><div class="card-sub">Otomatis dari GitHub Releases</div></div></div>
+            <div class="page-sub">Versi terpasang</div>
+            <div id="update-version" style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin:2px 0 8px">—</div>
+            <div class="muted" id="update-status">Memuat…</div>
+            <div class="bar" id="update-progress" hidden style="margin-top:8px"><span style="width:0%"></span></div>
+            <div class="row-gap" style="display:flex;gap:8px;margin-top:var(--sp-4);flex-wrap:wrap">
+              <button class="btn btn-ghost" id="btn-check-update">Periksa pembaruan</button>
               <button class="btn btn-primary" id="btn-install-update" hidden>Muat ulang &amp; perbarui</button>
-              <button class="btn btn-ghost" id="btn-open-releases" style="font-size:12px">Catatan rilis →</button>
+              <button class="btn btn-ghost" id="btn-open-releases" style="font-size:var(--fs-micro)">Catatan rilis →</button>
             </div>
           </div>
         </div>
 
-        <div class="grid-equal">
+        <div class="settings-grid">
           <div class="card">
-            <div class="card-head"><div><div class="card-title">Tampilan</div><div class="card-sub">Tema &amp; kepadatan tabel mengikuti preferensi Anda</div></div></div>
-            <div class="field"><label>Tema</label>
-              <div class="segmented" id="theme-picker" role="radiogroup" aria-label="Pilih tema">
-                <label class="segment">
-                  <input type="radio" name="theme" class="theme-radio" data-theme="system" checked>
-                  <span>Sistem</span>
-                </label>
-                <label class="segment">
-                  <input type="radio" name="theme" class="theme-radio" data-theme="light">
-                  <span>Terang</span>
-                </label>
-                <label class="segment">
-                  <input type="radio" name="theme" class="theme-radio" data-theme="dark">
-                  <span>Gelap</span>
-                </label>
+            <div class="card-hd"><div><div class="card-title">Tampilan</div><div class="card-sub">Tema &amp; kepadatan mengikuti preferensi Anda</div></div></div>
+            <div class="field"><label id="theme-picker-label">Tema</label>
+              <div class="segmented" id="theme-picker" role="radiogroup" aria-labelledby="theme-picker-label">
+                <label class="segment"><input type="radio" name="theme" class="theme-radio" data-theme="system" checked><span>Sistem</span></label>
+                <label class="segment"><input type="radio" name="theme" class="theme-radio" data-theme="light"><span>Terang</span></label>
+                <label class="segment"><input type="radio" name="theme" class="theme-radio" data-theme="dark"><span>Gelap</span></label>
               </div>
             </div>
-            <div class="field" style="margin:14px 0 0"><label>Kepadatan tabel</label>
-              <select id="density-select" class="select" style="width:100%" aria-label="Kepadatan tabel">
+            <div class="field" style="margin:0"><label for="density-select">Kepadatan tabel</label>
+              <select id="density-select" class="select" style="width:100%">
                 <option value="auto">Otomatis (ikut lebar jendela)</option>
                 <option value="normal">Normal</option>
                 <option value="padat">Padat</option>
@@ -425,9 +479,9 @@
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><div><div class="card-title">Privasi &amp; diagnostik</div><div class="card-sub">Tidak ada data dikirim keluar mesin Anda</div></div></div>
-            <p class="muted" style="margin:0 0 12px">Sesi login &amp; data publik tersimpan di folder userData OS. Aplikasi hanya menghubungi Instagram/TikTok sesuai klik Anda.</p>
-            <div class="row-gap">
+            <div class="card-hd"><div><div class="card-title">Privasi &amp; diagnostik</div><div class="card-sub">Tidak ada data dikirim keluar mesin Anda</div></div></div>
+            <p class="muted" style="margin:0 0 var(--sp-3)">Sesi login &amp; data publik tersimpan di folder userData OS. Aplikasi hanya menghubungi Instagram/TikTok sesuai klik Anda.</p>
+            <div class="row-gap" style="display:flex;gap:8px">
               <button class="btn btn-ghost" id="btn-diag">Salin info diagnostik</button>
               <button class="btn btn-ghost" id="btn-open-data">Buka folder data</button>
             </div>
@@ -437,29 +491,33 @@
         <div class="danger-zone">
           <div class="card-title" style="color:var(--err)">Zona berbahaya</div>
           <div class="page-sub">Tindakan ini tidak bisa dibatalkan.</div>
-          <div class="row-gap" style="margin-top:12px">
+          <div class="row-gap" style="display:flex;gap:8px;margin-top:var(--sp-3)">
             <button class="btn btn-ghost" id="btn-clear-session">Hapus sesi login (IG &amp; TikTok)</button>
-            <button class="btn btn-danger" id="btn-clear">Hapus semua data</button>
+            <button class="btn btn-danger" id="btn-clear">Hapus semua data…</button>
           </div>
         </div>
       </section>
     </main>
   </div>
 
+  <!-- ════════ STATUSBAR ════════ -->
   <footer class="statusbar" role="contentinfo">
-    <span id="sb-worker" class="sb-item" data-tab="proses"><span class="sb-dot"></span>Siaga</span>
-    <span id="sb-audit" class="sb-item" data-tab="dashboard">Audit: Semua</span>
+    <button class="sb-item" id="sb-worker" data-tab="proses" title="Buka Proses"><span class="sb-dot"></span>Siaga</button>
+    <button class="sb-item" id="sb-audit" data-tab="dashboard" title="Buka Ringkasan">Audit: Semua</button>
     <span id="sb-db" class="sb-dim">DB —</span>
     <span id="sb-pace" class="sb-dim">Pace —</span>
     <span class="sb-spacer"></span>
-    <span id="sb-version" class="sb-dim">v1.1.0</span>
+    <span id="sb-version" class="sb-dim">v2.0.0</span>
   </footer>
 
   <div id="search-pop" class="search-pop" hidden></div>
   <div id="modal-root" class="modal-root"></div>
-  <div id="toast-root"></div>
+  <div id="toast-root" aria-live="polite"></div>
+
+  <!-- Helper murni (dual-mode: window global di renderer, CJS di node --test) -->
   <script src="format.js"></script>
   <script src="store.js"></script>
-  <script src="app.js"></script>
+  <!-- Aplikasi v2 (ES modules) -->
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
