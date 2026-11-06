@@ -837,6 +837,16 @@ thead .th-sort.asc::after { content: "↑"; color: var(--brand); }
 .login-status .okdot { color: var(--ok); }
 .login-status .offdot { color: var(--err); }
 
+/* ---------- command strip (dashboard) ---------- */
+.command-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.cs-item { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--sh-sm); font-size: 13px; color: var(--ink-2); }
+.cs-item b { color: var(--ink); font-weight: 800; }
+.cs-action { cursor: pointer; }
+.cs-action:hover:not(:disabled) { border-color: var(--brand-line); background: var(--surface-2); }
+.cs-action:disabled { opacity: .5; cursor: default; box-shadow: none; }
+#cs-review b { color: var(--warn); }
+#cs-failed b { color: var(--err); }
+
 /* ---------- insights (dashboard, collapsible) ---------- */
 .insights { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--sh-sm); margin-bottom: 16px; }
 .insights-summary { display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; list-style: none; user-select: none; color: var(--ink); }

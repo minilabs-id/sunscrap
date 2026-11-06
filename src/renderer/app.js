@@ -229,6 +229,7 @@ function renderWorker() {
     banner.hidden = !isAuth;
     if (isAuth) $('#auth-banner-text').textContent = w.lastError;
   }
+  renderCommandStrip();
 }
 
 async function toggleWorker() {
@@ -641,6 +642,7 @@ async function loadAccountsIntel() {
     const flagged = summaryIntel.flagged || 0;
     const rCounts = reviewedDecisionCounts(state.reviews);
     const needsReview = Math.max(0, flagged - (rCounts.clear + rCounts.flag));
+    state.needsReview = needsReview;
     if (badge) { badge.hidden = needsReview <= 0; badge.textContent = fmt(needsReview); }
     const kpiFlag = $('#kpi-flagged');
     if (kpiFlag) { kpiFlag.textContent = fmt(needsReview); kpiFlag.title = `${fmt(flagged)} terindikasi · ${fmt(rCounts.clear + rCounts.flag)} sudah ditanggapi`; }
@@ -949,6 +951,7 @@ function openAccount(username, platform) {
         toast('Tinjauan tersimpan.', 'ok');
         closeModal();
         if (state.tab === 'accounts') loadAccounts();
+        loadAccountsIntel().then(() => renderCommandStrip());
       } else {
         toast((r && r.error) || 'Gagal menyimpan tinjauan.', 'error');
       }
@@ -1227,6 +1230,38 @@ async function renderOnboarding() {
   const pr = $('#ob-proses'); if (pr) pr.addEventListener('click', () => activateTab('proses'));
 }
 
+function renderCommandStrip() {
+  const host = $('#command-strip');
+  if (!host) return;
+  const w = state.worker;
+  const workerActive = w && w.active;
+  const workerLabel = w ? (workerActive ? 'Aktif' : (w.lastError ? 'Terhenti' : 'Siaga')) : '—';
+  const needsReview = state.needsReview || 0;
+  const failed = ((state.summary && state.summary.kpi) || {}).failed || 0;
+  host.innerHTML = `
+    <div class="cs-item" ${w && w.lastError ? `title="${esc(w.lastError)}"` : ''}>
+      <span class="dot ${workerActive ? 'active' : (w && w.lastError ? 'error' : '')}"></span>
+      <span>Worker <b>${esc(workerLabel)}</b></span>
+      <button class="btn btn-ghost btn-sm" id="cs-worker">${workerActive ? 'Hentikan' : 'Mulai'}</button>
+    </div>
+    <button class="cs-item cs-action" id="cs-review" ${needsReview ? '' : 'disabled'}>Perlu tinjauan <b>${fmt(needsReview)}</b></button>
+    <button class="cs-item cs-action" id="cs-failed" ${failed ? '' : 'disabled'}>Gagal <b>${fmt(failed)}</b></button>`;
+  const wk = $('#cs-worker'); if (wk) wk.addEventListener('click', toggleWorker);
+  const rv = $('#cs-review'); if (rv) rv.addEventListener('click', () => {
+    state.accounts.reviewOnly = true;
+    const chip = $('#account-review-only');
+    if (chip) chip.setAttribute('aria-pressed', 'true');
+    ['#account-q', '#account-level', '#account-band', '#account-platform'].forEach((s) => { const el = $(s); if (el) el.disabled = true; });
+    activateTab('accounts');
+  });
+  const fl = $('#cs-failed'); if (fl) fl.addEventListener('click', () => {
+    state.targets.status = 'failed';
+    state.targets.offset = 0;
+    syncTargetChips();
+    activateTab('targets');
+  });
+}
+
 async function refreshDashboard() {
   if (state.tab !== 'dashboard') return;
   renderOnboarding();
@@ -1254,6 +1289,7 @@ async function refreshDashboard() {
       renderQuality(summary);
       try { renderCompare(summary, await api.getCompare({ months: 6 })); } catch { const el = $('#compare-panel'); if (el) el.textContent = '—'; }
       await Promise.all([loadRiskAccounts(), loadAccountsIntel()]);
+      renderCommandStrip();
       $('#dash-sub').textContent = `Diperbarui ${relTime(summary.generated_at)} · ${fmt(summary.kpi?.targets || 0)} target`;
     }
   } catch (e) { console.error('refreshDashboard gagal:', e); }
