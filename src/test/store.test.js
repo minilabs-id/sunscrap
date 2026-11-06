@@ -91,3 +91,13 @@ test('isNeedsReview: hanya akun terindikasi yang belum clear/flag', () => {
   assert.equal(store.isNeedsReview({ platform: 'instagram', username: 'e', score: 0 }, reviews), false); // tidak terindikasi
   assert.equal(store.isNeedsReview(null, reviews), false);
 });
+
+test('riskScorePct memetakan skor mentah ke 0-100', () => {
+  assert.equal(store.riskScorePct(0), 0);
+  assert.equal(store.riskScorePct(2), 20);
+  assert.equal(store.riskScorePct(6), 60);
+  assert.equal(store.riskScorePct(10), 100);
+  assert.equal(store.riskScorePct(15), 100); // capped
+  assert.equal(store.riskScorePct(-3), 0);
+  assert.equal(store.riskScorePct(null), 0);
+});

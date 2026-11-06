@@ -114,7 +114,13 @@
     return !(rec && (rec.decision === 'clear' || rec.decision === 'flag'));
   }
 
-  const api = { createState, densityForWidth, pageLabel, nextOffset, prevOffset, toggleSort, summarySignature, reviewKey, reviewMeta, reviewedDecisionCounts, isNeedsReview };
+  // Skor risiko dinormalisasi ke 0..100: ambang "pola_kembar" (10 poin) = 100%.
+  function riskScorePct(raw) {
+    const n = Number(raw) || 0;
+    return Math.round(Math.min(100, Math.max(0, n * 10)));
+  }
+
+  const api = { createState, densityForWidth, pageLabel, nextOffset, prevOffset, toggleSort, summarySignature, reviewKey, reviewMeta, reviewedDecisionCounts, isNeedsReview, riskScorePct };
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;

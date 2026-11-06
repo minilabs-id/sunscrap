@@ -677,7 +677,7 @@ async function loadRiskAccounts() {
     host.innerHTML = flagged.length
       ? flagged.map((a) => `<div class="leader-row" data-account="${esc(a.username)}" data-platform="${esc(a.platform)}" tabindex="0" role="button" aria-label="Buka detail ${esc(a.username)}">
           <span class="rank">${a.level === 'pola_kembar' ? '!!' : a.level === 'pola_ternak' ? '!' : '?'}</span>
-          <span class="leader-main"><b>@${esc(a.username)}</b><span class="muted"> · ${esc(a.level.replace(/_/g, ' '))} · ${fmtCompact(a.followers ?? 0)} followers</span><div class="er-bar"><i style="width:${Math.min(100, (a.score || 0) * 6)}%"></i></div></span>
+          <span class="leader-main"><b>@${esc(a.username)}</b><span class="muted"> · ${esc(a.level.replace(/_/g, ' '))} · ${fmtCompact(a.followers ?? 0)} followers</span><div class="er-bar"><i style="width:${riskScorePct(a.score)}%"></i></div></span>
           <span class="leader-num"><b>${fmt(a.score)}</b><span class="muted">skor</span></span>
         </div>`).join('')
       : '<div class="muted" style="padding:14px 2px">Tidak ada akun dengan skor risiko &gt; 0.</div>';
@@ -814,7 +814,7 @@ function renderAccountsTable(items) {
       <tr class="clickable" data-account="${esc(a.username)}" data-platform="${esc(a.platform)}" tabindex="0" role="button" aria-label="Buka detail ${esc(a.username)}">
         <td><div class="acct-cell">${avatarHtml(a.avatar_url, a.username)}<span><b>@${esc(a.username)}</b> ${reviewBadgeHtml(a.platform, a.username)}<br><span class="muted">${esc((a.display_name || '').slice(0, 42))}</span></span></div></td>
         <td><span class="badge lv-${esc(a.level)}">${esc(a.level.replace(/_/g, ' '))}</span></td>
-        <td class="num"><div class="score-track" style="width:88px;display:inline-block"><i style="width:${Math.min(100, (a.score || 0) * 6)}%"></i></div> <b>${fmt(a.score)}</b></td>
+        <td class="num"><div class="score-track" style="width:88px;display:inline-block"><i style="width:${riskScorePct(a.score)}%"></i></div> <b>${fmt(a.score)}</b></td>
         <td class="num">${fmt(a.followers)}</td>
         <td><div class="score-track" style="width:72px" title="${a.metrics && a.metrics.view_reach_pct !== null ? fmtPct(a.metrics.view_reach_pct) : '—'}"><i style="width:${Math.min(100, a.metrics && a.metrics.view_reach_pct !== null ? a.metrics.view_reach_pct : (a.metrics && a.metrics.like_reach_pct !== null ? a.metrics.like_reach_pct : 0))}%;background:var(--brand-400)"></i></div></td>
         <td class="num">${fmt(a.metrics?.posts_seen)}</td>
