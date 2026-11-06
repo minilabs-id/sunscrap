@@ -1247,13 +1247,7 @@ function renderCommandStrip() {
     <button class="cs-item cs-action" id="cs-review" ${needsReview ? '' : 'disabled'}>Perlu tinjauan <b>${fmt(needsReview)}</b></button>
     <button class="cs-item cs-action" id="cs-failed" ${failed ? '' : 'disabled'}>Gagal <b>${fmt(failed)}</b></button>`;
   const wk = $('#cs-worker'); if (wk) wk.addEventListener('click', toggleWorker);
-  const rv = $('#cs-review'); if (rv) rv.addEventListener('click', () => {
-    state.accounts.reviewOnly = true;
-    const chip = $('#account-review-only');
-    if (chip) chip.setAttribute('aria-pressed', 'true');
-    ['#account-q', '#account-level', '#account-band', '#account-platform'].forEach((s) => { const el = $(s); if (el) el.disabled = true; });
-    activateTab('accounts');
-  });
+  const rv = $('#cs-review'); if (rv) rv.addEventListener('click', openTriage);
   const fl = $('#cs-failed'); if (fl) fl.addEventListener('click', () => {
     state.targets.status = 'failed';
     state.targets.offset = 0;
@@ -1320,6 +1314,50 @@ function showScoreHelp() {
       </ul>
       <p class="muted" style="border-left:3px solid var(--warn);padding-left:10px"><b>Disclaimer:</b> ini indikasi otomatis dari data publik — bukan identifikasi orang dan bukan vonis. Wajib verifikasi manual sebelum tindakan apa pun. Data dapat dihapus atas permintaan.</p></div>
     <div class="modal-foot"><button class="btn btn-ghost" data-close>Tutup</button></div>`);
+}
+
+// ---------- keyboard shortcuts ----------
+function openTriage() {
+  state.accounts.reviewOnly = true;
+  const chip = $('#account-review-only');
+  if (chip) chip.setAttribute('aria-pressed', 'true');
+  ['#account-q', '#account-level', '#account-band', '#account-platform'].forEach((s) => { const el = $(s); if (el) el.disabled = true; });
+  activateTab('accounts');
+}
+function showShortcuts() {
+  openModal(`<div class="modal-head"><h3>Pintasan keyboard</h3><button class="btn btn-ghost" data-close>✕</button></div>
+    <div class="modal-body">
+      <div class="flag"><b>Ctrl K</b> — command palette (aksi + pencarian)</div>
+      <div class="flag"><b>Ctrl 1…6</b> — pindah tab</div>
+      <div class="flag"><b>G lalu 1…6</b> — pindah tab (gaya Linear)</div>
+      <div class="flag"><b>G lalu T</b> — buka triage (perlu tinjauan)</div>
+      <div class="flag"><b>Ctrl I</b> — import data · <b>Ctrl E</b> — export · <b>Ctrl Shift B</b> — cadangkan database</div>
+      <div class="flag"><b>?</b> — tampilkan pintasan ini · <b>Esc</b> — tutup dialog</div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" data-close>Tutup</button></div>`);
+}
+let goPrefix = null;
+let goPrefixTimer = null;
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) { goPrefix = null; return; }
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) { goPrefix = null; return; }
+    const k = e.key.toLowerCase();
+    if (k === 'g') {
+      goPrefix = 'g';
+      clearTimeout(goPrefixTimer);
+      goPrefixTimer = setTimeout(() => { goPrefix = null; }, 1200);
+      return;
+    }
+    if (goPrefix === 'g') {
+      goPrefix = null; clearTimeout(goPrefixTimer);
+      if (k === 't') { e.preventDefault(); openTriage(); return; }
+      if (k >= '1' && k <= '6') { e.preventDefault(); activateTab(['dashboard', 'targets', 'accounts', 'proses', 'browser', 'settings'][Number(k) - 1]); return; }
+      return;
+    }
+    if (k === '?') { e.preventDefault(); showShortcuts(); }
+  });
 }
 
 // ---------- search ----------
@@ -1696,6 +1734,7 @@ async function init() {
   bindBrowser();
   bindGlobalSearch();
   bindTrend();
+  bindKeyboardShortcuts();
   await loadAudits();
   await loadReviews();
   await refreshWorker();
