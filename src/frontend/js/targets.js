@@ -8,6 +8,7 @@ import {
   deltaBadge, toggleSort, pageLabel, nextOffset, prevOffset, emptyState,
 } from './helpers.js';
 import { state } from './state.js';
+import { setNavTargetCount } from './chrome.js';
 
 export function statusBadge(status) {
   const s = (status || 'PENDING').toLowerCase();
@@ -103,8 +104,7 @@ export async function loadTargets() {
   state.targets.items = res.items || [];
   state.targets.total = res.total || 0;
   $('#targets-total').textContent = `${fmt(res.total)} target`;
-  const navBadge = $('#nav-targets-count');
-  if (navBadge) { navBadge.hidden = !(res.total > 0); navBadge.textContent = res.total > 999 ? '999+' : fmt(res.total); }
+  setNavTargetCount(res.total);
   $('#targets-page').textContent = pageLabel(state.targets.offset, state.targets.limit, res.total);
   renderTargetsTable(state.targets.items);
 }

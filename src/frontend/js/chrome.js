@@ -10,6 +10,15 @@ import { renderStatusBarAudit } from './worker.js';
 
 const TAB_LABELS = { dashboard: 'Ringkasan', targets: 'Target', accounts: 'Akun', proses: 'Proses', browser: 'Sesi', settings: 'Pengaturan' };
 
+/** Satu-satunya penulis badge jumlah Target di sidebar. */
+export function setNavTargetCount(total) {
+  const badge = $('#nav-targets-count');
+  if (!badge) return;
+  const n = Number(total) || 0;
+  badge.hidden = n <= 0;
+  badge.textContent = n > 999 ? '999+' : String(n);
+}
+
 let tabListener = null;
 /** Daftarkan satu listener tunggal untuk muat ulang data per-tab. */
 export function onTabActivated(fn) { tabListener = fn; }

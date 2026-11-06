@@ -10,6 +10,7 @@ import {
 import { state } from './state.js';
 import { applyStatusFilter } from './targets.js';
 import { refreshAccountIntel } from './intel.js';
+import { setNavTargetCount } from './chrome.js';
 
 // ── timeseries (cache per audit) ───────────────────────────────
 async function loadTimeseries() {
@@ -361,6 +362,7 @@ export async function refreshDashboard() {
   try {
     const summary = await api.getSummary(state.auditId);
     if (!summary) return;
+    setNavTargetCount((summary.kpi || {}).targets);
     const ts = await loadTimeseries();
     const sig = summarySignature(summary, ts);
     if (sig === state.dashSig) {
