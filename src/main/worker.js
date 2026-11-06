@@ -34,7 +34,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
   const state = {
     active: false, busy: false, timer: null,
     cycleId: null, lastPlatform: null, blockedInARow: 0,
-    lastError: null, lastTaskId: null,
+    lastError: null, lastTaskId: null, lastEta: null,
     harvested: new Set(), followerAttempts: new Set(),
   };
 
@@ -44,7 +44,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
     else if (state.lastError) label = 'berhenti';
     return {
       active: state.active, busy: state.busy, label,
-      cycleId: state.cycleId, lastError: state.lastError, lastTaskId: state.lastTaskId,
+      cycleId: state.cycleId, lastError: state.lastError, lastTaskId: state.lastTaskId, eta: state.lastEta,
       rate: limiter.getStatus(),
     };
   }
@@ -252,6 +252,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
 
       const delayMs = limiter.getDelay();
       const estimate = limiter.estimateTime(Math.max(0, pending - 1));
+      state.lastEta = estimate.display;
       say(`Berikutnya ${Math.round(delayMs / 1000)} dtk | sisa ~${estimate.display} | siklus ${limiter.cycleVisits}/${limiter.VISIT_BUDGET}`);
       schedule(delayMs);
     } catch (error) {

@@ -1005,10 +1005,10 @@ async function loadProcess() {
     }
     const etaEl = $('#queue-eta');
     if (etaEl) {
-      let pace = null;
-      try { const w = await api.workerStatus(); pace = w && w.rate && w.rate.paceLabel; } catch { /* non-kritis: abaikan */ }
+      let pace = null; let etaStr = null;
+      try { const w = await api.workerStatus(); pace = w && w.rate && w.rate.paceLabel; etaStr = w && w.eta; } catch { /* non-kritis: abaikan */ }
       const eta = pending + running;
-      etaEl.textContent = eta > 0 ? `${fmt(eta)} task tersisa${pace ? ` · pace ${pace}` : ''}` : 'Antrean kosong';
+      etaEl.textContent = eta > 0 ? `${fmt(eta)} task tersisa${pace ? ` · pace ${pace}` : ''}${etaStr ? ` · sisa ±${etaStr}` : ''}` : 'Antrean kosong';
     }
     const stats = $('#queue-stats');
     if (stats) {
@@ -1026,7 +1026,7 @@ async function loadProcess() {
         const dLikes = (r.likes != null && r.prev_likes != null) ? r.likes - r.prev_likes : null;
         const dViews = (r.views != null && r.prev_views != null) ? r.views - r.prev_views : null;
         return `<tr><td class="muted">${esc(fmtWhen(r.scraped_at))}</td><td>@${esc(r.username || '—')} <span class="badge ${r.platform === 'instagram' ? 'ig' : 'tk'}">${r.platform === 'instagram' ? 'IG' : 'TK'}</span></td>
-        <td class="num">${fmt(r.follower_count)}</td><td class="num">${fmt(r.likes)}</td><td class="num">${deltaBadge(dLikes)}</td><td class="num">${fmt(r.views)}</td><td class="num">${deltaBadge(dViews)}</td><td>${statusBadge(r.status)}</td></tr>`;
+        <td class="num">${fmt(r.follower_count)}</td><td class="num">${fmt(r.likes)}</td><td class="num">${deltaBadge(dLikes)}</td><td class="num">${fmt(r.views)}</td><td class="num">${deltaBadge(dViews)}</td><td>${statusBadge(r.status)}${String(r.status).toLowerCase() === 'failed' && r.error_message ? '<div class="muted" style="font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(r.error_message) + '">' + esc(r.error_message) + '</div>' : ''}</td></tr>`;
       }).join('') || `<tr><td colspan="8" class="muted">Belum ada aktivitas.</td></tr>`}</tbody>`;
   } catch (e) {
     console.error('loadProcess gagal:', e);
