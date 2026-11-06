@@ -760,6 +760,8 @@ function renderTargetsTable(items) {
   $$('#targets-table .th-sort').forEach((th) => {
     th.classList.toggle('desc', th.dataset.sort === state.targets.sort && state.targets.dir === 'desc');
     th.classList.toggle('asc', th.dataset.sort === state.targets.sort && state.targets.dir === 'asc');
+    th.removeAttribute('aria-sort');
+    if (th.dataset.sort === state.targets.sort) th.setAttribute('aria-sort', state.targets.dir === 'asc' ? 'ascending' : 'descending');
   });
   $$('#targets-table tr[data-target]').forEach((row) => {
     row.addEventListener('click', (e) => {
@@ -1336,6 +1338,23 @@ function showShortcuts() {
     </div>
     <div class="modal-foot"><button class="btn btn-ghost" data-close>Tutup</button></div>`);
 }
+function enableTablistKeyboard(tablist) {
+  if (!tablist) return;
+  const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+  tablist.addEventListener('keydown', (e) => {
+    const idx = tabs.indexOf(document.activeElement);
+    if (idx < 0) return;
+    let next = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = tabs[(idx + 1) % tabs.length];
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = tabs[(idx - 1 + tabs.length) % tabs.length];
+    else if (e.key === 'Home') next = tabs[0];
+    else if (e.key === 'End') next = tabs[tabs.length - 1];
+    if (!next) return;
+    e.preventDefault();
+    next.focus();
+    next.click();
+  });
+}
 let goPrefix = null;
 let goPrefixTimer = null;
 function bindKeyboardShortcuts() {
@@ -1735,6 +1754,7 @@ async function init() {
   bindGlobalSearch();
   bindTrend();
   bindKeyboardShortcuts();
+  $$('.mini-tabs[role="tablist"]').forEach(enableTablistKeyboard);
   await loadAudits();
   await loadReviews();
   await refreshWorker();
