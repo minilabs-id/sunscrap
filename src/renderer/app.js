@@ -423,28 +423,30 @@ function bindTrend() {
 // ---------- status donut ----------
 const CIRC = 2 * Math.PI * 62;
 const DONUT_SEGS = [
-  { key: 'ok', label: 'OK', k: 'ok', color: 'var(--ok)' },
-  { key: 'partial', label: 'Sebagian', k: 'partial', color: 'var(--warn)' },
-  { key: 'failed', label: 'Gagal', k: 'failed', color: 'var(--err)' },
-  { key: 'pending', label: 'Menunggu', k: 'pending', color: '#9aa3b2' },
+  { key: 'done', label: 'Selesai', color: 'var(--ok)' },
+  { key: 'pending', label: 'Menunggu', color: '#9aa3b2' },
+  { key: 'failed', label: 'Gagal', color: 'var(--err)' },
 ];
-const DONUT_TARGETS_MAP = { ok: 'ok', partial: 'partial', failed: 'failed', pending: 'pending' };
+const DONUT_TARGETS_MAP = { done: 'done', pending: 'pending', failed: 'failed' };
+function donutCounts(k) {
+  k = k || {};
+  return {
+    done: (k.ok || 0) + (k.partial || 0),
+    pending: (k.pending || 0) + (k.running || 0),
+    failed: k.failed || 0,
+  };
+}
 function renderDonut(summary) {
   const k = (summary && summary.kpi) || {};
-  const counts = {
-    ok: k.ok || 0,
-    partial: k.partial || 0,
-    failed: k.failed || 0,
-    pending: (k.pending || 0) + (k.running || 0),
-  };
-  const segSum = DONUT_SEGS.reduce((a, s) => a + counts[s.k], 0);
+  const counts = donutCounts(k);
+  const segSum = counts.done + counts.pending + counts.failed;
   let acc = 0;
   const svg = $('#status-donut');
   if (!svg) return;
   svg.innerHTML =
     `<circle cx="80" cy="80" r="62" fill="none" stroke="var(--sunken)" stroke-width="18"/>` +
     DONUT_SEGS.map((s) => {
-      const len = segSum ? (counts[s.k] / segSum) * CIRC : 0;
+      const len = segSum ? (counts[s.key] / segSum) * CIRC : 0;
       const seg = `<circle class="seg" data-key="${s.key}" cx="80" cy="80" r="62" fill="none" stroke="${s.color}" stroke-width="18" stroke-dasharray="${len.toFixed(2)} ${CIRC.toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" stroke-linecap="butt" opacity="1"></circle>`;
       acc += len;
       return seg;
@@ -454,8 +456,8 @@ function renderDonut(summary) {
   const legend = $('#donut-legend');
   if (legend) {
     legend.innerHTML = DONUT_SEGS.map((s) => {
-      const pct = segSum ? (counts[s.k] / segSum * 100) : 0;
-      return `<li><button class="legend-item" data-key="${s.key}" aria-pressed="false"><span class="legend-dot" style="background:${s.color}"></span><span><b>${fmt(counts[s.k])} ${esc(s.label)}</b><small>${idID(pct, 1)}% dari ${fmt(segSum)} target</small></span></button></li>`;
+      const pct = segSum ? (counts[s.key] / segSum * 100) : 0;
+      return `<li><button class="legend-item" data-key="${s.key}" aria-pressed="false"><span class="legend-dot" style="background:${s.color}"></span><span><b>${fmt(counts[s.key])} ${esc(s.label)}</b><small>${idID(pct, 1)}% dari ${fmt(segSum)} target</small></span></button></li>`;
     }).join('');
   }
 
@@ -471,14 +473,14 @@ function applyStatusFilter(key) {
   $$('#status-donut .seg').forEach((el) => {
     const on = !next || el.dataset.key === next;
     el.setAttribute('opacity', on ? '1' : '0.2');
-    el.setAttribute('stroke-width', next && el.dataset.key === next ? '23' : '20');
+    el.setAttribute('stroke-width', next && el.dataset.key === next ? '23' : '18');
   });
   $$('#donut-legend .legend-item').forEach((btn) => btn.setAttribute('aria-pressed', String(!!next && btn.dataset.key === next)));
   // update center
-  const k = state.summary?.kpi || {};
-  const sumSeg = (k.ok || 0) + (k.partial || 0) + (k.failed || 0) + (k.pending || 0) + (k.running || 0);
+  const counts = donutCounts(state.summary && state.summary.kpi);
+  const sumSeg = counts.done + counts.pending + counts.failed;
   const target = next ? DONUT_SEGS.find((s) => s.key === next) : null;
-  const targetVal = target ? ((k[target.k] || 0) + (target.k === 'pending' ? (k.running || 0) : 0)) : sumSeg;
+  const targetVal = target ? counts[target.key] : sumSeg;
   const centerVal = $('#donut-center-val');
   const centerLbl = $('#donut-center-lbl');
   if (centerVal) centerVal.textContent = fmt(targetVal);
