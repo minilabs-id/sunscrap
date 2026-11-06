@@ -222,7 +222,10 @@ function renderTemaTable(summary) {
 
 function filterTargetsByTema(tema) {
   $('#target-q').value = tema === '(tanpa tema)' ? '' : tema;
+  state.targets.status = '';
+  state.targets.issue = '';
   state.targets.offset = 0;
+  state.statusFilterActive = null;
   document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
 }
 
@@ -403,7 +406,7 @@ export function bindDashboardEvents() {
     $('#top-views').hidden = btn.dataset.postsTab !== 'views';
     $('#top-er').hidden = btn.dataset.postsTab !== 'er';
   }));
-  $('#btn-clear-status-filter').addEventListener('click', () => { state.statusFilterActive = null; applyStatusFilter(null); renderStackbar(state.summary); });
+  $('#btn-clear-status-filter').addEventListener('click', () => { state.statusFilterActive = null; applyStatusFilter(null, { activate: false }); renderStackbar(state.summary); });
 
   // Kartu "Perlu tindakan"
   $('#att-review').addEventListener('click', () => {
@@ -416,7 +419,7 @@ export function bindDashboardEvents() {
     state.targets.status = 'failed';
     state.targets.issue = '';
     state.targets.offset = 0;
-    state.statusFilterActive = null;
+    state.statusFilterActive = 'failed';
     document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
   });
   $('#att-pending').addEventListener('click', () => {

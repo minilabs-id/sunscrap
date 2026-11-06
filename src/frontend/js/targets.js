@@ -115,14 +115,15 @@ export function syncTargetChips() {
 }
 
 /** Deterministik: null → semua; string → status tersebut. Toggle ditangani pemanggil. */
-export function applyStatusFilter(key) {
+export function applyStatusFilter(key, { activate = true } = {}) {
   state.targets.status = key || '';
   state.targets.issue = '';
   state.targets.offset = 0;
   state.targets.selected.clear();
   updateRetrySelected();
   syncTargetChips();
-  if (state.tab !== 'targets') { activateTabSafe('targets'); } else loadTargets();
+  if (state.tab === 'targets') { loadTargets(); return; }
+  if (activate) activateTabSafe('targets');
 }
 
 // activateTab disuntik oleh main.js untuk menghindari dependensi melingkar.
