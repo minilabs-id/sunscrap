@@ -102,7 +102,7 @@
     <main class="main">
       <div class="auth-banner" id="auth-banner" hidden>
         <span id="auth-banner-text">Sesi login kedaluwarsa.</span>
-        <div class="row-gap" style="display:flex;gap:8px">
+        <div class="row-gap">
           <button class="btn btn-ghost btn-sm" id="auth-banner-ig">Login Instagram</button>
           <button class="btn btn-ghost btn-sm" id="auth-banner-tk">Login TikTok</button>
         </div>
@@ -182,7 +182,7 @@
               </svg>
               <div class="chart-tooltip" id="chart-tooltip" hidden role="tooltip"></div>
             </div>
-            <div class="page-sub" id="trend-sub" style="margin-top:8px">—</div>
+            <div class="page-sub mt-2" id="trend-sub">—</div>
           </div>
 
           <div class="card" aria-label="Komposisi status target">
@@ -220,7 +220,7 @@
           </div>
         </div>
 
-        <div class="grid-2" style="margin-bottom:0">
+        <div class="grid-2 mb-0">
           <div class="card" aria-label="Per platform">
             <div class="card-hd"><div><div class="card-title">Per platform</div><div class="card-sub">Instagram vs TikTok · views · likes · komentar · median ER</div></div></div>
             <div id="platform-compare"></div>
@@ -231,7 +231,7 @@
           </div>
         </div>
 
-        <div class="card" id="compare-card" aria-label="Perbandingan antar periode" hidden style="margin-top:var(--sp-4)">
+        <div class="card mt-4" id="compare-card" aria-label="Perbandingan antar periode" hidden>
           <div class="card-hd"><div><div class="card-title">Perbandingan periode</div><div class="card-sub">Akun baru &amp; hilang antar periode impor</div></div></div>
           <div id="compare-panel" class="muted">Memuat…</div>
         </div>
@@ -329,15 +329,15 @@
           </select>
           <button class="filter-chip" id="account-review-only" aria-pressed="false" title="Akun terindikasi yang belum dijawab (clear/flag)">Perlu tinjauan</button>
         </div>
-        <div class="table-wrap" style="max-height:56vh; margin-bottom:var(--sp-4)">
+        <div class="table-wrap tall mb-4">
           <table class="table" id="accounts-table"></table>
         </div>
-        <div class="pager" style="margin-bottom:var(--sp-4)">
+        <div class="pager mb-4">
           <button class="btn btn-ghost btn-sm" id="accounts-prev">‹ Prev</button>
           <span class="muted" id="accounts-page">Hal 1</span>
           <button class="btn btn-ghost btn-sm" id="accounts-next">Next ›</button>
         </div>
-        <div class="grid-2" style="margin-bottom:0">
+        <div class="grid-2 mb-0">
           <div class="card" aria-label="Distribusi risiko">
             <div class="card-hd"><div><div class="card-title">Distribusi risiko</div><div class="card-sub">Level dari mesin intel</div></div></div>
             <div id="risk-bars"></div>
@@ -370,13 +370,13 @@
               </div>
               <div class="pace-budget">
                 <div class="pace-row"><span class="muted">Siklus</span><b id="pb-cycle">—</b></div>
-                <div class="bar" aria-hidden="true"><span id="pace-meter"></span></div>
+                <div class="bar" id="pace-bar" role="progressbar" aria-label="Anggaran siklus worker terpakai" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="pace-meter"></span></div>
                 <div class="pace-row"><span class="muted">Harian</span><b id="pb-daily">—</b></div>
                 <div class="pace-row"><span class="muted">Sesi</span><b id="pb-session">—</b></div>
                 <div class="pace-row"><span class="muted">Mode</span><b id="pb-mode">—</b></div>
               </div>
             </div>
-            <div class="page-sub" id="worker-detail" style="margin-top:var(--sp-3)"></div>
+            <div class="page-sub mt-3" id="worker-detail"></div>
           </div>
           <div class="card" aria-label="Antrean">
             <div class="card-hd"><div><div class="card-title">Antrean</div><div class="card-sub" id="queue-eta">Memuat…</div></div></div>
@@ -387,7 +387,7 @@
         </div>
         <div class="card" aria-label="Aktivitas terbaru">
           <div class="card-hd"><div><div class="card-title">Aktivitas terbaru</div><div class="card-sub">Delta vs kunjungan sebelumnya</div></div></div>
-          <div class="table-wrap" style="box-shadow:none;border:0;max-height:none"><table class="table" id="latest-table"></table></div>
+          <div class="table-wrap flush"><table class="table" id="latest-table"></table></div>
         </div>
       </section>
 
@@ -399,10 +399,10 @@
             <div class="page-sub">Login &amp; jelajah sesi persisten Instagram/TikTok — tersimpan lokal</div>
           </div>
         </header>
-        <div class="card" style="margin-bottom:var(--sp-4)">
+        <div class="card mb-4">
           <div class="card-hd"><div><div class="card-title">Status sesi</div><div class="card-sub">Dipakai worker &amp; browser di bawah</div></div></div>
           <div id="session-login-status" class="login-status" aria-live="polite">Memuat…</div>
-          <div class="row-gap" style="display:flex;gap:8px;margin-top:var(--sp-3)">
+          <div class="row-gap mt-3">
             <button class="btn btn-ghost" id="btn-session-ig">Login Instagram</button>
             <button class="btn btn-ghost" id="btn-session-tk">Login TikTok</button>
           </div>
@@ -411,7 +411,7 @@
           <button class="btn btn-ghost nav-btn" id="browser-back" title="Mundur" aria-label="Mundur">‹</button>
           <button class="btn btn-ghost nav-btn" id="browser-fwd" title="Maju" aria-label="Maju">›</button>
           <button class="btn btn-ghost nav-btn" id="browser-reload" title="Muat ulang" aria-label="Muat ulang">⟳</button>
-          <input id="browser-url" class="input" style="flex:1" placeholder="https://www.instagram.com/…" aria-label="URL" autocomplete="off" spellcheck="false" />
+          <input id="browser-url" class="input grow" placeholder="https://www.instagram.com/…" aria-label="URL" autocomplete="off" spellcheck="false" />
           <button class="btn btn-ghost" id="browser-go">Buka</button>
           <button class="btn btn-ghost" id="browser-ig">Instagram</button>
           <button class="btn btn-ghost" id="browser-tk">TikTok</button>
@@ -428,16 +428,16 @@
           </div>
         </header>
 
-        <div class="card" style="margin-bottom:var(--sp-4)">
+        <div class="card mb-4">
           <div class="card-hd"><div><div class="card-title">Audit</div><div class="card-sub">Audit ulang / kunjungi profil / edit / hapus</div></div></div>
-          <div class="table-wrap" style="box-shadow:none;border:0;max-height:none"><table class="table" id="audits-table"></table></div>
+          <div class="table-wrap flush"><table class="table" id="audits-table"></table></div>
         </div>
 
         <div class="settings-grid">
           <div class="card">
             <div class="card-hd"><div><div class="card-title">Database</div><div class="card-sub">sunscrap.db · skema v5 · tersimpan lokal</div></div></div>
             <div id="db-info" class="db-info"></div>
-            <div class="row-gap" style="display:flex;gap:8px;margin-top:var(--sp-4)">
+            <div class="row-gap mt-4">
               <button class="btn btn-ghost" id="btn-backup">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="8" ry="3.2"/><path d="M4 6v12c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2V6"/><path d="M4 12c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2"/></svg>
                 Cadangkan database
@@ -448,13 +448,13 @@
           <div class="card">
             <div class="card-hd"><div><div class="card-title">Pembaruan</div><div class="card-sub">Otomatis dari GitHub Releases</div></div></div>
             <div class="page-sub">Versi terpasang</div>
-            <div id="update-version" style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin:2px 0 8px">—</div>
+            <div class="version-xl" id="update-version">—</div>
             <div class="muted" id="update-status">Memuat…</div>
-            <div class="bar" id="update-progress" hidden style="margin-top:8px"><span style="width:0%"></span></div>
-            <div class="row-gap" style="display:flex;gap:8px;margin-top:var(--sp-4);flex-wrap:wrap">
+            <div class="bar mt-2" id="update-progress" hidden role="progressbar" aria-label="Progres unduhan pembaruan" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span style="width:0%"></span></div>
+            <div class="row-gap mt-4">
               <button class="btn btn-ghost" id="btn-check-update">Periksa pembaruan</button>
               <button class="btn btn-primary" id="btn-install-update" hidden>Muat ulang &amp; perbarui</button>
-              <button class="btn btn-ghost" id="btn-open-releases" style="font-size:var(--fs-micro)">Catatan rilis →</button>
+              <button class="btn btn-ghost btn-note" id="btn-open-releases">Catatan rilis →</button>
             </div>
           </div>
         </div>
@@ -469,8 +469,8 @@
                 <label class="segment"><input type="radio" name="theme" class="theme-radio" data-theme="dark"><span>Gelap</span></label>
               </div>
             </div>
-            <div class="field" style="margin:0"><label for="density-select">Kepadatan tabel</label>
-              <select id="density-select" class="select" style="width:100%">
+            <div class="field field--flush"><label for="density-select">Kepadatan tabel</label>
+              <select id="density-select" class="select block">
                 <option value="auto">Otomatis (ikut lebar jendela)</option>
                 <option value="normal">Normal</option>
                 <option value="padat">Padat</option>
@@ -480,8 +480,8 @@
           </div>
           <div class="card">
             <div class="card-hd"><div><div class="card-title">Privasi &amp; diagnostik</div><div class="card-sub">Tidak ada data dikirim keluar mesin Anda</div></div></div>
-            <p class="muted" style="margin:0 0 var(--sp-3)">Sesi login &amp; data publik tersimpan di folder userData OS. Aplikasi hanya menghubungi Instagram/TikTok sesuai klik Anda.</p>
-            <div class="row-gap" style="display:flex;gap:8px">
+            <p class="muted mb-3">Sesi login &amp; data publik tersimpan di folder userData OS. Aplikasi hanya menghubungi Instagram/TikTok sesuai klik Anda.</p>
+            <div class="row-gap">
               <button class="btn btn-ghost" id="btn-diag">Salin info diagnostik</button>
               <button class="btn btn-ghost" id="btn-open-data">Buka folder data</button>
             </div>
@@ -489,9 +489,9 @@
         </div>
 
         <div class="danger-zone">
-          <div class="card-title" style="color:var(--err)">Zona berbahaya</div>
+          <div class="card-title danger-title">Zona berbahaya</div>
           <div class="page-sub">Tindakan ini tidak bisa dibatalkan.</div>
-          <div class="row-gap" style="display:flex;gap:8px;margin-top:var(--sp-3)">
+          <div class="row-gap mt-3">
             <button class="btn btn-ghost" id="btn-clear-session">Hapus sesi login (IG &amp; TikTok)</button>
             <button class="btn btn-danger" id="btn-clear">Hapus semua data…</button>
           </div>

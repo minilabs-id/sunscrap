@@ -48,26 +48,26 @@ export function openAccount(username, platform) {
       : (detail.metrics && detail.metrics.like_reach_pct !== null && detail.metrics.like_reach_pct !== undefined ? fmtPct(detail.metrics.like_reach_pct) : '—');
 
     const body = `
-      <div class="grid-2" style="margin-bottom:var(--sp-3)">
-        <div><div class="muted" style="font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.1em;font-weight:700">Followers</div><div class="num" style="font-size:24px;font-weight:800;letter-spacing:-.02em">${fmt(detail.followers)}</div></div>
-        <div><div class="muted" style="font-size:var(--fs-micro);text-transform:uppercase;letter-spacing:.1em;font-weight:700">Median reach</div><div class="num" style="font-size:24px;font-weight:800;letter-spacing:-.02em">${reach}</div></div>
+      <div class="grid-2 mb-3">
+        <div><div class="micro-label">Followers</div><div class="num stat-num">${fmt(detail.followers)}</div></div>
+        <div><div class="micro-label">Median reach</div><div class="num stat-num">${reach}</div></div>
       </div>
-      <p class="muted" style="margin-top:0">${esc(detail.bio || '(tanpa bio)')}${detail.region ? ' · ' + esc(detail.region) : ''}</p>
+      <p class="muted">${esc(detail.bio || '(tanpa bio)')}${detail.region ? ' · ' + esc(detail.region) : ''}</p>
       <div class="panel"><div class="panel-title">Indikasi (${fmt(detail.score)} poin)</div>${flags || '<div class="muted">Tidak ada indikasi.</div>'}</div>
       <div class="panel"><div class="panel-title">Tinjauan manual</div>
-        <div class="muted" style="margin-bottom:10px" id="review-current">${cur ? `Status: <b>${esc(curMeta ? curMeta.label : cur.decision)}</b>${cur.note ? ' — ' + esc(cur.note) : ''}${cur.at ? ' · ' + esc(relTime(cur.at)) : ''}` : 'Belum ada keputusan.'}</div>
-        <div class="row-gap" style="margin-bottom:8px">
+        <div class="muted mb-3" id="review-current">${cur ? `Status: <b>${esc(curMeta ? curMeta.label : cur.decision)}</b>${cur.note ? ' — ' + esc(cur.note) : ''}${cur.at ? ' · ' + esc(relTime(cur.at)) : ''}` : 'Belum ada keputusan.'}</div>
+        <div class="row-gap mb-2">
           <button class="btn btn-ghost btn-sm" data-rv="bookmark">Ditandai</button>
           <button class="btn btn-ghost btn-sm" data-rv="clear">Bersih</button>
           <button class="btn btn-ghost btn-sm" data-rv="flag">Konfirmasi</button>
         </div>
-        <div class="field" style="margin:0"><label for="rv-note">Catatan (opsional)</label><textarea id="rv-note" class="input" rows="2" placeholder="Alasan keputusan…">${esc(cur ? cur.note || '' : '')}</textarea></div>
+        <div class="field field--flush"><label for="rv-note">Catatan (opsional)</label><textarea id="rv-note" class="input" rows="2" placeholder="Alasan keputusan…">${esc(cur ? cur.note || '' : '')}</textarea></div>
       </div>
       ${siblings ? `<div class="panel"><div class="panel-title">Akun tertaut</div>${siblings}</div>` : ''}
       ${history ? `<div class="panel"><div class="panel-title">Seri bulanan</div><table class="table"><thead><tr><th scope="col">Bulan</th><th scope="col" class="num">Followers</th><th scope="col" class="num">Post</th></tr></thead><tbody>${history}</tbody></table></div>` : ''}`;
 
-    const title = `<span style="display:flex;align-items:center;gap:12px;min-width:0">${avatarHtml(detail.avatar_url, detail.username, true)}<span style="min-width:0;overflow:hidden;text-overflow:ellipsis">@${esc(detail.username)}</span> <span class="badge lv-${esc(detail.level)}">${esc(detail.level.replace(/_/g, ' '))}</span></span>`;
-    const foot = `<button class="btn btn-danger" id="del-account" style="margin-right:auto">Hapus data akun…</button><button class="btn btn-ghost" data-close>Tutup</button>`;
+    const title = `<span class="h3-flex">${avatarHtml(detail.avatar_url, detail.username, true)}<span class="truncate">@${esc(detail.username)}</span> <span class="badge lv-${esc(detail.level)}">${esc(detail.level.replace(/_/g, ' '))}</span></span>`;
+    const foot = `<button class="btn btn-danger mr-auto" id="del-account">Hapus data akun…</button><button class="btn btn-ghost" data-close>Tutup</button>`;
 
     openModal(modalShell({ title, body, foot }));
     $('#del-account').addEventListener('click', () => openDeleteAccount(detail.username, detail.platform));
@@ -97,7 +97,7 @@ export function openDeleteAccount(username, platform) {
   openModal(modalShell({
     title: 'Hapus data akun',
     body: `<p>Data akun <b>@${esc(username)}</b> (profil, riwayat bulanan, unggahan) akan dihapus. Ketik username untuk melanjutkan.</p>
-      <div class="field" style="margin:0"><label for="del-account-confirm">Ketik @${esc(username)}</label><input id="del-account-confirm" class="input" placeholder="${esc(username)}" autocomplete="off"></div>`,
+      <div class="field field--flush"><label for="del-account-confirm">Ketik @${esc(username)}</label><input id="del-account-confirm" class="input" placeholder="${esc(username)}" autocomplete="off"></div>`,
     foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger-solid" id="confirm-del-account" disabled>Hapus</button>`,
   }));
   const check = () => { $('#confirm-del-account').disabled = $('#del-account-confirm').value.trim() !== username; };
@@ -117,13 +117,13 @@ export function showScoreHelp() {
   openModal(modalShell({
     title: 'Bagaimana skor dihitung?',
     body: `<p>Skor adalah agregasi sinyal lemah dari data <b>publik</b> (bukan identitas):</p>
-      <ul style="margin:0 0 10px 18px">
+      <ul>
         <li><b>+4</b> Unggahan sama muncul di akun lain</li>
         <li><b>+3</b> Kontak (nomor/email) di bio dipakai akun lain</li>
         <li><b>+2</b> Caption seragam lintas akun · jangkauan sangat rendah · komentar nyaris nol · unggahan bertumpuk · follower datar</li>
         <li><b>+1</b> Unggahan serentak · following &gt; followers</li>
       </ul>
-      <p class="muted" style="border-left:3px solid var(--warn);padding-left:10px"><b>Disclaimer:</b> ini indikasi otomatis dari data publik — bukan identifikasi orang dan bukan vonis. Wajib verifikasi manual sebelum tindakan apa pun. Data dapat dihapus atas permintaan.</p>`,
+      <p class="muted warn-notebox"><b>Disclaimer:</b> ini indikasi otomatis dari data publik — bukan identifikasi orang dan bukan vonis. Wajib verifikasi manual sebelum tindakan apa pun. Data dapat dihapus atas permintaan.</p>`,
     foot: `<button class="btn btn-ghost" data-close>Tutup</button>`,
   }));
 }

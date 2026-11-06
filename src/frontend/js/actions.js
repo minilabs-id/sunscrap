@@ -17,7 +17,7 @@ export async function openExport() {
   try { count = await api.exportCount({ auditId: state.auditId || null, status }); } catch { count = null; }
   openModal(modalShell({
     title: 'Export data',
-    body: `<p>Anda akan mengekspor:</p><ul style="margin:0 0 8px 18px">
+    body: `<p>Anda akan mengekspor:</p><ul>
       <li><b>Audit:</b> ${esc(audit ? audit.name : 'Semua audit')}</li>
       <li><b>Status:</b> ${esc(statusLabel)}</li>
       <li><b>Baris:</b> ${fmt(count)}</li></ul>
@@ -48,9 +48,9 @@ export function openNewAudit() {
         Pilih file Excel/CSV (kolom Link/URL)
       </button>
       <div class="modal-divider"><span>atau tempel link</span></div>
-      <div class="field" style="margin:0"><label for="new-links">Tempel link postingan — satu per baris</label>
+      <div class="field field--flush"><label for="new-links">Tempel link postingan — satu per baris</label>
         <textarea id="new-links" class="input" rows="5" placeholder="https://www.instagram.com/p/CODE/&#10;https://www.tiktok.com/@user/video/7123456789"></textarea></div>
-      <p class="muted" style="margin:8px 0 0">Maksimal 10.000 baris per import.</p>`,
+      <p class="muted mt-2">Maksimal 10.000 baris per import.</p>`,
     foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-ghost" id="confirm-links">Import link</button>`,
   }));
 

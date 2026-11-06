@@ -164,7 +164,7 @@ function renderStackbar(summary) {
         const v = counts[s.key];
         const pct = (v / total) * 100;
         const isActive = active === s.key;
-        return `<button class="${s.cls}${isActive ? ' is-active' : ''}" data-key="${s.key}" style="width:${Math.max(pct, v ? 4 : 0)}%" aria-pressed="${isActive}" title="${esc(s.label)} — ${fmt(v)} target (${idIDSafe(pct)}%)">${v ? fmt(v) : ''}</button>`;
+        return `<button class="${s.cls}${isActive ? ' is-active' : ''}" data-key="${s.key}" style="width:${Math.max(pct, v ? 4 : 0)}%" aria-pressed="${isActive}" aria-label="Filter Target: ${esc(s.label)} — ${fmt(v)} target" title="${esc(s.label)} — ${fmt(v)} target (${idIDSafe(pct)}%)">${v ? fmt(v) : ''}</button>`;
       }).join('');
       bar.querySelectorAll('button').forEach((btn) => btn.addEventListener('click', () => toggleStackFilter(btn.dataset.key)));
     }
@@ -178,7 +178,7 @@ function renderStackbar(summary) {
       const pct = total ? (v / total) * 100 : 0;
       const isActive = active === s.key;
       return `<button class="legend-row" data-key="${s.key}" aria-pressed="${isActive}">
-        <span class="legend-dot ${s.cls}" style="background:${legendColor(s.key)}"></span>
+        <span class="legend-dot ${s.cls}"></span>
         <b>${esc(s.label)}</b>
         <small>${fmt(v)} target</small>
         <span class="pct">${idIDSafe(pct)}%</span>
@@ -187,7 +187,6 @@ function renderStackbar(summary) {
     legend.querySelectorAll('.legend-row').forEach((btn) => btn.addEventListener('click', () => toggleStackFilter(btn.dataset.key)));
   }
 }
-const legendColor = (key) => ({ done: '#1f9d63', pending: '#a8a49e', failed: '#d64545' }[key] || '#a8a49e');
 const idIDSafe = (n) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: 1 }) : '0');
 
 function toggleStackFilter(key) {
@@ -279,12 +278,12 @@ function renderQuality(summary) {
   const rows = [
     { n: q.without_followers || 0, label: 'target tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', action: auditId ? { label: 'Kunjungi profil', act: 'profile', primary: true } : null },
     { n: q.missing_views || 0, label: 'video TikTok tanpa views', hint: 'Kemungkinan privat / age-gated', action: { label: 'Lihat', act: 'views' } },
-    { n: k.failed || 0, label: 'target gagal', hint: 'Didominasi throttle — coba ulang setelah jeda', action: auditId ? { label: 'Ulangi gagal', act: 'retry', primary: true } : null },
+    { n: k.failed || 0, label: 'target gagal', hint: 'Didominasi throttle — coba ulang setelah jeda', action: auditId ? { label: 'Ulangi yang gagal', act: 'retry', primary: true } : null },
     { n: q.missing_username || 0, label: 'target tanpa handle', hint: 'Username tidak ter-parse dari URL', action: null },
     { n: q.never_scraped || 0, label: 'target belum diproses', hint: 'Menunggu giliran worker', action: { label: 'Buka Proses', act: 'proses' } },
   ];
   $('#quality-list').innerHTML = rows.map((r) => `
-    <div class="check-row"><div><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted" style="font-size:var(--fs-micro)">${esc(r.hint)}</div></div>${r.action ? `<button class="btn ${r.action.primary ? 'btn-primary' : 'btn-ghost'} btn-sm" data-quality-action="${r.action.act}">${esc(r.action.label)}</button>` : '<span class="muted">—</span>'}</div>`).join('');
+    <div class="check-row"><div><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted text-micro">${esc(r.hint)}</div></div>${r.action ? `<button class="btn ${r.action.primary ? 'btn-primary' : 'btn-ghost'} btn-sm" data-quality-action="${r.action.act}">${esc(r.action.label)}</button>` : '<span class="muted">—</span>'}</div>`).join('');
 }
 
 // ── Perbandingan periode (hanya tampil bila ≥ 2 periode) ───────
@@ -295,9 +294,9 @@ function renderCompare(summary, compare) {
   if (!compare || !compare.periods || compare.periods.length < 2) { card.hidden = true; return; }
   card.hidden = false;
   const s = compare.summary || {};
-  el.innerHTML = `<p style="margin:0 0 10px">${compare.periods.length} periode · terbaru <b>${esc(compare.latest_period)}</b> · ${fmt(s.accounts)} akun · <b>${fmt(s.new_accounts)} baru</b> · ${fmt(s.missing_latest)} hilang di periode terbaru</p>
+  el.innerHTML = `<p class="mb-3">${compare.periods.length} periode · terbaru <b>${esc(compare.latest_period)}</b> · ${fmt(s.accounts)} akun · <b>${fmt(s.new_accounts)} baru</b> · ${fmt(s.missing_latest)} hilang di periode terbaru</p>
     <blockquote class="compare-quote">Impor periode ini: <b>${fmt((summary?.kpi || {}).targets)}</b> target · views <b>${fmtCompact((summary?.kpi?.totals || {}).views)}</b></blockquote>
-    <p class="muted" style="margin-bottom:0">Tip: buka tab <b>Akun</b> untuk melihat klaster dan skor risiko per akun.</p>`;
+    <p class="muted">Tip: buka tab <b>Akun</b> untuk melihat klaster dan skor risiko per akun.</p>`;
 }
 
 // ── Kartu "Perlu tindakan" ─────────────────────────────────────
@@ -337,7 +336,7 @@ async function renderOnboarding() {
 
   host.hidden = false;
   host.innerHTML = `
-    <div class="card" style="margin-bottom:var(--sp-4)">
+    <div class="card mb-4">
       <div class="card-hd"><div><div class="card-title">Mulai di sini</div><div class="card-sub">Empat langkah singkat untuk audit pertama Anda</div></div></div>
       <div class="ob-steps">${steps.map((s, i) => `
         <div class="ob-step${s.done ? ' done' : ''}">

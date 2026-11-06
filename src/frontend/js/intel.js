@@ -55,7 +55,7 @@ export function renderRiskPanels() {
   const levels = [
     { key: 'pola_kembar', label: 'Pola kembar', color: 'var(--err)' },
     { key: 'pola_ternak', label: 'Pola ternak', color: 'var(--warn)' },
-    { key: 'amati', label: 'Amati', color: '#eab308' },
+    { key: 'amati', label: 'Amati', color: 'var(--amati)' },
     { key: 'bersih', label: 'Bersih', color: 'var(--ok-dot)' },
   ];
   const max = Math.max(...levels.map((l) => byLevel[l.key] || 0), 1);
@@ -64,7 +64,7 @@ export function renderRiskPanels() {
     barsHost.innerHTML = levels.map((l) => `
       <div class="intel-row"><span class="intel-lbl">${l.label}</span>
         <div class="intel-track"><i style="width:${Math.round(((byLevel[l.key] || 0) / max) * 100)}%;background:${l.color}"></i></div>
-        <span class="num" style="width:44px;text-align:right">${fmt(byLevel[l.key] || 0)}</span>
+        <span class="num intel-num">${fmt(byLevel[l.key] || 0)}</span>
       </div>`).join('');
   }
 

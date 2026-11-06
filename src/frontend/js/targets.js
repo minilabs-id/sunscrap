@@ -38,7 +38,7 @@ function renderTargetsTable(items) {
 
   $('#targets-table').innerHTML = `
     <thead><tr>
-      <th scope="col" style="width:36px"><input type="checkbox" id="targets-checkall" aria-label="Pilih semua"></th>
+      <th scope="col" class="w-36"><input type="checkbox" id="targets-checkall" aria-label="Pilih semua"></th>
       <th scope="col">Pl.</th>
       <th scope="col">Akun</th>
       <th scope="col">Tema</th>
@@ -142,7 +142,7 @@ export function openTarget(targetId) {
     const rows = (snapshots || []).map((s) => `<tr><td>${esc(fmtWhen(s.scraped_at))}</td><td>${statusBadge(s.status)}</td><td class="num">${fmt(s.follower_count)}</td><td class="num">${fmt(s.likes)}</td><td class="num">${fmt(s.comments)}</td><td class="num">${fmt(s.views)}</td><td class="wrap">${esc(s.error_message || '')}</td></tr>`).join('');
     openModal(modalShell({
       title: 'Riwayat target',
-      body: `<div class="table-wrap" style="max-height:50vh;border:0;box-shadow:none"><table class="table"><thead><tr><th scope="col">Waktu</th><th scope="col">Status</th><th scope="col" class="num">Fol.</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Komen</th><th scope="col" class="num">Views</th><th scope="col">Error</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">Belum ada snapshot.</td></tr>'}</tbody></table></div>`,
+      body: `<div class="table-wrap flush tall"><table class="table"><thead><tr><th scope="col">Waktu</th><th scope="col">Status</th><th scope="col" class="num">Fol.</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Komen</th><th scope="col" class="num">Views</th><th scope="col">Error</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">Belum ada snapshot.</td></tr>'}</tbody></table></div>`,
       foot: `<button class="btn btn-ghost" data-close>Tutup</button>`,
     }));
   }).catch(() => toast('Gagal memuat riwayat target.', 'error'));

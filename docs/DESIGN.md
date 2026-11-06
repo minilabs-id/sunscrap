@@ -42,8 +42,8 @@ Tanpa dukungan backdrop-filter, permukaan tetap terbaca (≥ 82% opak di palette
 
 - Keluarga: `"Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif` —
   native ke Windows 11, turun ke sistem lain dengan anggun.
-- Skala: 11 (micro/label) · 12 (meta) · 13 (tabel) · 14 (body) · 15 (title kartu) ·
-  **26 (judul halaman)** · 24 (KPI) · 40 (pace).
+- Skala: 10.5 (label caps) · 11 (micro) · 12 (meta) · 13 (tabel) · 14 (body) · 15 (title kartu) ·
+  **26 (judul halaman)** · 24 (KPI) · 20 (stat) · 40 (pace).
 - `tabular-nums` global; label section: 10.5px, huruf besar, letter-spacing .1–.12em.
 
 ## 4. Grid & spacing

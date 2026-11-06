@@ -23,10 +23,10 @@ export async function loadProcess() {
     const legend = $('#queue-legend');
     if (legend) {
       legend.innerHTML =
-        `<span><i style="background:#1f9d63"></i>OK — ${fmt(ok)}</span>` +
-        `<span><i style="background:#e8a33d"></i>Sebagian — ${fmt(partial)}</span>` +
-        `<span><i style="background:#d64545"></i>Gagal — ${fmt(failed)}</span>` +
-        `<span><i style="background:#a8a49e"></i>Menunggu — ${fmt(pending)}</span>`;
+        `<span><i class="seg-ok"></i>OK — ${fmt(ok)}</span>` +
+        `<span><i class="seg-warn"></i>Sebagian — ${fmt(partial)}</span>` +
+        `<span><i class="seg-err"></i>Gagal — ${fmt(failed)}</span>` +
+        `<span><i class="seg-idle"></i>Menunggu — ${fmt(pending)}</span>`;
     }
     const stats = $('#queue-stats');
     if (stats) {
@@ -76,6 +76,7 @@ export function renderPace(w) {
   const cyclePct = r.visitBudget ? Math.min(100, Math.round((r.cycleVisits || 0) / r.visitBudget * 100)) : 0;
   const num = $('#pace-num'); if (num) num.textContent = r.paceLabel || '—';
   const meter = $('#pace-meter'); if (meter) meter.style.width = cyclePct + '%';
+  const paceBar = $('#pace-bar'); if (paceBar) paceBar.setAttribute('aria-valuenow', String(cyclePct));
   const cycle = $('#pb-cycle'); if (cycle) cycle.textContent = r.visitBudget ? `${fmt(r.cycleVisits)} / ${fmt(r.visitBudget)}` : '—';
   const daily = $('#pb-daily'); if (daily) daily.textContent = (r.dailyVisits != null && r.dailyRail) ? `${fmt(r.dailyVisits)} / ${fmt(r.dailyRail)}` : '—';
   const session = $('#pb-session'); if (session) session.textContent = (r.sessionTasks != null && r.sessionBreakAt) ? `${fmt(r.sessionTasks)} / ${fmt(r.sessionBreakAt)}` : '—';

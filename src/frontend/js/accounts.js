@@ -32,11 +32,11 @@ function renderAccountsTable(items) {
     </tr></thead>
     <tbody>${items.map((a) => `
       <tr class="clickable" data-account="${esc(a.username)}" data-platform="${esc(a.platform)}" tabindex="0" role="button" aria-label="Buka detail ${esc(a.username)}">
-        <td><div class="acct-cell">${avatarHtml(a.avatar_url, a.username)}<span style="min-width:0"><b>@${esc(a.username)}</b> ${reviewBadgeHtml(a.platform, a.username)}<br><span class="muted">${esc((a.display_name || '').slice(0, 42))}</span></span></div></td>
+        <td><div class="acct-cell">${avatarHtml(a.avatar_url, a.username)}<span class="min-0"><b>@${esc(a.username)}</b> ${reviewBadgeHtml(a.platform, a.username)}<br><span class="muted">${esc((a.display_name || '').slice(0, 42))}</span></span></div></td>
         <td><span class="lv-${esc(a.level)}">${esc(a.level.replace(/_/g, ' '))}</span></td>
-        <td class="num"><span class="score-track" style="width:72px;display:inline-block;vertical-align:middle;margin-right:8px"><i style="width:${riskScorePct(a.score)}%"></i></span><b>${fmt(a.score)}</b></td>
+        <td class="num"><span class="score-track track track-mr"><i style="width:${riskScorePct(a.score)}%"></i></span><b>${fmt(a.score)}</b></td>
         <td class="num">${fmt(a.followers)}</td>
-        <td><span class="score-track" style="width:72px;display:inline-block" title="${a.metrics && a.metrics.view_reach_pct !== null ? fmtPct(a.metrics.view_reach_pct) : '—'}"><i style="width:${Math.min(100, a.metrics && a.metrics.view_reach_pct !== null ? a.metrics.view_reach_pct : (a.metrics && a.metrics.like_reach_pct !== null ? a.metrics.like_reach_pct : 0))}%;background:var(--accent)"></i></span></td>
+        <td><span class="score-track track" title="${a.metrics && a.metrics.view_reach_pct !== null ? fmtPct(a.metrics.view_reach_pct) : '—'}"><i style="width:${Math.min(100, a.metrics && a.metrics.view_reach_pct !== null ? a.metrics.view_reach_pct : (a.metrics && a.metrics.like_reach_pct !== null ? a.metrics.like_reach_pct : 0))}%;background:var(--accent)"></i></span></td>
         <td class="num">${fmt(a.metrics?.posts_seen)}</td>
         <td class="num">${fmt(a.months_seen)}</td>
         <td class="cell-clip">${esc((a.flags || []).map((f) => f.label).join(' · ') || '—')}</td>

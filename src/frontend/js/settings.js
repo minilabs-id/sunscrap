@@ -15,7 +15,7 @@ export function renderAudits() {
         <td class="num">${fmt(a.target_count)}</td>
         <td class="num">${fmt((a.ok_count || 0) + (a.partial_count || 0))}</td>
         <td class="num">${fmt(a.repeat_days)}</td>
-        <td><div class="row-gap" style="justify-content:flex-end">
+        <td><div class="row-gap end">
           <button class="btn btn-ghost btn-sm" data-act="rerun" data-id="${a.id}">Audit ulang</button>
           <button class="btn btn-ghost btn-sm" data-act="profile" data-id="${a.id}" title="Kunjungi profil akun yang datanya belum ada">Kunjungi profil</button>
           <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${a.id}" data-name="${esc(a.name)}" data-repeat="${a.repeat_days}">Edit</button>
@@ -49,7 +49,7 @@ export function renderAudits() {
       openModal(modalShell({
         title: 'Edit audit',
         body: `<div class="field"><label for="edit-name">Nama</label><input id="edit-name" class="input" value="${esc(btn.dataset.name)}"></div>
-              <div class="field" style="margin:0"><label for="edit-repeat">Ulang (hari, 0 = manual)</label><input id="edit-repeat" class="input" type="number" min="0" max="365" value="${btn.dataset.repeat}"></div>`,
+              <div class="field field--flush"><label for="edit-repeat">Ulang (hari, 0 = manual)</label><input id="edit-repeat" class="input" type="number" min="0" max="365" value="${btn.dataset.repeat}"></div>`,
         foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" id="confirm-edit">Simpan</button>`,
       }));
       $('#confirm-edit').addEventListener('click', async () => {
@@ -83,8 +83,10 @@ export function renderUpdate(s) {
   if (prog) {
     const show = s.status === 'downloading' || s.status === 'available';
     prog.hidden = !show;
+    const pctVal = Math.max(0, Math.min(100, s.percent || 0));
     const bar = prog.querySelector('span');
-    if (bar) bar.style.width = `${Math.max(0, Math.min(100, s.percent || 0))}%`;
+    if (bar) bar.style.width = `${pctVal}%`;
+    prog.setAttribute('aria-valuenow', String(Math.round(pctVal)));
   }
   const install = $('#btn-install-update');
   if (install) install.hidden = s.status !== 'downloaded';
@@ -123,8 +125,8 @@ async function handleRestore() {
   openModal(modalShell({
     title: 'Pulihkan dari cadangan',
     body: `<p>Anda akan mengganti <b>seluruh data saat ini</b> dengan cadangan:</p>
-      <ul style="margin:0 0 8px 18px"><li><b>File:</b> ${esc(prev.file)}</li><li>Audit ${fmt(c.audits)} · Target ${fmt(c.targets)} · Snapshot ${fmt(c.snapshots)} · Akun ${fmt(c.accounts)}</li><li>Skema: v${esc(prev.schema_version ?? '?')} (aplikasi ini: v5)</li></ul>
-      ${schemaMismatch ? `<p class="muted" style="border-left:3px solid var(--err);padding-left:10px;color:var(--err)"><b>Tidak kompatibel:</b> cadangan dibuat dengan skema v${esc(prev.schema_version)}. Pemulihan ditolak.</p>` : '<p class="muted">Data aktif dicadangkan otomatis dulu sebelum diganti. Tidak bisa dibatalkan.</p>'}`,
+      <ul><li><b>File:</b> ${esc(prev.file)}</li><li>Audit ${fmt(c.audits)} · Target ${fmt(c.targets)} · Snapshot ${fmt(c.snapshots)} · Akun ${fmt(c.accounts)}</li><li>Skema: v${esc(prev.schema_version ?? '?')} (aplikasi ini: v5)</li></ul>
+      ${schemaMismatch ? `<p class="muted err-notebox"><b>Tidak kompatibel:</b> cadangan dibuat dengan skema v${esc(prev.schema_version)}. Pemulihan ditolak.</p>` : '<p class="muted">Data aktif dicadangkan otomatis dulu sebelum diganti. Tidak bisa dibatalkan.</p>'}`,
     foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger-solid" id="confirm-restore" ${schemaMismatch ? 'disabled' : ''}>Pulihkan</button>`,
   }));
   $('#confirm-restore').addEventListener('click', async () => {
@@ -145,7 +147,7 @@ function handleClearAll() {
     title: 'Hapus semua data',
     body: `<p>Semua audit, target, snapshot, dan data akun akan dihapus <b>permanen</b>.</p>
       <div class="field"><label for="clear-confirm">Ketik <b>HAPUS</b> untuk melanjutkan</label><input id="clear-confirm" class="input" placeholder="HAPUS" autocomplete="off"></div>
-      <label class="row-gap" style="margin-top:6px;cursor:pointer"><input type="checkbox" id="clear-backup" checked> Cadangkan database dulu (disarankan)</label>`,
+      <label class="row-gap mt-2 clickable"><input type="checkbox" id="clear-backup" checked> Cadangkan database dulu (disarankan)</label>`,
     foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger-solid" id="confirm-clear" disabled>Hapus semua</button>`,
   }));
   const checkEnabled = () => { $('#confirm-clear').disabled = $('#clear-confirm').value.trim() !== 'HAPUS'; };
