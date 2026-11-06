@@ -612,6 +612,23 @@ function renderCompare(summary, compare) {
 }
 
 // ---------- intel / risk / clusters ----------
+const REASON_LABELS = { konten: 'Konten sama', kontak: 'Kontak bio sama', template: 'Caption seragam', serentak: 'Unggah serentak' };
+function clusterMember(m) {
+  const s = String(m);
+  const i = s.indexOf(':');
+  if (i < 0) return { platform: 'instagram', username: s };
+  return { platform: s.slice(0, i), username: s.slice(i + 1) };
+}
+function renderClusterCards(clusters) {
+  return (clusters || []).map((c, ci) => {
+    const members = (c.members || []).map((m) => {
+      const mm = clusterMember(m);
+      return `<button class="cluster-chip" data-platform="${esc(mm.platform)}" data-username="${esc(mm.username)}">@${esc(mm.username)}</button>`;
+    }).join(' ');
+    const reasons = (c.reasons || []).map((r) => REASON_LABELS[r] || r).join(' · ');
+    return `<div class="cluster-card"><strong>Klaster ${ci + 1} · ${c.size} akun<span class="strength">${c.strong ? 'bukti kuat' : 'perlu perhatian'}</span></strong><div class="cluster-meta">${esc(reasons)}</div><div class="cluster-members">${members}</div></div>`;
+  }).join('');
+}
 async function loadAccountsIntel() {
   try {
     const res = await api.getAccounts({ sort: 'risk', limit: 200 });
@@ -645,13 +662,16 @@ async function loadAccountsIntel() {
           <span class="num" style="width:44px;text-align:right">${fmt(byLevel[l.key] || 0)}</span>
         </div>`).join('');
     }
-    // clusters list
+    // clusters list (anggota bisa diklik untuk membuka akun)
     const clustersHost = $('#clusters-list');
     const strong = clusters.filter((c) => c.strong).slice(0, 4);
     if (clustersHost) {
       clustersHost.innerHTML = strong.length
-        ? strong.map((c) => `<div class="cluster-card"><strong># cluster · ${c.size} akun<span class="strength">bukti kuat</span></strong><div class="cluster-meta">${esc((c.members || []).slice(0, 3).map((m) => '@' + String(m).split(':').pop()).join(', '))}${(c.members || []).length > 3 ? ', …' : ''}</div><div class="cluster-meta">${esc((c.reasons || []).join(' · '))}</div></div>`).join('')
+        ? renderClusterCards(strong)
         : emptyState('Belum ada klaster kuat', 'Klaster muncul setelah cukup banyak kunjungan profil.');
+      clustersHost.querySelectorAll('.cluster-chip').forEach((chip) => {
+        chip.addEventListener('click', () => openAccount(chip.dataset.username, chip.dataset.platform));
+      });
     }
     // cluster preview (dashboard)
     const preview = $('#cluster-preview');
