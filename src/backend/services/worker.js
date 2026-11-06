@@ -5,8 +5,8 @@
  * limiter. Memanggil db langsung (tanpa HTTP). Direproduksi dari desktop/worker/core.js.
  */
 
-const TaskCache = require('./taskCache');
-const { allowedTarget, cacheKey, classifyError, outcomeOf, CACHE_HIT_DELAY_MS, ERROR_BACKOFF_MS, IDLE_POLL_MS } = require('./policy');
+const TaskCache = require('../core/taskCache');
+const { allowedTarget, cacheKey, classifyError, outcomeOf, CACHE_HIT_DELAY_MS, ERROR_BACKOFF_MS, IDLE_POLL_MS } = require('../core/policy');
 const { cacheAvatar } = require('./avatar');
 
 function delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }

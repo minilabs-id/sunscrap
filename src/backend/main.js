@@ -11,13 +11,14 @@ const {
 } = require('electron');
 const { fileURLToPath } = require('node:url');
 
-const { createDatabase } = require('./db');
-const { createScraper } = require('./scraper');
-const { createWorker } = require('./worker');
-const { createRateLimiter } = require('./rateLimiter');
+const { createDatabase } = require('./core/db');
+const { createScraper } = require('./services/scraper');
+const { createWorker } = require('./services/worker');
+const { createRateLimiter } = require('./core/rateLimiter');
 const { registerIpc } = require('./ipc');
-const { initUpdater } = require('./updater');
-const avatar = require('./avatar');
+const { initUpdater } = require('./services/updater');
+const { createStorage } = require('./core/storage');
+const avatar = require('./services/avatar');
 
 // Skema kustom untuk menyajikan avatar lokal (tanpa akses CDN dari renderer).
 // Sengaja TIDAK `standard`: skema standard dinormalkan Chromium menjadi
@@ -29,7 +30,7 @@ protocol.registerSchemesAsPrivileged([
 const ICON_FILE = path.join(__dirname, '..', '..', 'assets', 'icon.png');
 const LIMITER_STATE = 'worker-state.json';
 const WINDOW_STATE = 'window-state.json';
-const RENDERER_INDEX_PATH = path.join(__dirname, '..', 'renderer', 'index.html');
+const RENDERER_INDEX_PATH = path.join(__dirname, '..', 'frontend', 'index.html');
 const APP_VERSION = require('../../package.json').version;
 
 // Overlay tombol min/max/close harus mengikuti tema — putih di dark mode terlihat rusak.
@@ -66,44 +67,6 @@ let userData = null;
 let windowStore = null;
 let shuttingDown = false;
 let warnedTray = false; // beri tahu sekali saat jendela pertama kali diminimalkan ke tray
-
-// ---- file-backed storage (sinkron, proses utama) ----
-function createStorage(filePath) {
-  let data = {};
-  try {
-    const raw = fs.readFileSync(filePath, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object') data = parsed;
-  } catch {}
-  return {
-    get(keys) {
-      if (keys === null || keys === undefined) return { ...data };
-      const wanted = Array.isArray(keys) ? keys : [keys];
-      const result = {};
-      for (const key of wanted) if (Object.prototype.hasOwnProperty.call(data, key)) result[key] = data[key];
-      return result;
-    },
-    set(values) {
-      Object.assign(data, values || {});
-      try {
-        fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        const tmp = filePath + '.tmp';
-        fs.writeFileSync(tmp, JSON.stringify(data));
-        fs.renameSync(tmp, filePath);
-      } catch {}
-    },
-    remove(keys) {
-      const list = Array.isArray(keys) ? keys : [keys];
-      for (const key of list) delete data[key];
-      try {
-        fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        const tmp = filePath + '.tmp';
-        fs.writeFileSync(tmp, JSON.stringify(data));
-        fs.renameSync(tmp, filePath);
-      } catch {}
-    },
-  };
-}
 
 function notify(title, body) {
   if (!Notification.isSupported()) return;
@@ -302,7 +265,7 @@ function createMainWindow() {
   });
 
   mainWindow.on('closed', () => { mainWindow = null; });
-  mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+  mainWindow.loadFile(RENDERER_INDEX_PATH);
   return mainWindow;
 }
 

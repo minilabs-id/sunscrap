@@ -9,9 +9,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { BrowserWindow, session } = require('electron');
-const { allowedTarget, platformForHost, ALLOWED_HOSTS } = require('./policy');
+const { allowedTarget, platformForHost, ALLOWED_HOSTS } = require('../core/policy');
 
-const CONTENT_DIR = path.join(__dirname, '..', 'scraper-content');
+const CONTENT_DIR = path.join(__dirname, '..', '..', 'scraper-content');
 const PARTITION = 'persist:sunscrap';
 const WORLD_ID = 999;
 const SCRAPE_TIMEOUT_MS = 45000;

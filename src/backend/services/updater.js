@@ -20,7 +20,7 @@ function initUpdater({ log, broadcast, isPackaged }) {
   // Status yang dibagikan ke renderer (Pengaturan → Pembaruan).
   const state = {
     enabled,
-    version: require('../../package.json').version,
+    version: require('../../../package.json').version,
     status: enabled ? 'idle' : 'dev', // dev | idle | checking | available | downloading | downloaded | error | uptodate
     availableVersion: null,
     percent: null,

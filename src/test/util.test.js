@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const util = require('../main/util');
+const util = require('../backend/core/util');
 
 test('normalizeTargetUrl menerima post Instagram & TikTok', () => {
   assert.deepEqual(util.normalizeTargetUrl('https://www.instagram.com/user/p/ABC123/'), { platform: 'instagram', url: 'https://www.instagram.com/user/p/ABC123/' });

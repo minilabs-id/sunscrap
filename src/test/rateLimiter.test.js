@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { createRateLimiter } = require('../main/rateLimiter');
+const { createRateLimiter } = require('../backend/core/rateLimiter');
 
 function memStorage() {
   const data = {};

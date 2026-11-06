@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const TaskCache = require('../main/taskCache');
+const TaskCache = require('../backend/core/taskCache');
 
 test('baris penuh menjawab task tanpa navigasi', () => {
   const task = { platform: 'tiktok', username: 'u', url: 'https://www.tiktok.com/@u/video/1', cachedPost: {

@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const store = require('../renderer/store');
+const store = require('../frontend/store');
 
 test('createState menghasilkan instance independen', () => {
   const a = store.createState();

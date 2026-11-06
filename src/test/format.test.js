@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const f = require('../renderer/format');
+const f = require('../frontend/format');
 
 test('fmt: null → em dash, angka dikelompokkan id-ID', () => {
   assert.equal(f.fmt(null), '—');

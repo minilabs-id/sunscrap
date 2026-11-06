@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const policy = require('../main/policy');
+const policy = require('../backend/core/policy');
 
 test('allowlist hanya host persis (bukan suffix)', () => {
   assert.equal(policy.allowedTarget('https://www.instagram.com/p/abc'), true);

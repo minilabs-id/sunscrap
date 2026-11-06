@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { createDatabase } = require('../main/db');
+const { createDatabase } = require('../backend/core/db');
 
 function makeDb() {
   return createDatabase(':memory:');

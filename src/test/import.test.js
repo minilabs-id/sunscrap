@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const imp = require('../main/import');
+const imp = require('../backend/core/import');
 
 test('parseLinksText menerima link IG/TikTok dan menghitung yang tidak valid', () => {
   const r = imp.parseLinksText(

@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const intel = require('../main/intel');
+const intel = require('../backend/core/intel');
 
 const t0 = '2026-10-01T08:00:00Z';
 const t1 = '2026-10-01T08:02:00Z';

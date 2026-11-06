@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { sanitizeCell, calcEr, difference, reviewFor } = require('../main/export');
+const { sanitizeCell, calcEr, difference, reviewFor } = require('../backend/core/export');
 
 test('sanitizeCell menetralkan formula injection', () => {
   for (const evil of ['=1+1', '+cmd', '-2+3', '@SUM(A1)', '\t=1', '\r=1']) {

@@ -10,11 +10,11 @@ const os = require('node:os');
 
 app.whenReady().then(() => {
   try {
-    const { createDatabase } = require('../src/main/db');
-    const { createScraper } = require('../src/main/scraper');
-    const { createWorker } = require('../src/main/worker');
-    const { createRateLimiter } = require('../src/main/rateLimiter');
-    const { registerIpc } = require('../src/main/ipc');
+    const { createDatabase } = require('../src/backend/core/db');
+    const { createScraper } = require('../src/backend/services/scraper');
+    const { createWorker } = require('../src/backend/services/worker');
+    const { createRateLimiter } = require('../src/backend/core/rateLimiter');
+    const { registerIpc } = require('../src/backend/ipc');
 
     const dbPath = path.join(os.tmpdir(), 'sunscrap-smoke-' + Date.now() + '.db');
     const db = createDatabase(dbPath);
@@ -36,8 +36,8 @@ app.whenReady().then(() => {
     const limiter = createRateLimiter({ get: () => ({}), set() {}, remove() {} }).init();
     const worker = createWorker({ db, scraper, limiter, notify: () => {}, log: console.log });
 
-    require('../src/main/import');
-    require('../src/main/export');
+    require('../src/backend/core/import');
+    require('../src/backend/core/export');
 
     console.log('SMOKE_OK', JSON.stringify({
       inserted: created.inserted,
