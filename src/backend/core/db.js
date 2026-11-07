@@ -1300,7 +1300,7 @@ function createDatabase(dbPath) {
       return { ...a, er_rows: er.length, median_er: recapMedian(er) };
     }).sort((a, b) => b.targets - a.targets || a.audit_id - b.audit_id);
 
-    const rankedViews = posts.filter((p) => p.views !== null).sort((a, b) => b.views - a.views).slice(0, 5);
+    const rankedViews = posts.filter((p) => p.views !== null).sort((a, b) => b.views - a.views).slice(0, 10);
     const rankedEr = posts.filter((p) => p.er !== null).sort((a, b) => b.er - a.er).slice(0, 5);
     const scraped = platforms.reduce((s, p) => s + p.scraped, 0);
     const verified = statusCounts.OK + statusCounts.PARTIAL;

@@ -1,6 +1,6 @@
 /**
  * sunscrap v2 — Ringkasan (dashboard action-first)
- * Urutan: perlu tindakan → KPI → tren → tema/top konten → platform/kualitas.
+ * Urutan: perlu tindakan → KPI → tren + kualitas → top konten IG/TikTok → per platform.
  */
 import { $, $$, toast } from './dom.js';
 import {
@@ -132,52 +132,20 @@ function hideTrendTooltip() {
   $$('#trend-chart .trend-dot').forEach((d) => d.setAttribute('opacity', '0'));
 }
 
-// ── Tema teratas ───────────────────────────────────────────────
-const barER = (er, max) => Math.round((er ?? 0) / (max || 1) * 100);
-
-function renderTemaTable(summary) {
-  const host = $('#tema-table');
-  if (!host) return;
-  const temas = (summary && summary.temas) || [];
-  if (!temas.length) { host.innerHTML = `<tbody><tr><td>${emptyState('Belum ada tema', 'Kolom "tema" kosong di data Anda.')}</td></tr></tbody>`; return; }
-  const list = [...temas].sort((a, b) => state.temaSort === 'er' ? ((b.median_er ?? -1) - (a.median_er ?? -1)) : ((b.views ?? 0) - (a.views ?? 0))).slice(0, 6);
-  const maxER = Math.max(...list.map((t) => t.median_er ?? 0), 1);
-  host.innerHTML = `<thead><tr><th scope="col">Tema</th><th scope="col" class="r">Target</th><th scope="col" class="r">Views</th><th scope="col" class="r">Median ER</th></tr></thead><tbody>${list.map((t) => `
-    <tr tabindex="0" data-tema="${esc(t.tema || '')}" role="button" aria-label="Filter target tema ${esc(t.tema || '')}">
-      <td><strong>${esc(t.tema || '(tanpa tema)')}</strong></td>
-      <td class="r">${fmt(t.targets)}</td>
-      <td class="r">${esc(fmtCompact(t.views))}</td>
-      <td class="r"><span class="er-track" title="${t.median_er !== null && t.median_er !== undefined ? fmtPct(t.median_er) : '—'}"><span class="er-fill" style="width:${barER(t.median_er, maxER)}%"></span></span> <b>${t.median_er !== null && t.median_er !== undefined ? fmtPct(t.median_er) : '—'}</b></td>
-    </tr>`).join('')}</tbody>`;
-  host.querySelectorAll('tr[data-tema]').forEach((row) => {
-    const go = () => filterTargetsByTema(row.dataset.tema);
-    row.addEventListener('click', go);
-    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
-  });
-}
-
-function filterTargetsByTema(tema) {
-  $('#target-q').value = tema === '(tanpa tema)' ? '' : tema;
-  state.targets.status = '';
-  state.targets.issue = '';
-  state.targets.offset = 0;
-  state.statusFilterActive = null;
-  document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
-}
-
-// ── Top konten ─────────────────────────────────────────────────
+// ── Top konten (per platform) ──────────────────────────────────
 function renderTopPosts(summary) {
   const views = (summary && summary.posts && summary.posts.top_views) || [];
-  const er = (summary && summary.posts && summary.posts.top_er) || [];
   const row = (p, i) => `
     <div class="leader-row${i < 3 ? ' is-top' : ''}">
       <span class="rank">${i + 1}</span>
-      <span class="leader-main"><b>${esc(p.handle || '—')}</b><span class="muted"> · ${p.platform === 'instagram' ? 'Instagram' : 'TikTok'}${p.scraped_at ? ' · ' + esc(relTime(p.scraped_at)) : ''}</span></span>
+      <span class="leader-main"><b>${esc(p.handle || '—')}</b>${p.scraped_at ? `<span class="muted"> · ${esc(relTime(p.scraped_at))}</span>` : ''}</span>
       <span class="leader-num"><b>${esc(fmtCompact(p.views ?? 0))}</b><span class="muted">views</span></span>
       <span class="leader-num"><b>${p.er !== null && p.er !== undefined ? fmtPct(p.er) : '—'}</b><span class="muted">ER</span></span>
     </div>`;
-  $('#top-views').innerHTML = views.length ? views.map(row).join('') : emptyState('Belum ada data', 'Import data, lalu jalankan worker.');
-  $('#top-er').innerHTML = er.length ? er.map(row).join('') : emptyState('Belum ada data', 'Import data, lalu jalankan worker.');
+  const ig = views.filter((p) => p.platform === 'instagram').slice(0, 6);
+  const tk = views.filter((p) => p.platform === 'tiktok').slice(0, 6);
+  $('#top-ig').innerHTML = ig.length ? ig.map(row).join('') : emptyState('Belum ada data Instagram', 'Import data, lalu jalankan worker.');
+  $('#top-tk').innerHTML = tk.length ? tk.map(row).join('') : emptyState('Belum ada data TikTok', 'Import data, lalu jalankan worker.');
 }
 
 // ── Per platform ───────────────────────────────────────────────
@@ -312,7 +280,6 @@ export async function refreshDashboard() {
     renderAttention(summary);
     renderKpis(summary, ts);
     renderTrend();
-    renderTemaTable(summary);
     renderTopPosts(summary);
     renderPlatformCompare(summary);
     renderQuality(summary);
@@ -332,17 +299,6 @@ export function bindDashboardEvents() {
     state.metric = btn.dataset.metric;
     $$('.mini-tabs [data-metric]').forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
     renderTrend();
-  }));
-  $$('.mini-tabs [data-tema-sort]').forEach((btn) => btn.addEventListener('click', () => {
-    state.temaSort = btn.dataset.temaSort;
-    $$('.mini-tabs [data-tema-sort]').forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
-    renderTemaTable(state.summary);
-  }));
-  $$('.mini-tabs [data-posts-tab]').forEach((btn) => btn.addEventListener('click', () => {
-    state.postsTab = btn.dataset.postsTab;
-    $$('.mini-tabs [data-posts-tab]').forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
-    $('#top-views').hidden = btn.dataset.postsTab !== 'views';
-    $('#top-er').hidden = btn.dataset.postsTab !== 'er';
   }));
   // Kartu "Perlu tindakan"
   $('#att-review').addEventListener('click', () => {
