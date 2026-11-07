@@ -114,6 +114,10 @@ async function main() {
   await page.click('#targets-checkall');
   await page.waitForTimeout(300);
   expect(!(await page.$eval('#btn-retry-selected', (el) => el.disabled)), 'Ulangi terpilih aktif setelah centang semua');
+  // klik retry tanpa memilih audit -> toast peringatan
+  await page.click('#btn-retry-selected');
+  await page.waitForTimeout(300);
+  expect(await page.isVisible('.toast.warning'), 'toast peringatan "Pilih audit dulu" muncul');
   await page.click('#targets-checkall');
   await page.waitForTimeout(300);
   // buka riwayat target

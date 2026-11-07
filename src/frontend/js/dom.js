@@ -17,6 +17,7 @@ export function toast(message, kind = '') {
   const root = $('#toast-root');
   if (!root) return;
   const icons = {
+    info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r="0.6" fill="currentColor"/></svg>',
     ok: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>',
     error: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>',
     warning: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17.5h.01"/></svg>',
@@ -24,7 +25,7 @@ export function toast(message, kind = '') {
   const node = document.createElement('div');
   node.className = 'toast' + (kind ? ' ' + kind : '');
   node.setAttribute('role', 'status');
-  node.innerHTML = (icons[kind] || icons.ok) + '<span>' + esc(message) + '</span>';
+  node.innerHTML = (icons[kind] || icons.info) + '<span>' + esc(message) + '</span>';
   root.appendChild(node);
   while (root.children.length > 3) root.removeChild(root.firstChild);
   setTimeout(() => node.remove(), kind === 'error' ? 8000 : 4200);

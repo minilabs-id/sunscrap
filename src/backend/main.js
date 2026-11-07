@@ -75,7 +75,11 @@ let warnedTray = false; // beri tahu sekali saat jendela pertama kali diminimalk
 
 function notify(title, body) {
   if (!Notification.isSupported()) return;
-  try { new Notification({ title, body }).show(); } catch {}
+  try {
+    const n = new Notification({ title, body, icon: nativeImage.createFromPath(ICON_FILE) });
+    n.on('click', () => showMainWindow());
+    n.show();
+  } catch {}
 }
 
 function broadcast(type, payload) {

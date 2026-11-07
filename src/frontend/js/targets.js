@@ -249,7 +249,7 @@ export function bindTargetEvents() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeColumnsPop(); });
 
   $('#btn-retry-failed').addEventListener('click', async () => {
-    if (!state.auditId) { toast('Pilih audit dulu (di atas).'); return; }
+    if (!state.auditId) { toast('Pilih audit dulu (di atas).', 'warning'); return; }
     try {
       const r = await api.retryFailed(state.auditId);
       toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} target.`, r && r.error ? 'error' : 'ok');
@@ -258,7 +258,7 @@ export function bindTargetEvents() {
   });
   $('#btn-retry-selected').addEventListener('click', async () => {
     if (!state.targets.selected.size) return;
-    if (!state.auditId) { toast('Pilih audit dulu (di atas).'); return; }
+    if (!state.auditId) { toast('Pilih audit dulu (di atas).', 'warning'); return; }
     try {
       const r = await api.retryTargets(state.auditId, Array.from(state.targets.selected));
       toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} target.`, r && r.error ? 'error' : 'ok');
