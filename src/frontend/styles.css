@@ -1444,8 +1444,11 @@ body.modal-open { overflow: hidden; }
    Proses — meter & antrean
    ============================================================ */
 .pace-wrap { display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap; }
-.pace-num { font-size: var(--fs-display); font-weight: 800; letter-spacing: -.03em; line-height: 1; }
-.pace-unit { font-size: var(--fs-micro); color: var(--ink-3); margin-top: 2px; }
+.worker-banner { display: flex; align-items: center; gap: var(--sp-3); }
+.worker-banner .dot { width: 14px; height: 14px; }
+.worker-banner-body { flex: 1; min-width: 0; }
+.worker-banner-title { font-size: var(--fs-body); font-weight: 700; }
+.worker-banner-sub { font-size: var(--fs-micro); color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pace-budget { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 240px; }
 .pace-row { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-meta); }
 .pace-row b { font-variant-numeric: tabular-nums; }

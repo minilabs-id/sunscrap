@@ -110,6 +110,7 @@ async function init() {
 
   // Tombol global lain
   $('#worker-toggle').addEventListener('click', toggleWorker);
+  $('#proses-worker-toggle').addEventListener('click', async () => { await toggleWorker(); if (state.tab === 'proses') loadProcess(); });
   $('#btn-new-audit').addEventListener('click', openNewAudit);
   $('#btn-export').addEventListener('click', openExport);
   $('#btn-theme-toggle').addEventListener('click', () => applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark'));

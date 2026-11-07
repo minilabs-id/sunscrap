@@ -50,6 +50,7 @@ export async function loadProcess() {
 
     // Pace & budget
     renderPace(w);
+    renderProsesStatus(w);
 
     // Aktivitas terbaru
     const latest = await api.getLatest({ limit: 20 });
@@ -103,6 +104,34 @@ async function renderHealth() {
         return `<div class="check-row"><div><strong>${pl}:${esc(ev.username || '?')}</strong> ${statusBadge(ev.status)} ${ev.errorCode ? `<span class="muted">· ${esc(ERR_LABEL[ev.errorCode] || ev.errorCode)}</span>` : ''}<div class="muted text-micro">${ev.ms ? fmt(ev.ms) + ' ms · ' : ''}${esc(relTime(ev.t))}</div></div></div>`;
       }).join('') || '<div class="muted">Belum ada aktivitas worker.</div>'}
     </div>`;
+}
+
+/** Banner status worker eksplisit (aktif/siaga/terhenti + tombol kontrol). */
+export function renderProsesStatus(w) {
+  if (!w) return;
+  const active = !!w.active;
+  const errored = !active && !!w.lastError;
+  const dot = $('#proses-dot');
+  const label = $('#proses-status-label');
+  const sub = $('#proses-status-sub');
+  const toggle = $('#proses-worker-toggle');
+  if (dot) dot.className = 'dot' + (active ? ' active' : errored ? ' error' : '');
+  if (label) label.textContent = active ? 'Worker aktif' : (errored ? 'Worker terhenti' : 'Worker siaga');
+  if (toggle) {
+    toggle.textContent = active ? 'Hentikan worker' : 'Mulai worker';
+    toggle.classList.toggle('btn-primary', !active);
+    toggle.classList.toggle('btn-danger', active);
+  }
+  if (!sub) return;
+  const r = w.rate || {};
+  if (active) {
+    const eta = w.eta || null;
+    sub.textContent = `${w.busy ? 'Sedang memproses' : 'Menunggu antrean'} · jeda ${r.paceLabel || '—'} · siklus ${fmt(r.cycleVisits)}/${fmt(r.visitBudget)}${eta ? ` · sisa ±${eta}` : ''}`;
+  } else if (errored) {
+    sub.textContent = w.lastError;
+  } else {
+    sub.textContent = 'Belum berjalan — klik "Mulai worker" untuk memulai scraping.';
+  }
 }
 
 /** Meter pace + rincian budget (dipanggil dari loadProcess & saat worker berubah). */
