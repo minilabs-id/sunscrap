@@ -1489,19 +1489,32 @@ body.modal-open { overflow: hidden; }
 .okdot { color: var(--ok-dot); }
 .offdot { color: var(--ink-3); }
 
-/* Baris sesi (Sesi & Login) — ringkas */
-.session-rows { display: flex; flex-direction: column; }
-.session-row {
-  display: flex;
+/* Indikator sesi (Sesi & Login) — ikon + titik status */
+.session-indicator {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  gap: var(--sp-3);
-  padding: 8px 2px;
-  border-bottom: 1px solid var(--line);
+  justify-content: center;
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 }
-.session-row:last-child { border-bottom: 0; }
-.session-platform { flex: none; width: 150px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
-.session-status { flex: 1; min-width: 0; color: var(--ink-2); }
-.session-actions { flex: none; display: flex; gap: 12px; }
+.session-indicator:hover { border-color: var(--accent-ring); color: var(--ink); box-shadow: var(--sh-sm); }
+.session-indicator svg { width: 18px; height: 18px; }
+.session-dot {
+  position: absolute;
+  right: -1px; bottom: -1px;
+  width: 12px; height: 12px;
+  border-radius: 999px;
+  background: var(--ink-3);
+  border: 2px solid var(--surface);
+  transition: background var(--dur-fast) var(--ease);
+}
+.session-indicator.on .session-dot { background: var(--ok-dot); }
 
 /* ============================================================
    Pengaturan — seksi & zona berbahaya

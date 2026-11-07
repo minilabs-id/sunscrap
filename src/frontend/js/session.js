@@ -32,38 +32,25 @@ function browserNavigate(url) {
 }
 
 export async function renderLoginStatus() {
-  const igEl = $('#session-ig-status');
-  const tkEl = $('#session-tk-status');
-  const dot = (on) => (on ? '<span class="okdot">●</span>' : '<span class="offdot">○</span>');
+  const set = (id, platform, on) => {
+    const el = $(id);
+    if (!el) return;
+    el.classList.toggle('on', !!on);
+    el.title = `${platform} — ${on ? 'masuk' : 'belum login (klik untuk login)'}`;
+  };
   try {
     const status = await api.getLoginStatus();
-    if (igEl) igEl.innerHTML = `${dot(!!(status && status.instagram))} ${status && status.instagram ? 'masuk' : 'belum login'}`;
-    if (tkEl) tkEl.innerHTML = `${dot(!!(status && status.tiktok))} ${status && status.tiktok ? 'masuk' : 'belum login'}`;
+    set('#browser-ig', 'Instagram', status && status.instagram);
+    set('#browser-tk', 'TikTok', status && status.tiktok);
   } catch {
-    if (igEl) igEl.textContent = 'tidak tersedia';
-    if (tkEl) tkEl.textContent = 'tidak tersedia';
+    set('#browser-ig', 'Instagram', false);
+    set('#browser-tk', 'TikTok', false);
   }
 }
 
 export async function initSessionTab() {
   ensureBrowser();
   renderLoginStatus();
-  renderBridgeStatus();
-}
-
-/** Status jembatan sesi eksternal (loopback). */
-export async function renderBridgeStatus() {
-  const el = $('#bridge-status');
-  if (!el) return;
-  try {
-    const st = await api.getBridgeStatus();
-    const dot = (on) => (on ? '<span class="okdot">●</span>' : '<span class="offdot">○</span>');
-    el.innerHTML = st && st.listening
-      ? `${dot(true)} Jembatan aktif · port <b>${st.port}</b> — menunggu kiriman sesi dari ekstensi.`
-      : `${dot(false)} Jembatan tidak dapat aktif (port ${st && st.port} sedang dipakai?).`;
-  } catch {
-    el.textContent = 'Status jembatan: tidak tersedia';
-  }
 }
 
 export function bindSessionEvents() {
@@ -88,6 +75,4 @@ export function bindSessionEvents() {
   $('#browser-reload').addEventListener('click', () => wv.reload());
   $('#browser-ig').addEventListener('click', () => { ensureBrowser(); wv.loadURL('https://www.instagram.com/'); });
   $('#browser-tk').addEventListener('click', () => { ensureBrowser(); wv.loadURL('https://www.tiktok.com/'); });
-  $('#btn-session-ig').addEventListener('click', () => api.openLogin('instagram').catch(() => toast('Gagal membuka jendela login.', 'error')));
-  $('#btn-session-tk').addEventListener('click', () => api.openLogin('tiktok').catch(() => toast('Gagal membuka jendela login.', 'error')));
 }
