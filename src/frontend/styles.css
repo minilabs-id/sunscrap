@@ -326,7 +326,9 @@ button { font: inherit; color: inherit; }
 }
 
 .sidebar {
-  width: 248px;
+  container-type: inline-size;
+  width: clamp(76px, calc(248px - (1350px - 100vw) * 0.905), 248px);
+  transition: width .25s var(--ease);
   flex: none;
   display: flex;
   flex-direction: column;
@@ -1641,17 +1643,18 @@ body.modal-open { overflow: hidden; }
 :root[data-density="lapang"] .main { padding: var(--sp-6) var(--sp-7); }
 
 /* ============================================================
-   Responsif sidebar (mode kompak ikon)
+   Responsif sidebar (elastis): lebar mengikuti jendela secara fluid,
+   konten beralih ke mode "ikon saja" saat sidebar < 175px (container query).
    ============================================================ */
-@media (max-width: 1160px) {
-  .sidebar { width: 76px; padding: var(--sp-3) var(--sp-2); align-items: center; }
-  .nav-group, .tb-context, .tb-sep { display: none; }
-  .nav-link { justify-content: center; padding: 0; width: 44px; height: 44px; }
-  .nav-link span.nav-text, .nav-badge { display: none; }
-  .nav-link.active::before { left: -8px; }
-  .side-foot { width: 100%; }
+@container (max-width: 175px) {
+  .nav-group, .nav-link .nav-text, .nav-badge { display: none; }
+  .nav-link { justify-content: center; padding: 0; width: 44px; margin-inline: auto; }
+  .nav-link.active::before { left: -10px; }
   .worker-toggle .btn-label { display: none; }
-  .worker-toggle { width: 44px; padding: 0; justify-content: center; margin-left: auto; margin-right: auto; }
+  .worker-toggle { width: 44px; padding: 0; justify-content: center; margin-inline: auto; }
+}
+
+@media (max-width: 1160px) {
   .audit-picker { max-width: 160px; }
   .audit-picker select { max-width: 100px; }
   .tb-search { width: min(360px, 34vw); }
@@ -1659,8 +1662,6 @@ body.modal-open { overflow: hidden; }
 
 /* Kompresi lanjut saat jendela makin sempit */
 @media (max-width: 960px) {
-  .sidebar { width: 64px; padding: var(--sp-2) var(--sp-1); }
-  .nav-link { width: 44px; height: 44px; }
   .tb-wordmark, .tb-kbd, .audit-picker, .sb-dim { display: none; }
   .tb-search { width: min(300px, 40vw); min-width: 0; }
   .page-head { align-items: flex-start; flex-direction: column; }
