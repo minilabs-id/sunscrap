@@ -90,6 +90,15 @@ function log(message) {
   console.log(`[sunscrap] ${message}`);
 }
 
+// Jangan biarkan exception tak tertangani mematikan proses utama secara senyap;
+// catat dengan jelas agar tetap bisa didiagnosis & aplikasi tetap hidup.
+process.on('uncaughtException', (error) => {
+  console.error('[sunscrap] uncaughtException:', error && error.stack ? error.stack : error);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[sunscrap] unhandledRejection:', reason && reason.stack ? reason.stack : reason);
+});
+
 function showAbout() {
   const acc = db ? db.getDatabaseInfo() : {};
   const counts = acc.counts || {};

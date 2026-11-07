@@ -49,6 +49,7 @@ node scripts/responsive.js   # matriks screenshot 1024–1920px (semua tab)
 node scripts/audit-responsive.js   # audit overflow/kesesuaian modal-popover (8 lebar x 4 tinggi, semua fitur)
 node scripts/audit-polish.js       # audit kerapian: nama aksesibel, kliping teks, alignment tombol
 node scripts/audit-contrast.js     # audit kontras WCAG (semua pasangan >= 4.5:1)
+npx electron scripts/bench.js      # benchmark latensi mesin (1k/5k/10k target)
 node scripts/screenshot.js   # tangkapan layar semua tab (dev helper, .screens/)
 ```
 
