@@ -8,7 +8,7 @@ import {
   reviewKey, reviewMeta, isNeedsReview, riskScorePct, emptyState,
 } from './helpers.js';
 import { state } from './state.js';
-import { refreshAccountIntel, renderRiskPanels } from './intel.js';
+import { refreshAccountIntel, renderRiskPanels, renderScatter } from './intel.js';
 import { avatarHtml, wireAvatarErrors, openAccount, showScoreHelp } from './account-detail.js';
 
 export function reviewBadgeHtml(platform, username) {
@@ -99,6 +99,7 @@ export async function refreshAccountsView() {
   await loadAccounts();
   await refreshAccountIntel(true);
   renderRiskPanels();
+  renderScatter();
 }
 
 /** Mode triase: hanya akun terindikasi yang belum dijawab. */

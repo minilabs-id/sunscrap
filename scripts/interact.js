@@ -114,6 +114,7 @@ async function main() {
   // ── 6. Akun: mode triase + modal detail & tinjauan ──
   await page.click('.nav-link[data-tab="accounts"]');
   await page.waitForTimeout(800);
+  expect(await page.isVisible('#scatter-host .empty'), 'kuadran menampilkan empty state (belum ada data akun)');
   await page.click('#score-help-btn');
   await page.waitForTimeout(400);
   expect(await page.isVisible('.modal'), 'modal Cara skor dihitung terbuka');
