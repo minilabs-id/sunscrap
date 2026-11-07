@@ -35,13 +35,12 @@ function renderKpis(summary, ts) {
   const sViews = days.map((d) => d.views);
   const sVerified = days.map((d) => (d.ok_count || 0) + (d.partial_count || 0));
   const scraped = k.scraped || 0, targets = k.targets || 0;
-  const shareScraped = targets ? Math.round(scraped / targets * 100) : 0;
   const successPct = scraped && k.success_rate != null ? fmtPct(k.success_rate) : '—';
 
   const cards = [
     { label: 'Total views', value: fmtCompact(totals.views || 0), sub: `${fmtCompact(totals.likes || 0)} likes · ${fmtCompact(totals.comments || 0)} komentar`, series: sViews, delta: delta7(sViews), action: 'targets' },
     { label: 'Terverifikasi', value: fmt((k.ok || 0) + (k.partial || 0)), sub: `OK ${fmt(k.ok)} · sebagian ${fmt(k.partial)}`, series: sVerified, delta: delta7(sVerified), action: 'targets' },
-    { label: 'Tingkat berhasil', value: successPct, sub: `${fmt(scraped)} dari ${fmt(targets)} postingan terproses (${shareScraped}%)`, series: null, delta: null, action: 'targets' },
+    { label: 'Tingkat berhasil', value: successPct, sub: `${fmt(scraped)} dari ${fmt(targets)} postingan terproses`, series: null, delta: null, action: 'targets' },
     { label: 'Jumlah akun', value: fmt(k.accounts || 0), sub: `${fmt(k.audits || 0)} audit · ${fmt(targets)} postingan`, series: null, delta: null, action: 'accounts' },
   ];
   $('#kpi-grid').innerHTML = cards.map((c) => `
