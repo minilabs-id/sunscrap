@@ -407,6 +407,12 @@
             <button class="btn btn-ghost" id="btn-session-tk">Login TikTok</button>
           </div>
         </div>
+        <div class="card mb-4" aria-label="Hubungkan browser eksternal">
+          <div class="card-hd"><div><div class="card-title">Hubungkan browser (sesi eksternal)</div><div class="card-sub">Ambil sesi IG/TikTok dari browser yang sudah login — tersinkron terus</div></div></div>
+          <p class="muted mb-3">Pasang ekstensi pendamping <b>sunscrap bridge</b> di browser (Chrome/Edge/Brave) yang sudah login. Ekstensi mengirim cookie sesi ke aplikasi secara berkala, jadi sesi di sini selalu mengikuti browser hidup.</p>
+          <div id="bridge-status" class="login-status" aria-live="polite">Memuat status jembatan…</div>
+          <div class="muted text-micro mt-2">Jangan bagikan cookie ke pihak lain — seluruh aliran hanya lewat <code>127.0.0.1</code> (localhost), tidak ke internet.</div>
+        </div>
         <div class="browser-bar">
           <button class="btn btn-ghost nav-btn" id="browser-back" title="Mundur" aria-label="Mundur">‹</button>
           <button class="btn btn-ghost nav-btn" id="browser-fwd" title="Maju" aria-label="Maju">›</button>

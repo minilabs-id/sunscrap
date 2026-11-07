@@ -45,9 +45,25 @@ export async function renderLoginStatus() {
   }
 }
 
-export function initSessionTab() {
+export async function initSessionTab() {
   ensureBrowser();
   renderLoginStatus();
+  renderBridgeStatus();
+}
+
+/** Status jembatan sesi eksternal (loopback). */
+export async function renderBridgeStatus() {
+  const el = $('#bridge-status');
+  if (!el) return;
+  try {
+    const st = await api.getBridgeStatus();
+    const dot = (on) => (on ? '<span class="okdot">●</span>' : '<span class="offdot">○</span>');
+    el.innerHTML = st && st.listening
+      ? `${dot(true)} Jembatan aktif · port <b>${st.port}</b> — menunggu kiriman sesi dari ekstensi.`
+      : `${dot(false)} Jembatan tidak dapat aktif (port ${st && st.port} sedang dipakai?).`;
+  } catch {
+    el.textContent = 'Status jembatan: tidak tersedia';
+  }
 }
 
 export function bindSessionEvents() {

@@ -23,7 +23,9 @@ secara bersih. Lihat [CHANGELOG.md](CHANGELOG.md) dan [docs/DESIGN.md](docs/DESI
 - **Proses** — pace rate limiter real-time, budget siklus/harian/sesi, komposisi antrean,
   **panel Kesehatan** (sukses-rate, histogram error, aktivitas terbaru), log aktivitas
   terbaru dengan pesan error apa adanya.
-- **Sesi & Login** — status sesi IG/TikTok + browser internal persisten (`persist:sunscrap`).
+- **Sesi & Login** — status sesi IG/TikTok + browser internal persisten (`persist:sunscrap`);
+  **Hubungkan browser** (ekstensi pendamping) untuk mengambil & menyinkronkan sesi dari
+  browser yang sudah login secara terus-menerus — lihat [docs/SESSION-BRIDGE.md](docs/SESSION-BRIDGE.md).
 - **Pengaturan** — audit (ulang/kunjungi profil/edit/hapus), backup & restore database (dengan safety
   backup otomatis), pembaruan dari GitHub Releases, tema (sistem/terang/gelap), kepadatan tabel.
 - **Privasi** — semua data tersimpan lokal (`userData` OS); tidak ada telemetri; hanya IG/TikTok yang

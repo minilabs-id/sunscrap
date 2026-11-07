@@ -18,6 +18,7 @@ const { createRateLimiter } = require('./core/rateLimiter');
 const { registerIpc } = require('./ipc');
 const { initUpdater } = require('./services/updater');
 const { createStorage } = require('./core/storage');
+const { createSessionBridge, DEFAULT_PORT } = require('./services/bridge');
 const avatar = require('./services/avatar');
 
 // Anti-deteksi (ringan): sembunyikan penanda otomasi Chromium agar jendela
@@ -68,6 +69,7 @@ let db = null;
 let worker = null;
 let scraper = null;
 let updater = null;
+let bridge = null;
 let userData = null;
 let windowStore = null;
 let shuttingDown = false;
@@ -384,6 +386,20 @@ async function boot() {
   const storage = createStorage(path.join(userData, LIMITER_STATE));
   const limiter = createRateLimiter(storage).init();
 
+  // Bridge sesi browser eksternal (continuous sync): server loopback yang
+  // menerima cookie IG/TikTok dari ekstensi pendamping di browser live.
+  const { session } = require('electron');
+  const bridgeSession = session.fromPartition('persist:sunscrap');
+  bridge = createSessionBridge({
+    session: bridgeSession,
+    log,
+    onChange: (r) => {
+      log(`Sesi browser diperbarui: ${r.instagram} IG / ${r.tiktok} TikTok`);
+      broadcast('bridge', r);
+    },
+  });
+  bridge.start().then((r) => { if (!r.ok) log(`Bridge sesi: ${r.error}`); else log(`Bridge sesi aktif di 127.0.0.1:${r.port}`); });
+
   worker = createWorker({
     db, scraper, limiter, notify, log, avatarDir, activityLogPath: path.join(userData, 'activity.jsonl'),
     onChange: (status) => { refreshTraySoon(); broadcast('worker', status); },
@@ -396,6 +412,7 @@ async function boot() {
 
   ipcMain.handle('app:copyDiagnostics', () => { copyDiagnostics(); return { ok: true }; });
   ipcMain.handle('app:openDataFolder', () => { openDataFolder(); return { ok: true }; });
+  ipcMain.handle('app:bridgeStatus', () => (bridge ? bridge.status() : { port: DEFAULT_PORT, listening: false }));
   // Renderer memberi tahu tema aktif agar overlay tombol window menyesuaikan.
   ipcMain.handle('app:theme', (event, theme) => {
     try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setTitleBarOverlay(titleBarOverlayFor(theme === 'dark')); } catch {}

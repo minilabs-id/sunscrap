@@ -72,6 +72,7 @@ contextBridge.exposeInMainWorld('sunscrap', {
   reviewSet: (payload) => invoke('review:set', payload),
   reviewDelete: (payload) => invoke('review:delete', payload),
   getLoginStatus: () => invoke('app:loginStatus'),
+  getBridgeStatus: () => invoke('app:bridgeStatus'),
   copyDiagnostics: () => invoke('app:copyDiagnostics'),
   openDataFolder: () => invoke('app:openDataFolder'),
 });

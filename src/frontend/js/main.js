@@ -13,7 +13,7 @@ import { refreshDashboard, bindDashboardEvents } from './dashboard.js';
 import { loadTargets, bindTargetEvents, registerActivateTab, openTarget } from './targets.js';
 import { refreshAccountsView, loadReviews, bindAccountEvents, setReviewOnly } from './accounts.js';
 import { loadProcess } from './process.js';
-import { initSessionTab, bindSessionEvents, renderLoginStatus } from './session.js';
+import { initSessionTab, bindSessionEvents, renderLoginStatus, renderBridgeStatus } from './session.js';
 import { loadSettings, bindSettingsEvents, renderUpdate, runBackup, refreshUpdatePanel } from './settings.js';
 import { openNewAudit, openExport } from './actions.js';
 import { bindGlobalSearch } from './search.js';
@@ -147,6 +147,11 @@ async function init() {
     else if (payload.type === 'data') pollSoon();
     else if (payload.type === 'menu') handleMenuAction(payload.payload && payload.payload.action);
     else if (payload.type === 'update') renderUpdate(payload.payload);
+    else if (payload.type === 'bridge') {
+      const r = payload.payload || {};
+      toast(`Sesi browser diperbarui (${r.instagram || 0} IG · ${r.tiktok || 0} TikTok).`, 'ok');
+      if (state.tab === 'browser') { renderLoginStatus(); renderBridgeStatus(); }
+    }
   });
 
   // Muat awal

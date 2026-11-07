@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "sunscrap bridge",
+  "version": "1.0.0",
+  "description": "Sinkronkan sesi Instagram/TikTok dari browser ini ke aplikasi sunscrap (hanya lewat localhost).",
+  "permissions": ["cookies", "alarms"],
+  "host_permissions": ["*://*.instagram.com/*", "*://*.tiktok.com/*", "http://127.0.0.1/*"],
+  "background": { "service_worker": "background.js" }
+}
