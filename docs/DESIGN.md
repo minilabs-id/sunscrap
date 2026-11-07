@@ -90,7 +90,10 @@ Audit aktif: picker global di titlebar (berlaku Ringkasan/Target/Akun) + indikat
 - **Stacked bar** — segmen Berhasil/Menunggu/Gagal; klik segmen atau legend →
   filter Target; `aria-pressed` sinkron; angka selalu teks.
 - **Tabel** — header sticky, uppercase micro, sortable (`aria-sort`), hover row
-  `--accent-wash`, kolom numerik kanan, `Δ` berwarna, status dot + label.
+  `--accent-wash`, kolom numerik kanan, `Δ` berwarna, status dot + label;
+  **pemilih kolom** popover (persisten via `localStorage`).
+- **Kuadran (scatter)** — SVG murni: X = followers (log), Y = reach %, garis median
+  putus-putus + label kuadran, titik berwarna level, tooltip + drill ke detail akun.
 - **Modal** — mica elevasi, fokus terjebak (Tab), Esc menutup, klik backdrop menutup,
   fokus kembali ke pemicu; aksi destruktif pakai ketikan konfirmasi (`HAPUS`, `username`).
 - **Command palette** — Ctrl+K; grup Aksi / Target / Akun / Post; keyboard penuh;

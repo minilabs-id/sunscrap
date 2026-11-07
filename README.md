@@ -15,9 +15,11 @@ secara bersih. Lihat [CHANGELOG.md](CHANGELOG.md) dan [docs/DESIGN.md](docs/DESI
   - KPI strip (views, terverifikasi, tingkat berhasil, akun terpantau)
   - Tren 30 hari (SVG, tooltip, ganti metrik) + **komposisi status** (stacked bar, klik → filter Target)
 - **Target** — tabel padat: sort per kolom, filter status/masalah/platform/tema, seleksi massal,
-  `Δ views` / `Δ likes` vs snapshot sebelumnya, ER, export `.xlsx`.
+  `Δ views` / `Δ likes` vs snapshot sebelumnya, ER, **pemilih kolom** (persisten), export `.xlsx`.
 - **Akun** — tabel + skor indikasi (bukan vonis) dengan bukti: flag, akun tertaut, seri bulanan;
-  keputusan tinjauan manual (*ditandai / bersih / konfirmasi*) dan mode triase **Perlu tinjauan**.
+  keputusan tinjauan manual (*ditandai / bersih / konfirmasi*) dan mode triase **Perlu tinjauan**;
+  **kuadran Followers × Reach** (scatter, log + median, titik berwarna level) membantu memilah
+  akun berpengaruh vs jangkauan-rendah.
 - **Proses** — pace rate limiter real-time, budget siklus/harian/sesi, komposisi antrean, log aktivitas
   terbaru dengan pesan error apa adanya.
 - **Sesi & Login** — status sesi IG/TikTok + browser internal persisten (`persist:sunscrap`).
