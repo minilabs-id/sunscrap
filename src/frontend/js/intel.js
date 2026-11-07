@@ -70,7 +70,7 @@ export function renderRiskPanels() {
   const clustersHost = $('#clusters-list');
   if (clustersHost) {
     const strong = (intel.clusters || []).filter((c) => c.strong).slice(0, 4);
-    const REASON_LABELS = { konten: 'Konten sama', kontak: 'Kontak bio sama', template: 'Caption seragam', serentak: 'Unggah serentak' };
+    const REASON_LABELS = { konten: 'Konten sama', kontak: 'Kontak bio sama', template: 'Caption seragam', serentak: 'Unggah serentak', nama: 'Nama berpola' };
     const member = (m) => {
       const s = String(m);
       const i = s.indexOf(':');

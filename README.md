@@ -20,7 +20,8 @@ secara bersih. Lihat [CHANGELOG.md](CHANGELOG.md) dan [docs/DESIGN.md](docs/DESI
   keputusan tinjauan manual (*ditandai / bersih / konfirmasi*) dan mode triase **Perlu tinjauan**;
   **kuadran Followers × Reach** (scatter, log + median, titik berwarna level) membantu memilah
   akun berpengaruh vs jangkauan-rendah.
-- **Proses** — pace rate limiter real-time, budget siklus/harian/sesi, komposisi antrean, log aktivitas
+- **Proses** — pace rate limiter real-time, budget siklus/harian/sesi, komposisi antrean,
+  **panel Kesehatan** (sukses-rate, histogram error, aktivitas terbaru), log aktivitas
   terbaru dengan pesan error apa adanya.
 - **Sesi & Login** — status sesi IG/TikTok + browser internal persisten (`persist:sunscrap`).
 - **Pengaturan** — audit (ulang/kunjungi profil/edit/hapus), backup & restore database (dengan safety

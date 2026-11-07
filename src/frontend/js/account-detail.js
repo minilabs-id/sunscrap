@@ -39,7 +39,11 @@ export function openAccount(username, platform) {
   api.getAccountDetail(platform, username).then((detail) => {
     if (!detail) { toast('Akun belum pernah disimpan.', 'error'); return; }
     const flags = (detail.flags || []).map((f) => `<div class="flag"><b>${esc(f.label)}</b> (+${f.points}) — ${esc(f.detail)}</div>`).join('');
-    const siblings = (detail.siblings || []).map((s) => `<div class="flag"><b>@${esc(s.username)}</b> — ${esc(s.level)} (${(s.reasons || []).join(', ')})</div>`).join('');
+    const siblings = (detail.siblings || []).map((s) => {
+      const reasonLabels = { konten: 'Konten sama', kontak: 'Kontak bio sama', template: 'Caption seragam', serentak: 'Unggah serentak', nama: 'Nama berpola' };
+      const reasons = (s.reasons || []).map((r) => reasonLabels[r] || r).join(', ');
+      return `<div class="flag"><b>@${esc(s.username)}</b> — ${esc(s.level)} (${esc(reasons)})</div>`;
+    }).join('');
     const history = (detail.history || []).map((h) => `<tr><td>${esc(h.month)}</td><td class="num">${fmt(h.follower_count)}</td><td class="num">${fmt(h.post_count)}</td></tr>`).join('');
     const cur = state.reviews[reviewKey(detail.platform, detail.username)];
     const curMeta = cur ? reviewMeta(cur.decision) : null;

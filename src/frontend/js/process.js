@@ -1,11 +1,12 @@
 /** sunscrap v2 — Proses (pace worker, antrean, aktivitas terbaru). */
 import { $ } from './dom.js';
-import { api, esc, fmt, fmtWhen, deltaBadge } from './helpers.js';
+import { api, esc, fmt, fmtWhen, relTime, deltaBadge } from './helpers.js';
 import { state } from './state.js';
 import { statusBadge } from './targets.js';
 
 export async function loadProcess() {
   try {
+    await renderHealth();
     const s = await api.getQueueStats();
     const pending = s.pending || 0, running = s.running || 0, ok = s.ok || 0, partial = s.partial || 0, failed = s.failed || 0;
     const total = Math.max(pending + running + ok + partial + failed, 1);
@@ -67,6 +68,41 @@ export async function loadProcess() {
     console.error('loadProcess gagal:', e);
     const eta = $('#queue-eta'); if (eta) eta.textContent = 'Gagal memuat antrean.';
   }
+}
+
+/** Panel kesehatan siklus: sukses-rate, histogram error, kejadian terbaru. */
+async function renderHealth() {
+  const host = $('#worker-health');
+  if (!host) return;
+  let activity = [];
+  try { activity = await api.workerActivity(50) || []; } catch { /* abaikan */ }
+  const tasks = activity.filter((e) => e.type === 'task');
+  const ok = tasks.filter((e) => e.status === 'OK').length;
+  const failed = tasks.filter((e) => e.status === 'FAILED');
+  const partial = tasks.filter((e) => e.status === 'PARTIAL').length;
+  const rate = tasks.length ? Math.round((ok / tasks.length) * 100) : null;
+  const codes = {};
+  failed.forEach((e) => { const c = e.errorCode || 'UNKNOWN'; codes[c] = (codes[c] || 0) + 1; });
+  const top = Object.entries(codes).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const ERR_LABEL = { AUTH: 'Login', THROTTLED: 'Dibatasi', PERMANENT: 'Permanen', TRANSIENT: 'Sementara' };
+
+  host.innerHTML = `
+    <div class="queue-stats" style="grid-template-columns:repeat(4,1fr);margin-top:0">
+      <div class="queue-stat"><b>${rate === null ? '—' : rate + '%'}</b><span>sukses</span></div>
+      <div class="queue-stat"><b>${fmt(tasks.length)}</b><span>task</span></div>
+      <div class="queue-stat"><b>${fmt(partial)}</b><span>sebagian</span></div>
+      <div class="queue-stat"><b>${fmt(failed.length)}</b><span>gagal</span></div>
+    </div>
+    ${top.length ? `<div class="queue-legend" style="margin-top:10px">${top.map(([c, n]) => `<span><i style="background:var(--err)"></i>${esc(ERR_LABEL[c] || c)} — ${fmt(n)}</span>`).join('')}</div>` : ''}
+    <div style="margin-top:12px;display:flex;flex-direction:column">
+      ${activity.slice(0, 6).map((ev) => {
+        if (ev.type !== 'task') {
+          return `<div class="check-row"><div><strong>${ev.type === 'start' ? 'Worker dimulai' : 'Worker dihentikan'}${ev.reason ? ' — ' + esc(ev.reason) : ''}</strong><div class="muted text-micro">${esc(relTime(ev.t))}</div></div></div>`;
+        }
+        const pl = ev.platform === 'instagram' ? 'IG' : 'TK';
+        return `<div class="check-row"><div><strong>${pl}:${esc(ev.username || '?')}</strong> ${statusBadge(ev.status)} ${ev.errorCode ? `<span class="muted">· ${esc(ERR_LABEL[ev.errorCode] || ev.errorCode)}</span>` : ''}<div class="muted text-micro">${ev.ms ? fmt(ev.ms) + ' ms · ' : ''}${esc(relTime(ev.t))}</div></div></div>`;
+      }).join('') || '<div class="muted">Belum ada aktivitas worker.</div>'}
+    </div>`;
 }
 
 /** Meter pace + rincian budget (dipanggil dari loadProcess & saat worker berubah). */

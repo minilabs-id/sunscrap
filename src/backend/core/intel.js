@@ -132,6 +132,7 @@ function findAccountLinks(accounts, postsByAccount) {
   const links = {};
   const byRef = {};
   const byBucket = {};
+  const byBase = {};
 
   for (const [key, posts] of Object.entries(postsByAccount)) {
     const platform = key.split(':', 1)[0];
@@ -177,6 +178,22 @@ function findAccountLinks(accounts, postsByAccount) {
     }
   }
   for (const keys of Object.values(byToken)) _pairOff(keys, 'kontak', links);
+
+  // Nama berpola: akun dengan basis nama sama (digit/akhiran dibuang) dalam platform sama,
+  // dan minimal satu di antaranya memang memakai akhiran angka (pola "akun", "akun2", "akun3").
+  for (const account of accounts) {
+    const key = _accountKey(account.platform, account.username);
+    if (!key) continue;
+    const raw = key.split(':').slice(1).join(':').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const base = raw.replace(/[0-9]+$/, '');
+    if (base.length < 4) continue;
+    const entry = (byBase[`${account.platform}:${base}`] ||= { keys: [], numeric: false });
+    entry.keys.push(key);
+    if (raw !== base) entry.numeric = true;
+  }
+  for (const entry of Object.values(byBase)) {
+    if (entry.numeric && entry.keys.length >= 2) _pairOff(entry.keys, 'nama', links);
+  }
 
   const byTemplate = {};
   for (const [key, posts] of Object.entries(postsByAccount)) {
@@ -357,6 +374,22 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
     if (bandFlat && steady && keptUploading) {
       flag('followers_datar', 'Followers tidak pernah bergerak',
         `Selisih ${displayPct(followerDeltaPct)} antara ${monthValues.length} bulan (${displayInt(monthValues[0])} → ${displayInt(monthValues[monthValues.length - 1])}) sementara upload jalan terus`, 2);
+    }
+  }
+
+  // Lonjakan followers tak wajar: pertumbuhan bulan terakhir jauh di atas median pertumbuhan.
+  if (monthValues.length >= 3) {
+    const growths = [];
+    for (let i = 1; i < monthValues.length; i++) {
+      if (monthValues[i - 1] > 0) growths.push((monthValues[i] - monthValues[i - 1]) / monthValues[i - 1]);
+    }
+    if (growths.length >= 2) {
+      const last = growths[growths.length - 1];
+      const medianGrowth = _median(growths);
+      if (medianGrowth !== null && last > 0.10 && last > (medianGrowth * 3) + 0.05) {
+        flag('followers_spike', 'Lonjakan followers',
+          `Tumbuh ${displayPct(last * 100)} pada bulan terakhir, sementara median bulanan hanya ${displayPct(medianGrowth * 100)}`, 2);
+      }
     }
   }
 

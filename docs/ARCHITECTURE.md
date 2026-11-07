@@ -55,8 +55,8 @@ Aturan main:
 ### `src/backend/services/` — IO & orkestrasi
 | Modul | Isi |
 |---|---|
-| `worker.js` | State machine worker: klaim task → scrape → simpan → reschedule; backoff; budget siklus/harian/sesi. |
-| `scraper.js` | Jendela tersembunyi IG/TikTok + injeksi `scraper-content/*`; ekstraksi metrik. |
+| `worker.js` | State machine worker: klaim task → scrape → simpan → reschedule; backoff; budget siklus/harian/sesi; **circuit-breaker per platform** (IG/TikTok dijeda independen); **activity ring-buffer + JSONL** (`activity.jsonl`). |
+| `scraper.js` | Jendela tersembunyi IG/TikTok + injeksi `scraper-content/*`; ekstraksi metrik; **anti-deteksi** (UA diacak, `navigator.webdriver=false`). |
 | `updater.js` | electron-updater → GitHub Releases (`com.sunscrap.app`). |
 | `avatar.js` | Cache avatar ke disk; diekspos renderer via skema `sa-avatar://`. |
 

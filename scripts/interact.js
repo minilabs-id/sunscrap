@@ -84,6 +84,7 @@ async function main() {
   expect(await page.$eval('#tab-proses', (el) => el.classList.contains('active')), 'kartu Belum diproses → pindah ke Proses');
   const queueHtml = await page.innerHTML('#queue-bar');
   expect(queueHtml.includes('q-seg'), 'Antrean di Proses terisi');
+  expect(await page.isVisible('#worker-health'), 'panel Kesehatan worker tampil');
 
   // ── 5. Target: chip filter + sort + seleksi + pager ──
   await page.click('.nav-link[data-tab="targets"]');

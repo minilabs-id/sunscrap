@@ -19,6 +19,7 @@ function registerDataIpc(ctx) {
   ipcMain.handle('worker:start', async () => { const s = await worker.start(); push('worker', s); return s; });
   ipcMain.handle('worker:stop', () => { const s = worker.stop(null); push('worker', s); return s; });
   ipcMain.handle('worker:status', () => worker.getStatus());
+  ipcMain.handle('worker:activity', (event, n) => { const c = num(n); return worker.getActivity(c === null ? 50 : c); });
   ipcMain.handle('worker:login', (event, platform) => {
     if (platform !== 'instagram' && platform !== 'tiktok') return { error: 'platform tidak valid' };
     scraper.openLogin(platform);

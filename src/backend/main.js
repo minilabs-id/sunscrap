@@ -20,6 +20,10 @@ const { initUpdater } = require('./services/updater');
 const { createStorage } = require('./core/storage');
 const avatar = require('./services/avatar');
 
+// Anti-deteksi (ringan): sembunyikan penanda otomasi Chromium agar jendela
+// worker tak langsung dikenali sebagai bot oleh anti-scraping IG/TikTok.
+app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled');
+
 // Skema kustom untuk menyajikan avatar lokal (tanpa akses CDN dari renderer).
 // Sengaja TIDAK `standard`: skema standard dinormalkan Chromium menjadi
 // sa-avatar://nama/ (host=nama, path='/') sehingga handler selalu 404 (K-3).
@@ -368,7 +372,7 @@ async function boot() {
   const limiter = createRateLimiter(storage).init();
 
   worker = createWorker({
-    db, scraper, limiter, notify, log, avatarDir,
+    db, scraper, limiter, notify, log, avatarDir, activityLogPath: path.join(userData, 'activity.jsonl'),
     onChange: (status) => { refreshTraySoon(); broadcast('worker', status); },
   });
 

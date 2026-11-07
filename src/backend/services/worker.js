@@ -5,13 +5,18 @@
  * limiter. Memanggil db langsung (tanpa HTTP). Direproduksi dari desktop/worker/core.js.
  */
 
+const fs = require('node:fs');
+const path = require('node:path');
 const TaskCache = require('../core/taskCache');
 const { allowedTarget, cacheKey, classifyError, outcomeOf, CACHE_HIT_DELAY_MS, ERROR_BACKOFF_MS, IDLE_POLL_MS } = require('../core/policy');
 const { cacheAvatar } = require('./avatar');
 
+const PLATFORM_COOLDOWN_MS = 10 * 60 * 1000; // IG/TikTok saling independen
+const PLATFORM_ERROR_THRESHOLD = 3;
+
 function delay(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 
-function createWorker({ db, scraper, limiter, notify, log, onChange, timers, avatarDir } = {}) {
+function createWorker({ db, scraper, limiter, notify, log, onChange, timers, avatarDir, activityLogPath } = {}) {
   const say = typeof log === 'function' ? log : () => {};
   const ping = typeof notify === 'function' ? notify : () => {};
   const clock = timers && typeof timers.setTimeout === 'function' ? timers : { setTimeout, clearTimeout };
@@ -36,7 +41,25 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
     cycleId: null, lastPlatform: null, blockedInARow: 0,
     lastError: null, lastTaskId: null, lastEta: null,
     harvested: new Set(), followerAttempts: new Set(),
+    platformErrors: { instagram: 0, tiktok: 0 },
+    platformPauseUntil: { instagram: 0, tiktok: 0 },
+    events: [], // ring buffer aktivitas terbaru
   };
+
+  function logEvent(evt) {
+    state.events.push(evt);
+    if (state.events.length > 200) state.events.shift();
+    if (activityLogPath) {
+      try {
+        fs.mkdirSync(path.dirname(activityLogPath), { recursive: true });
+        fs.appendFileSync(activityLogPath, JSON.stringify(evt) + '\n');
+      } catch { /* logging non-kritis */ }
+    }
+  }
+
+  function getActivity(count = 50) {
+    return state.events.slice(-count).reverse();
+  }
 
   function getStatus() {
     let label = 'siaga';
@@ -46,6 +69,10 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
       active: state.active, busy: state.busy, label,
       cycleId: state.cycleId, lastError: state.lastError, lastTaskId: state.lastTaskId, eta: state.lastEta,
       rate: limiter.getStatus(),
+      platforms: {
+        instagram: { paused: (state.platformPauseUntil.instagram || 0) > Date.now(), errors: state.platformErrors.instagram },
+        tiktok: { paused: (state.platformPauseUntil.tiktok || 0) > Date.now(), errors: state.platformErrors.tiktok },
+      },
     };
   }
 
@@ -70,6 +97,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
     state.active = false;
     if (state.timer) { clock.clearTimeout(state.timer); state.timer = null; }
     if (reason) { state.lastError = reason; ping('Worker berhenti', reason); }
+    logEvent({ t: new Date().toISOString(), type: 'stop', reason: reason || null });
     changed();
     return wasActive;
   }
@@ -80,6 +108,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
     state.lastError = null;
     state.blockedInARow = 0;
     limiter.startSession();
+    logEvent({ t: new Date().toISOString(), type: 'start' });
     ping('Worker aktif', 'Scraping berjalan di jendela tersembunyi. Biarkan aplikasi tetap terbuka.');
     changed();
     schedule(500);
@@ -177,6 +206,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
 
   async function tick() {
     if (!state.active || state.busy) return;
+    const tickStartMs = Date.now();
     state.busy = true;
     changed();
     try {
@@ -195,9 +225,15 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
       const pending = pendingCount();
       limiter.autoSelectMode(pending);
 
-      const prefer = state.lastPlatform === 'tiktok' ? 'instagram' : 'tiktok';
+      const now = Date.now();
+      const paused = (p) => (state.platformPauseUntil[p] || 0) > now;
+      // Pilih platform sehat; bila satu dijeda, kerjakan yang lain.
+      let prefer;
+      if (state.lastPlatform === 'tiktok') prefer = paused('instagram') ? (paused('tiktok') ? 'instagram' : 'tiktok') : 'instagram';
+      else prefer = paused('tiktok') ? (paused('instagram') ? 'instagram' : 'instagram') : 'tiktok';
       const task = db.getNextTask(prefer);
       if (!task) { schedule(IDLE_POLL_MS); return; }
+      if (paused(task.platform)) { schedule(IDLE_POLL_MS); return; }
       taskWithCache(task);
 
       const cycleId = task.run_id ? `${task.audit_id || 0}:${task.run_id}` : null;
@@ -221,6 +257,18 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
       const outcome = outcomeOf(result, state.blockedInARow);
       state.blockedInARow = outcome.blockedInARow;
 
+      // Circuit breaker per platform: 3 galat beruntun -> jeda platform tsb.
+      if (result.status === 'FAILED') {
+        state.platformErrors[task.platform] = (state.platformErrors[task.platform] || 0) + 1;
+        if (state.platformErrors[task.platform] >= PLATFORM_ERROR_THRESHOLD && !paused(task.platform)) {
+          state.platformPauseUntil[task.platform] = Date.now() + PLATFORM_COOLDOWN_MS;
+          state.platformErrors[task.platform] = 0;
+          ping('Platform dijeda', `${task.platform === 'instagram' ? 'Instagram' : 'TikTok'} berhenti sementara ${PLATFORM_COOLDOWN_MS / 60000} menit; beralih ke platform lain.`);
+        }
+      } else {
+        state.platformErrors[task.platform] = 0;
+      }
+
       if (outcome.charge === 'success') limiter.reportSuccess();
       else if (outcome.charge === 'error') limiter.reportError();
 
@@ -229,6 +277,15 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
       } catch (error) {
         say(`Gagal mengirim hasil task ${task.id}: ${error.message}`);
       }
+      logEvent({
+        t: new Date().toISOString(),
+        type: 'task',
+        platform: task.platform,
+        username: task.username || null,
+        status: result.status,
+        errorCode: result.errorCode || null,
+        ms: Date.now() - tickStartMs,
+      });
 
       if (outcome.blocked) {
         if (outcome.stop) {
@@ -271,7 +328,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
     return (stats.pending || 0) + (stats.running || 0);
   }
 
-  return { start, stop, getStatus };
+  return { start, stop, getStatus, getActivity };
 }
 
 module.exports = { createWorker };

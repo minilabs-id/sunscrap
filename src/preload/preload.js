@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('sunscrap', {
   workerStart: () => invoke('worker:start'),
   workerStop: () => invoke('worker:stop'),
   workerStatus: () => invoke('worker:status'),
+  workerActivity: (n) => invoke('worker:activity', n),
   openLogin: (platform) => invoke('worker:login', platform),
 
   // data (baca)

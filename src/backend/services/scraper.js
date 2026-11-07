@@ -27,9 +27,21 @@ function readContent(name) {
   return fs.readFileSync(path.join(CONTENT_DIR, name), 'utf8');
 }
 
+const CHROME_VERSIONS = ['126.0.0.0', '128.0.0.0', '131.0.0.0'];
 function desktopUserAgent() {
-  const chrome = process.versions.chrome || '126.0.0.0';
+  const chrome = CHROME_VERSIONS[Math.floor(Math.random() * CHROME_VERSIONS.length)];
   return `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chrome} Safari/537.36`;
+}
+
+/** Samarakan navigator agar tidak meninggalkan sidik otomasi (webdriver, bahasa). */
+function hardenNavigator(contents) {
+  const script = `(() => {
+    try {
+      Object.defineProperty(navigator, 'webdriver', { get: () => false });
+      Object.defineProperty(navigator, 'languages', { get: () => ['id-ID', 'id', 'en-US', 'en'] });
+    } catch (e) {}
+  })();`;
+  try { contents.executeJavaScript(script).catch(() => {}); } catch {}
 }
 
 /** Batas waktu per panggilan scrape; halaman yang menggantung tidak menahan worker. */
@@ -81,6 +93,7 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
       if (workerWindow && !workerWindow.isDestroyed()) workerWindow.destroy();
       workerWindow = null;
     });
+    workerWindow.webContents.on('did-finish-load', () => hardenNavigator(workerWindow.webContents));
     workerWindow.on('closed', () => { workerWindow = null; });
     return workerWindow;
   }

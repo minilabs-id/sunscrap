@@ -115,3 +115,30 @@ test('token dipakai <=50 akun tetap menjadi bukti pasangan', () => {
   const links = intel.findAccountLinks(accounts, postsByAccount);
   assert.ok(Object.keys(links).length > 0); // 40 akun berbagi kontak -> terhubung
 });
+
+test('nama berpola (akhiran angka) menghubungkan akun se-platform', () => {
+  const accounts = [account('jualkue', 10000), account('jualkue2', 10000), account('jualkue3', 10000)];
+  const postsByAccount = { 'instagram:jualkue': [], 'instagram:jualkue2': [], 'instagram:jualkue3': [] };
+  const links = intel.findAccountLinks(accounts, postsByAccount);
+  const edges = links['instagram:jualkue'] || {};
+  assert.ok(edges['instagram:jualkue2'] && edges['instagram:jualkue2'].has('nama'));
+});
+
+test('nama tanpa akhiran angka tidak menghubungkan akun berlainan', () => {
+  const accounts = [account('brandx', 1000), account('brandy', 1000)];
+  const postsByAccount = { 'instagram:brandx': [], 'instagram:brandy': [] };
+  const links = intel.findAccountLinks(accounts, postsByAccount);
+  assert.equal(Object.keys(links).length, 0);
+});
+
+test('lonjakan followers bulan terakhir yang tak wajar memberi flag', () => {
+  const a = account('spike', 10000);
+  const history = [
+    { month: '2026-07', follower_count: 1000, post_count: 10 },
+    { month: '2026-08', follower_count: 1100, post_count: 11 },
+    { month: '2026-09', follower_count: 1200, post_count: 12 },
+    { month: '2026-10', follower_count: 2000, post_count: 13 },
+  ];
+  const r = intel.analyseAccount(a, [], history, {});
+  assert.ok(r.flags.some((f) => f.key === 'followers_spike'));
+});
