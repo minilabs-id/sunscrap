@@ -326,9 +326,8 @@ button { font: inherit; color: inherit; }
 }
 
 .sidebar {
-  container-type: inline-size;
-  width: clamp(76px, calc(248px - (1350px - 100vw) * 0.905), 248px);
-  transition: width .25s var(--ease);
+  width: 248px;
+  transition: width .22s var(--ease);
   flex: none;
   display: flex;
   flex-direction: column;
@@ -1643,18 +1642,16 @@ body.modal-open { overflow: hidden; }
 :root[data-density="lapang"] .main { padding: var(--sp-6) var(--sp-7); }
 
 /* ============================================================
-   Responsif sidebar (elastis): lebar mengikuti jendela secara fluid,
-   konten beralih ke mode "ikon saja" saat sidebar < 175px (container query).
+   Responsif sidebar: dua mode bersih (penuh 248px ↔ ikon 76px),
+   beralih pada ambang yang sama, dengan transisi lebar yang halus.
    ============================================================ */
-@container (max-width: 175px) {
+@media (max-width: 1200px) {
+  .sidebar { width: 76px; padding: var(--sp-3) var(--sp-2); }
   .nav-group, .nav-link .nav-text, .nav-badge { display: none; }
   .nav-link { justify-content: center; padding: 0; width: 44px; margin-inline: auto; }
   .nav-link.active::before { left: -10px; }
   .worker-toggle .btn-label { display: none; }
   .worker-toggle { width: 44px; padding: 0; justify-content: center; margin-inline: auto; }
-}
-
-@media (max-width: 1160px) {
   .audit-picker { max-width: 160px; }
   .audit-picker select { max-width: 100px; }
   .tb-search { width: min(360px, 34vw); }
