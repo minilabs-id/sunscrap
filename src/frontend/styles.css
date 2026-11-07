@@ -10,7 +10,7 @@
 
   /* Mica — alas berlapis (bukan glass penuh) */
   --mica: #f3f1ee;
-  --mica-glow-a: rgba(245, 158, 11, .13);
+  --mica-glow-a: rgba(255, 152, 0, .14);
   --mica-glow-b: rgba(99, 102, 241, .07);
 
   /* Permukaan (lapisan elevaton) */
@@ -28,14 +28,18 @@
   --ink-2: #4d4946;
   --ink-3: #6f6a66;
 
-  /* Aksen matahari — identitas; dipakai hemat */
-  --accent: #b45309;            /* teks/ikon di atas terang (AA ≥4.5) */
-  --accent-strong: #f59e0b;     /* isi tombol primer */
-  --accent-strong-hover: #fbbf24;
-  --accent-on: #241300;         /* teks di atas tombol primer */
-  --accent-soft: rgba(245, 158, 11, .16);
-  --accent-wash: rgba(245, 158, 11, .09);
-  --accent-ring: rgba(245, 158, 11, .45);
+  /* Brand matahari — dari logo: oranye #FF9800 (sinar) & kuning #FFEB3B (inti) */
+  --brand-orange: #ff9800;
+  --brand-yellow: #ffeb3b;
+
+  /* Aksen fungsional — dipakai hemat */
+  --accent: #bf360c;            /* teks/ikon di atas terang (AA ≥4.5), oranye tua */
+  --accent-strong: var(--brand-orange);   /* isi tombol primer + grafis */
+  --accent-strong-hover: #ffa726;
+  --accent-on: #2a1600;         /* teks di atas tombol primer */
+  --accent-soft: rgba(255, 152, 0, .18);
+  --accent-wash: rgba(255, 152, 0, .11);
+  --accent-ring: rgba(255, 152, 0, .52);
 
   /* Status semantik (teks AA di atas surface) */
   --ok: #177245;
@@ -114,7 +118,7 @@
   color-scheme: dark;
 
   --mica: #1f1e1c;
-  --mica-glow-a: rgba(251, 191, 36, .08);
+  --mica-glow-a: rgba(255, 152, 0, .10);
   --mica-glow-b: rgba(129, 140, 248, .06);
 
   --surface: #28272a;
@@ -129,13 +133,13 @@
   --ink-2: #cdc9c5;
   --ink-3: #a09b96;
 
-  --accent: #fbbf24;
-  --accent-strong: #f5a623;
-  --accent-strong-hover: #ffc457;
-  --accent-on: #241300;
-  --accent-soft: rgba(251, 191, 36, .14);
-  --accent-wash: rgba(251, 191, 36, .08);
-  --accent-ring: rgba(251, 191, 36, .40);
+  --accent: #ffb74d;
+  --accent-strong: var(--brand-orange);
+  --accent-strong-hover: #ffa726;
+  --accent-on: #2a1600;
+  --accent-soft: rgba(255, 152, 0, .18);
+  --accent-wash: rgba(255, 152, 0, .10);
+  --accent-ring: rgba(255, 152, 0, .45);
 
   --ok: #4ade80;
   --ok-soft: #14301f;
@@ -215,7 +219,7 @@ button { font: inherit; color: inherit; }
 .tb-brand img, .tb-brand svg { width: 20px; height: 20px; display: block; }
 .tb-logo { flex: none; }
 .tb-wordmark { font-weight: 700; font-size: 13.5px; letter-spacing: .01em; }
-.tb-wordmark em { font-style: normal; color: var(--accent); }
+.tb-wordmark em { font-style: normal; color: var(--accent-strong); }
 .tb-sep { color: var(--ink-3); margin: 0 2px; }
 .tb-context {
   font-size: var(--fs-meta);

@@ -29,8 +29,9 @@
 | `--surface-2` / `-3` | `#faf9f7` / `#f0efed` | `#302f33` / `#3a393e` | sunken halus / hover |
 | `--line` / `--line-strong` | `rgba(28,26,24,.10/.18)` | `rgba(255,255,255,.09/.18)` | garis 1px |
 | `--ink` / `-2` / `-3` | `#1c1b1a` / `#4d4946` / `#6f6a66` | `#f4f2f0` / `#cdc9c5` / `#a09b96` | hierarki teks |
-| `--accent` (teks/ikon) | `#d97706` | `#fbbf24` | aksen (AA) |
-| `--accent-strong` (isi tombol) | `#f59e0b` (teks `#241300`) | `#f5a623` | tombol primer |
+| `--brand-orange` / `--brand-yellow` | `#ff9800` / `#ffeb3b` | sama | dari logo (sinar & inti) |
+| `--accent` (teks/ikon) | `#bf360c` | `#ffb74d` | aksen (AA) |
+| `--accent-strong` (isi tombol + grafis) | `var(--brand-orange)` (teks `#2a1600`) | `var(--brand-orange)` | tombol primer, grafik |
 | `--ok` / `--warn` / `--err` | `#177245` / `#b45309` / `#c92a2a` | `#4ade80` / `#fbbf24` / `#ff9a9a` | semantik saja |
 | `--ig` / `--tk` | `#c2185b` / `#0e7490` | `#f0669d` / `#38bdf8` | badge platform |
 

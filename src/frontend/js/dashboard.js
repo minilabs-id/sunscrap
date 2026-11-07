@@ -50,7 +50,7 @@ function renderKpis(summary, ts) {
       <div class="kpi-top">
         <span class="kpi-lbl">${esc(c.label)}</span>
         ${c.series
-          ? `<svg class="spark" viewBox="0 0 78 24" role="presentation" aria-hidden="true"><polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${sparklinePoints(c.series)}"/></svg>`
+          ? `<svg class="spark" viewBox="0 0 78 24" role="presentation" aria-hidden="true"><polyline fill="none" stroke="var(--accent-strong)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${sparklinePoints(c.series)}"/></svg>`
           : ''}
       </div>
       <div class="num">${esc(c.value)}</div>
@@ -87,7 +87,7 @@ function renderTrend() {
   $('#trend-cells').innerHTML = pts.map(([x, y], i) => `
     <g class="day-cell" data-idx="${i}">
       <rect class="day-cap" x="${x - 12}" y="16" width="24" height="176"></rect>
-      <circle class="trend-dot" cx="${x}" cy="${y}" r="4.2" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" opacity="0"></circle>
+      <circle class="trend-dot" cx="${x}" cy="${y}" r="4.2" fill="var(--accent-strong)" stroke="var(--surface)" stroke-width="2" opacity="0"></circle>
     </g>`).join('');
   const mid = Math.floor((days.length - 1) / 2);
   const midDate = days[mid] && days[mid].date ? days[mid].date : days[0].date;

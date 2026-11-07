@@ -1,7 +1,8 @@
 'use strict';
 /**
- * sunscrap — audit kontras WCAG
- * Baca token warna dari styles.css, hitung rasio kontras pasangan teks/latar.
+ * sunscrap — audit kontras WCAG (per-tema)
+ * Baca token dari styles.css, gabungkan :root (global) + :root.dark (override),
+ * resolve var(), lalu hitung rasio kontras pasangan teks/latar.
  * Jalankan: node scripts/audit-contrast.js
  */
 const fs = require('fs');
@@ -21,29 +22,45 @@ function ratio(a, b) {
   const [hi, lo] = l1 > l2 ? [l1, l2] : [l2, l1];
   return (hi + 0.05) / (lo + 0.05);
 }
-// Gabung token: :root (global) lalu :root.dark menimpa.
-const merged = {};
-for (const m of css.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-fA-F]{3,8})/g)) merged[m[1]] = m[2];
+function decls(block) {
+  const out = {};
+  for (const m of block.matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)) out[m[1]] = m[2].trim();
+  return out;
+}
+function resolve(map) {
+  for (let i = 0; i < 6; i++) {
+    let changed = false;
+    for (const k of Object.keys(map)) {
+      const m = String(map[k]).match(/^var\(--([a-z0-9-]+)\)$/i);
+      if (m && map[m[1]]) { map[k] = map[m[1]]; changed = true; }
+    }
+    if (!changed) break;
+  }
+  return map;
+}
+
+const parts = css.split(':root.dark {');
+const light = resolve(decls(parts[0]));
+const darkRaw = decls(parts[1] ? parts[1].split(/\n\}\s*\n/)[0] : '');
+const dark = resolve(Object.assign({}, light, darkRaw));
 
 const pairs = [
   ['ink', 'surface'], ['ink', 'surface-2'], ['ink-2', 'surface'], ['ink-2', 'surface-2'],
   ['ink-3', 'surface'], ['ink-3', 'surface-2'], ['accent', 'surface'],
-  ['ok', 'surface'], ['err', 'surface'], ['warn', 'surface'],
-  ['accent-on', 'accent-strong'], ['on-viz-light', 'viz-ok'], ['on-viz-light', 'viz-err'],
+  ['accent-on', 'accent-strong'], ['ok', 'surface'], ['err', 'surface'], ['warn', 'surface'],
+  ['on-viz-light', 'viz-ok'], ['on-viz-light', 'viz-err'],
   ['on-viz-dark', 'viz-warn'], ['on-viz-dark', 'viz-idle'], ['amati-strong', 'surface'],
 ];
 
-const bad = [];
-for (const [f, b] of pairs) {
-  if (!merged[f] || !merged[b]) { bad.push(`${f}/${b} token hilang`); continue; }
-  const r = ratio(merged[f], merged[b]);
-  if (r < 4.5) bad.push(`${f} pada ${b} = ${r.toFixed(2)}:1`);
+let bad = 0;
+for (const [theme, tok] of [['light', light], ['dark', dark]]) {
+  const fails = [];
+  for (const [f, b] of pairs) {
+    if (!/^#[0-9a-f]{3,8}$/i.test(tok[f] || '') || !/^#[0-9a-f]{3,8}$/i.test(tok[b] || '')) { fails.push(`${f}/${b} non-hex (${tok[f]}|${tok[b]})`); continue; }
+    const r = ratio(tok[f], tok[b]);
+    if (r < 4.5) fails.push(`${f} pada ${b} = ${r.toFixed(2)}:1`);
+  }
+  console.log(`  ${theme}: ${fails.length ? '\n    ' + fails.join('\n    ') : 'semua >= 4.5:1'}`);
+  if (fails.length) bad++;
 }
-if (bad.length) {
-  console.log('PELANGGARAN KONTRAS (< 4.5:1):');
-  bad.forEach((b) => console.log('  ' + b));
-  process.exit(1);
-} else {
-  console.log('Semua pasangan teks/latar >= 4.5:1 (AA).');
-  process.exit(0);
-}
+process.exit(bad ? 1 : 0);
