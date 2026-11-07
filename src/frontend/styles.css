@@ -228,6 +228,7 @@ button { font: inherit; color: inherit; }
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 200px;
   width: min(560px, 44vw);
   height: 32px;
   padding: 0 12px;
@@ -823,6 +824,7 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
+  min-height: 68px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-left: 3px solid var(--line-strong);
@@ -1437,10 +1439,10 @@ body.modal-open { overflow: hidden; }
 /* ============================================================
    Proses — meter & antrean
    ============================================================ */
-.pace-wrap { display: flex; align-items: center; gap: var(--sp-5); }
+.pace-wrap { display: flex; align-items: center; gap: var(--sp-5); flex-wrap: wrap; }
 .pace-num { font-size: var(--fs-display); font-weight: 800; letter-spacing: -.03em; line-height: 1; }
 .pace-unit { font-size: var(--fs-micro); color: var(--ink-3); margin-top: 2px; }
-.pace-budget { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+.pace-budget { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 240px; }
 .pace-row { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-meta); }
 .pace-row b { font-variant-numeric: tabular-nums; }
 
@@ -1464,7 +1466,7 @@ body.modal-open { overflow: hidden; }
 /* ============================================================
    Sesi — browser
    ============================================================ */
-.browser-bar { display: flex; gap: 8px; margin-bottom: var(--sp-3); align-items: center; }
+.browser-bar { display: flex; gap: 8px; margin-bottom: var(--sp-3); align-items: center; flex-wrap: wrap; }
 .nav-btn { width: 32px; padding: 0; font-size: 18px; }
 .browser-wrap {
   border: 1px solid var(--line);
