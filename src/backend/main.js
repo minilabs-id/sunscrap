@@ -33,11 +33,12 @@ const WINDOW_STATE = 'window-state.json';
 const RENDERER_INDEX_PATH = path.join(__dirname, '..', 'frontend', 'index.html');
 const APP_VERSION = require('../../package.json').version;
 
-// Overlay tombol min/max/close harus mengikuti tema — putih di dark mode terlihat rusak.
+// Overlay tombol min/max/close harus sama warna dengan permukaan titlebar
+// (solid) agar menyatu. Warna simbol mengikuti mode terang/gelap.
 function titleBarOverlayFor(dark) {
   return dark
-    ? { color: '#1f2430', symbolColor: '#e5e7eb', height: 46 }
-    : { color: '#ffffff', symbolColor: '#101828', height: 46 };
+    ? { color: '#28272a', symbolColor: '#d6d1cc', height: 46 }
+    : { color: '#ffffff', symbolColor: '#1c1b1a', height: 46 };
 }
 function systemPrefersDark() {
   try { return nativeTheme.shouldUseDarkColors; } catch { return false; }
@@ -382,6 +383,12 @@ async function boot() {
   ipcMain.handle('app:theme', (event, theme) => {
     try { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setTitleBarOverlay(titleBarOverlayFor(theme === 'dark')); } catch {}
     return { ok: true };
+  });
+  // Ikut perubahan tema sistem meski renderer tidak memicu (jaring pengaman).
+  nativeTheme.on('updated', () => {
+    try {
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setTitleBarOverlay(titleBarOverlayFor(systemPrefersDark()));
+    } catch {}
   });
 
   createMainWindow();

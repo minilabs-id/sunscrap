@@ -198,9 +198,7 @@ button { font: inherit; color: inherit; }
   gap: var(--sp-3);
   height: 46px;
   padding: 0 var(--window-controls-width) 0 var(--sp-4);
-  background: color-mix(in srgb, var(--surface) 68%, transparent);
-  backdrop-filter: blur(26px) saturate(1.35);
-  -webkit-backdrop-filter: blur(26px) saturate(1.35);
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
   position: relative;
   z-index: 30;
