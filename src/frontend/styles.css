@@ -1489,6 +1489,20 @@ body.modal-open { overflow: hidden; }
 .okdot { color: var(--ok-dot); }
 .offdot { color: var(--ink-3); }
 
+/* Baris sesi (Sesi & Login) — ringkas */
+.session-rows { display: flex; flex-direction: column; }
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--line);
+}
+.session-row:last-child { border-bottom: 0; }
+.session-platform { flex: none; width: 150px; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.session-status { flex: 1; min-width: 0; color: var(--ink-2); }
+.session-actions { flex: none; display: flex; gap: 12px; }
+
 /* ============================================================
    Pengaturan — seksi & zona berbahaya
    ============================================================ */

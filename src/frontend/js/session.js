@@ -32,16 +32,16 @@ function browserNavigate(url) {
 }
 
 export async function renderLoginStatus() {
-  const el = $('#session-login-status');
-  if (!el) return;
+  const igEl = $('#session-ig-status');
+  const tkEl = $('#session-tk-status');
+  const dot = (on) => (on ? '<span class="okdot">●</span>' : '<span class="offdot">○</span>');
   try {
     const status = await api.getLoginStatus();
-    const dot = (on) => on ? '<span class="okdot">●</span>' : '<span class="offdot">○</span>';
-    el.innerHTML =
-      `<span><b>Instagram</b> ${dot(!!(status && status.instagram))} ${status && status.instagram ? 'masuk' : 'belum login'}</span>` +
-      `<span><b>TikTok</b> ${dot(!!(status && status.tiktok))} ${status && status.tiktok ? 'masuk' : 'belum login'}</span>`;
+    if (igEl) igEl.innerHTML = `${dot(!!(status && status.instagram))} ${status && status.instagram ? 'masuk' : 'belum login'}`;
+    if (tkEl) tkEl.innerHTML = `${dot(!!(status && status.tiktok))} ${status && status.tiktok ? 'masuk' : 'belum login'}`;
   } catch {
-    el.textContent = 'Status login: tidak tersedia';
+    if (igEl) igEl.textContent = 'tidak tersedia';
+    if (tkEl) tkEl.textContent = 'tidak tersedia';
   }
 }
 

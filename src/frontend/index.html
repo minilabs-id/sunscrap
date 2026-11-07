@@ -406,19 +406,32 @@
             <div class="page-sub">Login &amp; jelajah sesi persisten Instagram/TikTok — tersimpan lokal</div>
           </div>
         </header>
-        <div class="card mb-4">
-          <div class="card-hd"><div><div class="card-title">Status sesi</div><div class="card-sub">Dipakai worker &amp; browser di bawah</div></div></div>
-          <div id="session-login-status" class="login-status" aria-live="polite">Memuat…</div>
-          <div class="row-gap mt-3">
-            <button class="btn btn-ghost" id="btn-session-ig">Login Instagram</button>
-            <button class="btn btn-ghost" id="btn-session-tk">Login TikTok</button>
+        <div class="card mb-4" aria-label="Sesi dan login">
+          <div class="card-hd"><div><div class="card-title">Sesi &amp; Login</div><div class="card-sub">Dipakai worker &amp; browser — tersimpan lokal</div></div></div>
+          <div class="session-rows">
+            <div class="session-row">
+              <span class="session-platform"><span class="badge ig">IG</span> Instagram</span>
+              <span id="session-ig-status" class="session-status">Memuat…</span>
+              <span class="session-actions">
+                <button class="linklike" id="btn-session-ig">Login</button>
+                <button class="linklike" id="browser-ig">Buka</button>
+              </span>
+            </div>
+            <div class="session-row">
+              <span class="session-platform"><span class="badge tk">TK</span> TikTok</span>
+              <span id="session-tk-status" class="session-status">Memuat…</span>
+              <span class="session-actions">
+                <button class="linklike" id="btn-session-tk">Login</button>
+                <button class="linklike" id="browser-tk">Buka</button>
+              </span>
+            </div>
+            <div class="session-row">
+              <span class="session-platform">Jembatan eksternal</span>
+              <span id="bridge-status" class="session-status">Memuat…</span>
+              <span class="session-actions"><span class="muted text-micro">localhost</span></span>
+            </div>
           </div>
-        </div>
-        <div class="card mb-4" aria-label="Hubungkan browser eksternal">
-          <div class="card-hd"><div><div class="card-title">Hubungkan browser (sesi eksternal)</div><div class="card-sub">Ambil sesi IG/TikTok dari browser yang sudah login — tersinkron terus</div></div></div>
-          <p class="muted mb-3">Pasang ekstensi pendamping <b>sunscrap bridge</b> di browser (Chrome/Edge/Brave) yang sudah login. Ekstensi mengirim cookie sesi ke aplikasi secara berkala, jadi sesi di sini selalu mengikuti browser hidup.</p>
-          <div id="bridge-status" class="login-status" aria-live="polite">Memuat status jembatan…</div>
-          <div class="muted text-micro mt-2">Jangan bagikan cookie ke pihak lain — seluruh aliran hanya lewat <code>127.0.0.1</code> (localhost), tidak ke internet.</div>
+          <p class="muted text-micro mt-2">"Hubungkan browser" — pasang ekstensi <b>sunscrap bridge</b> agar sesi tersinkron otomatis dari browser yang sudah login. Aliran hanya lewat localhost.</p>
         </div>
         <div class="browser-bar">
           <button class="btn btn-ghost nav-btn" id="browser-back" title="Mundur" aria-label="Mundur">‹</button>
@@ -426,8 +439,6 @@
           <button class="btn btn-ghost nav-btn" id="browser-reload" title="Muat ulang" aria-label="Muat ulang">⟳</button>
           <input id="browser-url" class="input grow" placeholder="https://www.instagram.com/…" aria-label="URL" autocomplete="off" spellcheck="false" />
           <button class="btn btn-ghost" id="browser-go">Buka</button>
-          <button class="btn btn-ghost" id="browser-ig">Instagram</button>
-          <button class="btn btn-ghost" id="browser-tk">TikTok</button>
         </div>
         <div class="browser-wrap"><webview id="browser-webview" partition="persist:sunscrap"></webview></div>
       </section>

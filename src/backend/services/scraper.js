@@ -84,8 +84,10 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
       },
     });
     loads = 0;
+    workerWindow.webContents.setAudioMuted(true);
     workerWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     workerWindow.webContents.on('will-navigate', (event, url) => {
+      try { if (new URL(url).protocol === 'about:') return; } catch {}
       if (!allowedTarget(url)) { say(`Navigasi keluar diblokir: ${url}`); event.preventDefault(); }
     });
     workerWindow.webContents.on('render-process-gone', (event, details) => {
@@ -93,7 +95,7 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
       if (workerWindow && !workerWindow.isDestroyed()) workerWindow.destroy();
       workerWindow = null;
     });
-    workerWindow.webContents.on('did-finish-load', () => hardenNavigator(workerWindow.webContents));
+    workerWindow.webContents.on('did-finish-load', () => { hardenNavigator(workerWindow.webContents); workerWindow.webContents.setAudioMuted(true); });
     workerWindow.on('closed', () => { workerWindow = null; });
     return workerWindow;
   }
@@ -155,6 +157,14 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
     );
   }
 
+  /** Kosongkan halaman worker agar tak ada tab "nongkrong" di belakang. */
+  function blank() {
+    const win = workerWindow;
+    if (win && !win.isDestroyed()) {
+      try { win.webContents.setAudioMuted(true); win.webContents.loadURL('about:blank').catch(() => {}); } catch {}
+    }
+  }
+
   return {
     async scrapePost(task) {
       const platform = platformForHost(task.url);
@@ -162,6 +172,7 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
       await load(task.url);
       const arg = JSON.stringify({ url: task.url, username: task.username || null, tema: task.tema || null });
       const result = await call(platform, `globalThis.__saScrapePost(${arg}).catch((e) => globalThis.__saErrorResult(e))`);
+      blank();
       return result;
     },
 
@@ -171,6 +182,7 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
       const url = platform === 'instagram' ? `https://www.instagram.com/${handle}/` : `https://www.tiktok.com/@${handle}`;
       await load(url);
       const result = await call(platform, `globalThis.__saScrapeProfile(${JSON.stringify(username)}).catch((e) => globalThis.__saErrorResult(e))`);
+      blank();
       return result && result.status !== 'FAILED' ? result : null;
     },
 
