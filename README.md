@@ -45,7 +45,9 @@ npx electron scripts/smoke.js   # smoke require-graph + DB + worker (di runtime 
 node scripts/e2e.js  # e2e Playwright (import file & tempel link, tanpa error console)
 node scripts/interact.js     # uji interaksi menyeluruh (profil sekali pakai)
 node scripts/responsive.js   # matriks screenshot 1024–1920px (semua tab)
-node scripts/audit-responsive.js   # audit overflow/kesesuaian modal-popover (6 lebar, semua fitur)
+node scripts/audit-responsive.js   # audit overflow/kesesuaian modal-popover (8 lebar x 4 tinggi, semua fitur)
+node scripts/audit-polish.js       # audit kerapian: nama aksesibel, kliping teks, alignment tombol
+node scripts/audit-contrast.js     # audit kontras WCAG (semua pasangan >= 4.5:1)
 node scripts/screenshot.js   # tangkapan layar semua tab (dev helper, .screens/)
 ```
 

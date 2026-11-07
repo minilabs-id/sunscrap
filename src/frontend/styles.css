@@ -29,7 +29,7 @@
   --ink-3: #6f6a66;
 
   /* Aksen matahari — identitas; dipakai hemat */
-  --accent: #d97706;            /* teks/ikon di atas terang (AA) */
+  --accent: #b45309;            /* teks/ikon di atas terang (AA ≥4.5) */
   --accent-strong: #f59e0b;     /* isi tombol primer */
   --accent-strong-hover: #fbbf24;
   --accent-on: #241300;         /* teks di atas tombol primer */
