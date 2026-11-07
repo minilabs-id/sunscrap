@@ -27,8 +27,6 @@ export function updateTitlebarContext() {
   const tab = TAB_LABELS[state.tab] || 'Ringkasan';
   const audit = (state.audits || []).find((a) => a.id === state.auditId);
   const context = audit && state.tab !== 'browser' && state.tab !== 'settings' ? `${tab} · ${audit.name}` : tab;
-  const el = $('#titlebar-context');
-  if (el) el.textContent = context;
   document.title = `${context} — sunscrap`;
 }
 
