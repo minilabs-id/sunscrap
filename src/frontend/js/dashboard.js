@@ -303,6 +303,7 @@ function renderCompare(summary, compare) {
 function renderAttention(summary) {
   const k = (summary && summary.kpi) || {};
   const failed = k.failed || 0;
+  const partial = k.partial || 0;
   const pending = (k.pending || 0) + (k.running || 0);
   const set = (id, num, enabled) => {
     const n = $(id + '-num');
@@ -311,6 +312,7 @@ function renderAttention(summary) {
     if (btn) btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
   };
   set('#att-failed', failed, failed > 0);
+  set('#att-partial', partial, partial > 0);
   set('#att-pending', pending, true); // selalu boleh membuka Proses
 }
 
@@ -365,7 +367,7 @@ export async function refreshDashboard() {
     const ts = await loadTimeseries();
     const sig = summarySignature(summary, ts);
     if (sig === state.dashSig) {
-      $('#dash-sub').textContent = `Diperbarui ${relTime(summary.generated_at)} · ${fmt(summary.kpi?.targets || 0)} target`;
+      $('#dash-sub').textContent = `Diperbarui ${relTime(summary.generated_at)}`;
       return;
     }
     state.dashSig = sig;
@@ -381,7 +383,7 @@ export async function refreshDashboard() {
     renderQuality(summary);
     try { renderCompare(summary, await api.getCompare({ months: 6 })); } catch { const el = $('#compare-panel'); if (el) el.textContent = '—'; }
     await refreshAccountIntel(); // badge + kartu "Perlu tinjauan"
-    $('#dash-sub').textContent = `Diperbarui ${relTime(summary.generated_at)} · ${fmt(summary.kpi?.targets || 0)} target`;
+    $('#dash-sub').textContent = `Diperbarui ${relTime(summary.generated_at)}`;
   } catch (e) {
     console.error('refreshDashboard gagal:', e);
   }
@@ -421,6 +423,15 @@ export function bindDashboardEvents() {
     state.targets.issue = '';
     state.targets.offset = 0;
     state.statusFilterActive = 'failed';
+    document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
+  });
+  $('#att-partial').addEventListener('click', () => {
+    const k = (state.summary && state.summary.kpi) || {};
+    if (!(k.partial > 0)) return;
+    state.targets.status = 'partial';
+    state.targets.issue = '';
+    state.targets.offset = 0;
+    state.statusFilterActive = 'partial';
     document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
   });
   $('#att-pending').addEventListener('click', () => {

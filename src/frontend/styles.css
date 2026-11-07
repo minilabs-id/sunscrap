@@ -785,9 +785,12 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
    ============================================================ */
 .attention {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--gap-sm);
   margin-bottom: var(--sp-4);
+}
+@media (max-width: 1240px) {
+  .attention { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .attention-item {
@@ -1661,8 +1664,6 @@ body.modal-open { overflow: hidden; }
 @media (max-width: 960px) {
   .tb-wordmark, .tb-kbd, .audit-picker, .sb-dim { display: none; }
   .tb-search { width: min(300px, 40vw); min-width: 0; }
-  .page-head { align-items: flex-start; flex-direction: column; }
-  .page-actions { width: 100%; justify-content: flex-start; }
 }
 
 @media (prefers-reduced-motion: reduce) {
