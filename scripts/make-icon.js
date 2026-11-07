@@ -51,50 +51,53 @@ function encodePng(width, height, rgba) {
 }
 
 function drawSun(size) {
-  const bg = [37, 99, 235]; // brand blue background
-  const sunFill = [253, 209, 23];
-  const sunEdge = [245, 158, 11];
-  const whites = [255, 255, 255];
+  // Logo sunscrap baru (SVG asli): dua persegi orange (#FF9800, satu diputar -45°)
+  // membentuk 8 sinar, lingkaran kuning (#FFEB3B) di tengah, latar transparan.
+  // Anti-aliasing via supersampling 4x4 (murni Node, tanpa dependency).
+  const S = size / 48;
+  const CX = 24 * S, CY = 24 * S;
+  const HALF = 13 * S;   // setengah sisi persegi (11..37)
+  const R = 11 * S;      // jari-jari lingkaran
+  const cos45 = Math.SQRT1_2, sin45 = Math.SQRT1_2;
+  const SS = 4, SS2 = SS * SS;
   const rgba = Buffer.alloc(size * size * 4);
-  const cx = size / 2;
-  const cy = size / 2;
-  const rayInner = size * 0.30;
-  const rayOuter = size * 0.46;
-  const disc = size * 0.26;
-  const rays = 12;
+
+  // Kategori warna pada titik kontinu (x,y)
+  const category = (x, y) => {
+    const dx = x - CX, dy = y - CY;
+    if (dx * dx + dy * dy <= R * R) return 2; // kuning
+    const inAxis = Math.abs(dx) <= HALF && Math.abs(dy) <= HALF;
+    const lx = dx * cos45 + dy * sin45;
+    const ly = -dx * sin45 + dy * cos45;
+    const inRot = Math.abs(lx) <= HALF && Math.abs(ly) <= HALF;
+    if (inAxis || inRot) return 1; // orange
+    return 0; // transparan
+  };
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const dx = x - cx;
-      const dy = y - cy;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const angle = (Math.atan2(dy, dx) + Math.PI * 2) % (Math.PI * 2);
-      let color = bg;
-
-      if (dist <= disc) {
-        color = sunFill;
-      } else if (dist <= rayOuter) {
-        const wedge = Math.PI / rays;
-        const d = Math.abs((angle % (2 * wedge)) - wedge);
-        const halfRay = wedge * 0.32;
-        if (d < halfRay && dist >= rayInner) color = sunEdge;
+      let orange = 0, yellow = 0;
+      for (let sy = 0; sy < SS; sy++) {
+        for (let sx = 0; sx < SS; sx++) {
+          const px = x + (sx + 0.5) / SS;
+          const py = y + (sy + 0.5) / SS;
+          const c = category(px, py);
+          if (c === 1) orange++;
+          else if (c === 2) yellow++;
+        }
       }
-
+      const covered = orange + yellow;
       const idx = (y * size + x) * 4;
-      rgba[idx] = color[0];
-      rgba[idx + 1] = color[1];
-      rgba[idx + 2] = color[2];
-      rgba[idx + 3] = 255;
-    }
-  }
-  // garis putih tipis di tengah agar menyerupai sinar pada latar biru
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const dx = x - cx; const dy = y - cy; const dist = Math.sqrt(dx * dx + dy * dy);
-      if (Math.abs(dist - disc) < 1.0) {
-        const idx = (y * size + x) * 4;
-        rgba[idx] = whites[0]; rgba[idx + 1] = whites[1]; rgba[idx + 2] = whites[2]; rgba[idx + 3] = 255;
-      }
+      if (!covered) { rgba[idx + 3] = 0; continue; }
+      // rata-rata warna (kuning 255,235,59 · orange 255,152,0) menurut cakupan
+      const r = 255;
+      const g = (yellow * 235 + orange * 152) / covered;
+      const b = (yellow * 59 + orange * 0) / covered;
+      const a = Math.round((covered / SS2) * 255);
+      rgba[idx] = r;
+      rgba[idx + 1] = Math.round(g);
+      rgba[idx + 2] = Math.round(b);
+      rgba[idx + 3] = a;
     }
   }
   return rgba;
