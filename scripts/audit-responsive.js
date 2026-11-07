@@ -106,8 +106,8 @@ async function main() {
     await page.waitForTimeout(150);
   }
 
-  for (const w of [1024, 1120, 1280, 1440, 1680, 1920]) {
-    for (const h of [640, 720, 900]) {
+  for (const w of [860, 920, 1000, 1120, 1280, 1440, 1680, 1920]) {
+    for (const h of [520, 640, 720, 900]) {
     await resize(w, h);
     await page.waitForTimeout(150);
 

@@ -73,10 +73,10 @@
   --fs-table: 13px;
   --fs-body: 14px;
   --fs-title: 15px;
-  --fs-page: 26px;
+  --fs-page: clamp(22px, 1.6vw + 8px, 26px);
   --fs-stat: 20px;
   --fs-display: 40px;
-  --fs-kpi: 24px;
+  --fs-kpi: clamp(20px, 1.3vw + 8px, 24px);
 
   /* Data-viz (fill, bukan teks semantik) */
   --viz-ok: #1e7a4a;     /* teks putih */
@@ -88,6 +88,11 @@
   --amati: #eab308;
   --amati-strong: #a16207;
   --score-end: #ef5d3a;
+
+  /* Gap fluid — kompresi kontinu saat jendela mengecil */
+  --gap-card: clamp(8px, 1vw, 16px);
+  --gap-sm: clamp(6px, 0.7vw, 12px);
+  --pad-card: clamp(10px, 1.1vw, 16px);
 
   /* Kontrol */
   --control-h: 32px;
@@ -473,14 +478,10 @@ button { font: inherit; color: inherit; }
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  padding: var(--sp-5) var(--sp-5) var(--sp-6);
+  padding: clamp(14px, 2.4vw, 24px) clamp(12px, 2.2vw, 24px) clamp(18px, 3vw, 32px);
   scroll-behavior: smooth;
 }
 .main > * { max-width: 1720px; margin-inline: auto; }
-
-@media (max-width: 1200px) {
-  .main { padding: var(--sp-4) var(--sp-4) var(--sp-5); }
-}
 
 .tab { display: none; }
 .tab.active { display: block; animation: tabIn var(--dur-med) var(--ease); }
@@ -522,7 +523,7 @@ button { font: inherit; color: inherit; }
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   box-shadow: var(--sh-sm);
-  padding: var(--sp-4);
+  padding: var(--pad-card);
 }
 .card-hd {
   display: flex;
@@ -534,7 +535,7 @@ button { font: inherit; color: inherit; }
 .card-title { font-size: var(--fs-title); font-weight: 700; letter-spacing: -.01em; }
 .card-sub { margin-top: 2px; font-size: var(--fs-meta); color: var(--ink-3); }
 
-.grid-2, .grid-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.grid-2, .grid-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); gap: var(--gap-card); margin-bottom: var(--sp-4); }
 
 /* ============================================================
    Tombol — WinUI-ish
@@ -782,7 +783,7 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--sp-4);
+  gap: var(--gap-card);
   margin-bottom: var(--sp-4);
 }
 @media (max-width: 1200px) {
@@ -814,8 +815,8 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
    ============================================================ */
 .attention {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
-  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  gap: var(--gap-sm);
   margin-bottom: var(--sp-4);
 }
 
@@ -1485,7 +1486,7 @@ body.modal-open { overflow: hidden; }
 /* ============================================================
    Pengaturan — seksi & zona berbahaya
    ============================================================ */
-.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); gap: var(--gap-card); margin-bottom: var(--sp-4); }
 
 .db-info { display: flex; flex-wrap: wrap; gap: 8px; }
 .db-chip {
@@ -1643,7 +1644,7 @@ body.modal-open { overflow: hidden; }
 /* ============================================================
    Responsif sidebar (mode kompak ikon)
    ============================================================ */
-@media (max-width: 1120px) {
+@media (max-width: 1160px) {
   .sidebar { width: 76px; padding: var(--sp-3) var(--sp-2); align-items: center; }
   .nav-group, .tb-context, .tb-sep { display: none; }
   .nav-link { justify-content: center; padding: 0; width: 44px; height: 44px; }
@@ -1656,6 +1657,16 @@ body.modal-open { overflow: hidden; }
   .audit-picker { max-width: 160px; }
   .audit-picker select { max-width: 100px; }
   .tb-search { width: min(360px, 34vw); }
+}
+
+/* Kompresi lanjut saat jendela makin sempit */
+@media (max-width: 960px) {
+  .sidebar { width: 64px; padding: var(--sp-2) var(--sp-1); }
+  .nav-link { width: 44px; height: 44px; }
+  .tb-wordmark, .tb-kbd, .audit-picker, .sb-dim { display: none; }
+  .tb-search { width: min(300px, 40vw); min-width: 0; }
+  .page-head { align-items: flex-start; flex-direction: column; }
+  .page-actions { width: 100%; justify-content: flex-start; }
 }
 
 @media (prefers-reduced-motion: reduce) {

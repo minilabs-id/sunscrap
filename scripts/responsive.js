@@ -12,7 +12,7 @@ const { _electron } = require('playwright-core');
 
 const ELECTRON = path.join(__dirname, '..', 'node_modules', 'electron', 'dist', 'electron.exe');
 const OUT = path.join(__dirname, '..', '.screens');
-const WIDTHS = [1024, 1120, 1280, 1440, 1680, 1920];
+const WIDTHS = [860, 920, 1000, 1120, 1280, 1440, 1680, 1920];
 const TABS = ['dashboard', 'targets', 'accounts', 'proses', 'browser', 'settings'];
 
 async function main() {
