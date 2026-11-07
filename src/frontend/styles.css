@@ -215,6 +215,7 @@ button { font: inherit; color: inherit; }
   user-select: none;
 }
 .tb-brand img, .tb-brand svg { width: 20px; height: 20px; display: block; }
+.tb-logo { image-rendering: crisp-edges; flex: none; }
 .tb-wordmark { font-weight: 700; font-size: 13.5px; letter-spacing: .01em; }
 .tb-wordmark em { font-style: normal; color: var(--accent); }
 .tb-sep { color: var(--ink-3); margin: 0 2px; }
