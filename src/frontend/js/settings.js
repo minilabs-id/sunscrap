@@ -8,7 +8,7 @@ import { state } from './state.js';
 // ── audits ─────────────────────────────────────────────────────
 export function renderAudits() {
   $('#audits-table').innerHTML = `
-    <thead><tr><th scope="col">Nama</th><th scope="col">Periode</th><th scope="col" class="num">Target</th><th scope="col" class="num">Terverifikasi</th><th scope="col" class="num">Ulang (hari)</th><th scope="col"><span class="sr-only">Aksi</span></th></tr></thead>
+    <thead><tr><th scope="col">Nama</th><th scope="col">Periode</th><th scope="col" class="num">Postingan</th><th scope="col" class="num">Terverifikasi</th><th scope="col" class="num">Ulang (hari)</th><th scope="col"><span class="sr-only">Aksi</span></th></tr></thead>
     <tbody>${(state.audits || []).map((a) => `
       <tr>
         <td><b>${esc(a.name)}</b></td><td>${esc(a.period || '—')}</td>
@@ -37,7 +37,7 @@ export function renderAudits() {
       const audit = (state.audits || []).find((a) => a.id === id);
       openModal(modalShell({
         title: 'Hapus audit?',
-        body: `<p>Audit <b>${esc(audit ? audit.name : id)}</b> dan seluruh target &amp; riwayatnya akan dihapus <b>permanen</b>.</p>`,
+        body: `<p>Audit <b>${esc(audit ? audit.name : id)}</b> dan seluruh postingan &amp; riwayatnya akan dihapus <b>permanen</b>.</p>`,
         foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger-solid" id="confirm-del">Hapus</button>`,
       }));
       $('#confirm-del').addEventListener('click', async () => {
@@ -104,7 +104,7 @@ export async function loadDbInfo() {
       chip('File', info.filename || 'sunscrap.db'),
       chip('Ukuran', `${fmt(Math.round((info.size_bytes || 0) / 1024))} KB`),
       chip('Audit', fmt(counts.audits)),
-      chip('Target', fmt(counts.targets)),
+      chip('Postingan', fmt(counts.targets)),
       chip('Snapshot', fmt(counts.snapshots)),
     ].join('');
     if (!state.dbInfoCache) { state.dbInfoCache = info; const sb = $('#sb-db'); if (sb) sb.textContent = `DB ${Math.round((info.size_bytes || 0) / 1024)} KB`; }
@@ -125,7 +125,7 @@ async function handleRestore() {
   openModal(modalShell({
     title: 'Pulihkan dari cadangan',
     body: `<p>Anda akan mengganti <b>seluruh data saat ini</b> dengan cadangan:</p>
-      <ul><li><b>File:</b> ${esc(prev.file)}</li><li>Audit ${fmt(c.audits)} · Target ${fmt(c.targets)} · Snapshot ${fmt(c.snapshots)} · Akun ${fmt(c.accounts)}</li><li>Skema: v${esc(prev.schema_version ?? '?')} (aplikasi ini: v5)</li></ul>
+      <ul><li><b>File:</b> ${esc(prev.file)}</li><li>Audit ${fmt(c.audits)} · Postingan ${fmt(c.targets)} · Snapshot ${fmt(c.snapshots)} · Akun ${fmt(c.accounts)}</li><li>Skema: v${esc(prev.schema_version ?? '?')} (aplikasi ini: v5)</li></ul>
       ${schemaMismatch ? `<p class="muted err-notebox"><b>Tidak kompatibel:</b> cadangan dibuat dengan skema v${esc(prev.schema_version)}. Pemulihan ditolak.</p>` : '<p class="muted">Data aktif dicadangkan otomatis dulu sebelum diganti. Tidak bisa dibatalkan.</p>'}`,
     foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger-solid" id="confirm-restore" ${schemaMismatch ? 'disabled' : ''}>Pulihkan</button>`,
   }));
@@ -145,7 +145,7 @@ async function handleRestore() {
 function handleClearAll() {
   openModal(modalShell({
     title: 'Hapus semua data',
-    body: `<p>Semua audit, target, snapshot, dan data akun akan dihapus <b>permanen</b>.</p>
+    body: `<p>Semua audit, postingan, snapshot, dan data akun akan dihapus <b>permanen</b>.</p>
       <div class="field"><label for="clear-confirm">Ketik <b>HAPUS</b> untuk melanjutkan</label><input id="clear-confirm" class="input" placeholder="HAPUS" autocomplete="off"></div>
       <label class="row-gap mt-2 clickable"><input type="checkbox" id="clear-backup" checked> Cadangkan database dulu (disarankan)</label>`,
     foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger-solid" id="confirm-clear" disabled>Hapus semua</button>`,

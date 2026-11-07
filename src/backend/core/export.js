@@ -93,7 +93,7 @@ function recapRows(db, auditId) {
 
   const label = auditId && summary.audits.length ? summary.audits[0].name : 'Semua audit';
   add('Ringkasan', 'Audit', label);
-  add('Ringkasan', 'Target', kpi.targets);
+  add('Ringkasan', 'Postingan', kpi.targets);
   add('Ringkasan', 'Sudah diproses', kpi.scraped);
   add('Ringkasan', 'Terverifikasi (OK + sebagian)', kpi.verified);
   add('Ringkasan', 'Tingkat keberhasilan (%)', kpi.success_rate, 'terverifikasi / sudah diproses');
@@ -108,7 +108,7 @@ function recapRows(db, auditId) {
   add('Ringkasan', 'Data terakhir', kpi.last_scraped_at || '—');
 
   for (const p of summary.platforms) {
-    add(`Platform ${p.platform}`, 'Target', p.targets);
+    add(`Platform ${p.platform}`, 'Postingan', p.targets);
     add(`Platform ${p.platform}`, 'Sudah diproses', p.scraped);
     add(`Platform ${p.platform}`, 'Terverifikasi', p.ok + p.partial);
     add(`Platform ${p.platform}`, 'Views', p.views);
@@ -152,7 +152,7 @@ function recapRows(db, auditId) {
   add('Catatan', 'Rumus ER Instagram', '(likes + komentar) / followers × 100');
   add('Catatan', 'Rumus ER TikTok', '(likes + komentar + share) / views × 100');
   add('Catatan', 'Share', 'Hanya tersedia untuk TikTok — Instagram tidak mengekspos angka share');
-  add('Catatan', 'Δ vs scrape', 'Dibanding scrape terakhir target yang sama — bisa lintas audit/periode');
+  add('Catatan', 'Δ vs scrape', 'Dibanding scrape terakhir postingan yang sama — bisa lintas audit/periode');
   add('Catatan', 'Median, bukan rata-rata', 'Median dipakai agar satu postingan viral tidak menggeser seluruh angka');
   return rows;
 }

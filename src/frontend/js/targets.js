@@ -55,7 +55,7 @@ function renderTargetsTable(items) {
     const checked = state.targets.selected.has(r.target_id);
     const tema = r.tema || shortUrl(r.url);
     return `<tr data-target="${r.target_id}" class="clickable" tabindex="0" role="button" aria-label="Buka riwayat ${esc(tema)}">
-      <td><input type="checkbox" class="sel" data-id="${r.target_id}" aria-label="Pilih target ${esc(tema)}" ${checked ? 'checked' : ''}></td>
+      <td><input type="checkbox" class="sel" data-id="${r.target_id}" aria-label="Pilih postingan ${esc(tema)}" ${checked ? 'checked' : ''}></td>
       ${cols.map((c) => c.cell(r)).join('')}
     </tr>`;
   }).join('');
@@ -65,7 +65,7 @@ function renderTargetsTable(items) {
       <th scope="col" class="w-36"><input type="checkbox" id="targets-checkall" aria-label="Pilih semua"></th>
       ${cols.map((c) => `<th scope="col" class="${c.thClass}"${c.sort ? ` data-sort="${c.sort}"` : ''}${c.title ? ` title="${c.title}"` : ''}>${c.th}</th>`).join('')}
     </tr></thead>
-    <tbody>${rows || `<tr><td colspan="${cols.length + 1}">${emptyState('Tidak ada target', 'Tidak ada target yang cocok dengan filter ini.')}</td></tr>`}</tbody>`;
+    <tbody>${rows || `<tr><td colspan="${cols.length + 1}">${emptyState('Tidak ada postingan', 'Tidak ada postingan yang cocok dengan filter ini.')}</td></tr>`}</tbody>`;
 
   $$('#targets-table .th-sort').forEach((th) => {
     th.classList.toggle('desc', th.dataset.sort === state.targets.sort && state.targets.dir === 'desc');
@@ -145,11 +145,11 @@ export async function loadTargets() {
   try {
     res = await api.getTargets(params);
   } catch {
-    toast('Gagal memuat target.', 'error');
+    toast('Gagal memuat postingan.', 'error');
   }
   state.targets.items = res.items || [];
   state.targets.total = res.total || 0;
-  $('#targets-total').textContent = `${fmt(res.total)} target`;
+  $('#targets-total').textContent = `${fmt(res.total)} postingan`;
   setNavTargetCount(res.total);
   $('#targets-page').textContent = pageLabel(state.targets.offset, state.targets.limit, res.total);
   renderTargetsTable(state.targets.items);
@@ -187,11 +187,11 @@ export function openTarget(targetId) {
   api.getTargetHistory(targetId).then((snapshots) => {
     const rows = (snapshots || []).map((s) => `<tr><td>${esc(fmtWhen(s.scraped_at))}</td><td>${statusBadge(s.status)}</td><td class="num">${fmt(s.follower_count)}</td><td class="num">${fmt(s.likes)}</td><td class="num">${fmt(s.comments)}</td><td class="num">${fmt(s.views)}</td><td class="wrap">${esc(s.error_message || '')}</td></tr>`).join('');
     openModal(modalShell({
-      title: 'Riwayat target',
+      title: 'Riwayat postingan',
       body: `<div class="table-wrap flush tall"><table class="table"><thead><tr><th scope="col">Waktu</th><th scope="col">Status</th><th scope="col" class="num">Fol.</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Komen</th><th scope="col" class="num">Views</th><th scope="col">Error</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">Belum ada snapshot.</td></tr>'}</tbody></table></div>`,
       foot: `<button class="btn btn-ghost" data-close>Tutup</button>`,
     }));
-  }).catch(() => toast('Gagal memuat riwayat target.', 'error'));
+  }).catch(() => toast('Gagal memuat riwayat postingan.', 'error'));
 }
 
 /** Ikat event toolbar + pager + sort header. Dipanggil sekali saat init. */
@@ -252,7 +252,7 @@ export function bindTargetEvents() {
     if (!state.auditId) { toast('Pilih audit dulu (di atas).', 'warning'); return; }
     try {
       const r = await api.retryFailed(state.auditId);
-      toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} target.`, r && r.error ? 'error' : 'ok');
+      toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} postingan.`, r && r.error ? 'error' : 'ok');
       loadTargets();
     } catch { toast('Gagal menjadwalkan ulang.', 'error'); }
   });
@@ -261,10 +261,10 @@ export function bindTargetEvents() {
     if (!state.auditId) { toast('Pilih audit dulu (di atas).', 'warning'); return; }
     try {
       const r = await api.retryTargets(state.auditId, Array.from(state.targets.selected));
-      toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} target.`, r && r.error ? 'error' : 'ok');
+      toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} postingan.`, r && r.error ? 'error' : 'ok');
       state.targets.selected.clear();
       updateRetrySelected();
       loadTargets();
-    } catch { toast('Gagal menjadwalkan ulang target terpilih.', 'error'); }
+    } catch { toast('Gagal menjadwalkan ulang postingan terpilih.', 'error'); }
   });
 }

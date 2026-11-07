@@ -69,7 +69,7 @@ function registerDataIpc(ctx) {
       if (fs.existsSync(hooked)) return hooked;
     }
     const result = await dlg(parentOf(event), dialog.showOpenDialog, {
-      title: 'Pilih file target',
+      title: 'Pilih file postingan',
       properties: ['openFile'],
       filters: [
         { name: 'Spreadsheet', extensions: ['csv', 'xlsx'] },

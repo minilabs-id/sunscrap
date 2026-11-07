@@ -23,7 +23,7 @@ function commandActions() {
     { id: 'export', label: 'Export data', hint: 'Ctrl+E', run: () => openExport() },
     { id: 'worker', label: (w && w.active) ? 'Hentikan worker' : 'Mulai worker', hint: '', run: () => document.dispatchEvent(new CustomEvent('sunscrap:toggle-worker')) },
     { id: 'tab:dashboard', label: 'Buka Ringkasan', hint: 'Ctrl+1', run: () => document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'dashboard' })) },
-    { id: 'tab:targets', label: 'Buka Target', hint: 'Ctrl+2', run: () => document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' })) },
+    { id: 'tab:targets', label: 'Buka Postingan', hint: 'Ctrl+2', run: () => document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' })) },
     { id: 'tab:accounts', label: 'Buka Akun', hint: 'Ctrl+3', run: () => document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'accounts' })) },
     { id: 'tab:proses', label: 'Buka Proses', hint: 'Ctrl+4', run: () => document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'proses' })) },
     { id: 'tab:settings', label: 'Buka Pengaturan', hint: 'Ctrl+6', run: () => document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'settings' })) },
@@ -81,7 +81,7 @@ export function bindGlobalSearch() {
       `<div class="search-item" data-kind="account" data-platform="${esc(a.platform)}" data-username="${esc(a.username)}" role="option"><span class="badge ${a.platform === 'instagram' ? 'ig' : 'tk'}">${a.platform === 'instagram' ? 'IG' : 'TK'}</span><span class="search-main">@${esc(a.username)}</span><span class="end">${fmt(a.follower_count)} fol.</span></div>`).join('');
     const posts = (res.posts || []).slice(0, 6).map((p) =>
       `<div class="search-item" data-kind="post" data-url="${esc(p.post_url || '')}" role="option"><span class="badge ${p.platform === 'instagram' ? 'ig' : 'tk'}">${p.platform === 'instagram' ? 'IG' : 'TK'}</span><span class="search-main">${esc((p.caption || p.post_url || '(tanpa caption)').slice(0, 56))}</span><span class="end">${fmtCompact(p.views)} views</span></div>`).join('');
-    const dataHtml = group('Target', targets) + group('Akun', accounts) + group('Post', posts);
+    const dataHtml = group('Postingan', targets) + group('Akun', accounts) + group('Post', posts);
     const actionsGroup = actionsHtml ? group('Aksi', actionsHtml) : '';
     pop.innerHTML = actionsGroup + dataHtml || `<div class="muted search-pad">Tidak ada hasil untuk “${esc(needle)}”.</div>`;
     activeIndex = -1;

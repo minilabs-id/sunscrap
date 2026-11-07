@@ -114,7 +114,7 @@ function showAbout() {
     `Data tersimpan lokal di:`,
     `${userData || '(belum siap)'}`,
     '',
-    `Audit: ${counts.audits ?? '-'} · Target: ${counts.targets ?? '-'} · Snapshot: ${counts.snapshots ?? '-'}`,
+    `Audit: ${counts.audits ?? '-'} · Postingan: ${counts.targets ?? '-'} · Snapshot: ${counts.snapshots ?? '-'}`,
     `Ukuran DB: ${acc.size_bytes ? (Math.round(acc.size_bytes / 1024)) + ' KB' : '-'}`,
   ];
   dialog.showMessageBox(mainWindow || undefined, {
@@ -132,7 +132,7 @@ function copyDiagnostics() {
     `OS: ${process.platform} ${process.arch}`,
     `Data: ${userData || '?'}`,
     `Ukuran DB: ${info.size_bytes ? Math.round(info.size_bytes / 1024) + ' KB' : '-'}`,
-    `Schema: ${info.schema_version ?? '?'} · Audit ${counts.audits ?? '-'} · Target ${counts.targets ?? '-'} · Snapshot ${counts.snapshots ?? '-'}`,
+    `Schema: ${info.schema_version ?? '?'} · Audit ${counts.audits ?? '-'} · Postingan ${counts.targets ?? '-'} · Snapshot ${counts.snapshots ?? '-'}`,
   ];
   const text = lines.join('\n');
   const { clipboard } = require('electron');
@@ -191,7 +191,7 @@ function buildAppMenu() {
       label: 'Buka',
       submenu: [
         { label: 'Dashboard', accelerator: 'CmdOrCtrl+1', click: () => send('tab:dashboard') },
-        { label: 'Target', accelerator: 'CmdOrCtrl+2', click: () => send('tab:targets') },
+        { label: 'Postingan', accelerator: 'CmdOrCtrl+2', click: () => send('tab:targets') },
         { label: 'Akun', accelerator: 'CmdOrCtrl+3', click: () => send('tab:accounts') },
         { label: 'Proses', accelerator: 'CmdOrCtrl+4', click: () => send('tab:proses') },
         { label: 'Sesi', accelerator: 'CmdOrCtrl+5', click: () => send('tab:browser') },

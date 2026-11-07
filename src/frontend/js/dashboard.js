@@ -41,8 +41,8 @@ function renderKpis(summary, ts) {
   const cards = [
     { label: 'Total views', value: fmtCompact(totals.views || 0), sub: `${fmtCompact(totals.likes || 0)} likes · ${fmtCompact(totals.comments || 0)} komentar`, series: sViews, delta: delta7(sViews), action: 'targets' },
     { label: 'Terverifikasi', value: fmt((k.ok || 0) + (k.partial || 0)), sub: `OK ${fmt(k.ok)} · sebagian ${fmt(k.partial)}`, series: sVerified, delta: delta7(sVerified), action: 'targets' },
-    { label: 'Tingkat berhasil', value: successPct, sub: `${fmt(scraped)} dari ${fmt(targets)} target terproses (${shareScraped}%)`, series: null, delta: null, action: 'targets' },
-    { label: 'Akun terpantau', value: fmt(k.accounts || 0), sub: `${fmt(k.audits || 0)} audit · ${fmt(targets)} target`, series: null, delta: null, action: 'accounts' },
+    { label: 'Tingkat berhasil', value: successPct, sub: `${fmt(scraped)} dari ${fmt(targets)} postingan terproses (${shareScraped}%)`, series: null, delta: null, action: 'targets' },
+    { label: 'Jumlah akun', value: fmt(k.accounts || 0), sub: `${fmt(k.audits || 0)} audit · ${fmt(targets)} postingan`, series: null, delta: null, action: 'accounts' },
   ];
   $('#kpi-grid').innerHTML = cards.map((c) => `
     <article class="kpi kpi-action" role="button" tabindex="0" data-kpi-action="${c.action}" aria-label="Buka ${esc(c.label)}" title="Buka ${esc(c.label)}">
@@ -180,11 +180,11 @@ function renderQuality(summary) {
   const k = (summary && summary.kpi) || {};
   const auditId = state.auditId;
   const rows = [
-    { n: q.without_followers || 0, label: 'target tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', action: auditId ? { label: 'Kunjungi profil', act: 'profile', primary: true } : null },
+    { n: q.without_followers || 0, label: 'postingan tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', action: auditId ? { label: 'Kunjungi profil', act: 'profile', primary: true } : null },
     { n: q.missing_views || 0, label: 'video TikTok tanpa views', hint: 'Kemungkinan privat / age-gated', action: { label: 'Lihat', act: 'views' } },
-    { n: k.failed || 0, label: 'target gagal', hint: 'Didominasi throttle — coba ulang setelah jeda', action: auditId ? { label: 'Ulangi yang gagal', act: 'retry', primary: true } : null },
-    { n: q.missing_username || 0, label: 'target tanpa handle', hint: 'Username tidak ter-parse dari URL', action: null },
-    { n: q.never_scraped || 0, label: 'target belum diproses', hint: 'Menunggu giliran worker', action: { label: 'Buka Proses', act: 'proses' } },
+    { n: k.failed || 0, label: 'postingan gagal', hint: 'Didominasi throttle — coba ulang setelah jeda', action: auditId ? { label: 'Ulangi yang gagal', act: 'retry', primary: true } : null },
+    { n: q.missing_username || 0, label: 'postingan tanpa handle', hint: 'Username tidak ter-parse dari URL', action: null },
+    { n: q.never_scraped || 0, label: 'postingan belum diproses', hint: 'Menunggu giliran worker', action: { label: 'Buka Proses', act: 'proses' } },
   ];
   $('#quality-list').innerHTML = rows.map((r) => `
     <div class="check-row"><div><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted text-micro">${esc(r.hint)}</div></div>${r.action ? `<button class="btn ${r.action.primary ? 'btn-primary' : 'btn-ghost'} btn-sm" data-quality-action="${r.action.act}">${esc(r.action.label)}</button>` : '<span class="muted">—</span>'}</div>`).join('');
@@ -199,7 +199,7 @@ function renderCompare(summary, compare) {
   card.hidden = false;
   const s = compare.summary || {};
   el.innerHTML = `<p class="mb-3">${compare.periods.length} periode · terbaru <b>${esc(compare.latest_period)}</b> · ${fmt(s.accounts)} akun · <b>${fmt(s.new_accounts)} baru</b> · ${fmt(s.missing_latest)} hilang di periode terbaru</p>
-    <blockquote class="compare-quote">Impor periode ini: <b>${fmt((summary?.kpi || {}).targets)}</b> target · views <b>${fmtCompact((summary?.kpi?.totals || {}).views)}</b></blockquote>
+    <blockquote class="compare-quote">Impor periode ini: <b>${fmt((summary?.kpi || {}).targets)}</b> postingan · views <b>${fmtCompact((summary?.kpi?.totals || {}).views)}</b></blockquote>
     <p class="muted">Tip: buka tab <b>Akun</b> untuk melihat klaster dan skor risiko per akun.</p>`;
 }
 

@@ -8,7 +8,7 @@ import { state } from './state.js';
 import { renderAudits } from './settings.js';
 import { renderStatusBarAudit } from './worker.js';
 
-const TAB_LABELS = { dashboard: 'Ringkasan', targets: 'Target', accounts: 'Akun', proses: 'Proses', browser: 'Sesi', settings: 'Pengaturan' };
+const TAB_LABELS = { dashboard: 'Ringkasan', targets: 'Postingan', accounts: 'Akun', proses: 'Proses', browser: 'Sesi', settings: 'Pengaturan' };
 
 /** Satu-satunya penulis badge jumlah Target di sidebar. */
 export function setNavTargetCount(total) {
