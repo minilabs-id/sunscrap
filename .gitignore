@@ -23,3 +23,5 @@ Thumbs.db
 
 # Local UI screenshots (dev helper)
 .screens/
+# Harness/checkpoint (bukan bagian proyek)
+.minicode/
