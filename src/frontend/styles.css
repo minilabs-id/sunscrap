@@ -419,45 +419,11 @@ button { font: inherit; color: inherit; }
 /* Kartu worker di kaki sidebar */
 .side-foot { margin-top: auto; display: flex; flex-direction: column; gap: var(--sp-2); }
 
-.worker-card {
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: var(--r-md);
-  padding: var(--sp-3);
-  box-shadow: var(--sh-sm);
-}
-.worker-card-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--fs-meta);
-  font-weight: 600;
-}
-.worker-card-sub {
-  margin-top: 4px;
-  font-size: var(--fs-micro);
-  color: var(--ink-3);
-  min-height: 15px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.meter {
-  margin-top: 8px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--sunken);
-  overflow: hidden;
-}
-.meter i {
-  display: block;
-  height: 100%;
-  width: 0%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent-strong), var(--accent-strong-hover));
-  transition: width var(--dur-med) var(--ease);
-}
-.worker-card .btn { margin-top: var(--sp-2); }
+.worker-toggle { gap: 10px; }
+.worker-toggle svg { width: 16px; height: 16px; flex: none; }
+.worker-toggle .ic-stop { display: none; }
+.worker-toggle.is-active .ic-play { display: none; }
+.worker-toggle.is-active .ic-stop { display: inline; }
 
 .dot {
   display: inline-block;
@@ -1684,9 +1650,8 @@ body.modal-open { overflow: hidden; }
   .nav-link span.nav-text, .nav-badge { display: none; }
   .nav-link.active::before { left: -8px; }
   .side-foot { width: 100%; }
-  .worker-card { padding: var(--sp-2); }
-  .worker-card-sub, .worker-card .btn span { display: none; }
-  .worker-card .btn { padding: 0; }
+  .worker-toggle .btn-label { display: none; }
+  .worker-toggle { width: 44px; padding: 0; justify-content: center; margin-left: auto; margin-right: auto; }
   .audit-picker { max-width: 160px; }
   .audit-picker select { max-width: 100px; }
   .tb-search { width: min(360px, 34vw); }

@@ -75,12 +75,11 @@
       </nav>
 
       <div class="side-foot">
-        <div class="worker-card" aria-label="Status worker">
-          <div class="worker-card-top"><span class="dot" id="worker-dot"></span><span id="worker-label">Siaga</span></div>
-          <div class="worker-card-sub" id="worker-sub">Worker belum berjalan</div>
-          <div class="meter" role="progressbar" aria-label="Progres siklus worker" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="worker-meter"><i id="worker-rail-fill"></i></div>
-          <button id="worker-toggle" class="btn btn-primary btn-block btn-sm"><span>Mulai worker</span></button>
-        </div>
+        <button id="worker-toggle" class="btn btn-primary btn-block worker-toggle" aria-label="Mulai worker" title="Mulai worker">
+          <svg class="ic-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          <svg class="ic-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          <span class="btn-label">Mulai worker</span>
+        </button>
       </div>
     </aside>
 
