@@ -39,13 +39,13 @@ function renderKpis(summary, ts) {
   const successPct = scraped && k.success_rate != null ? fmtPct(k.success_rate) : '—';
 
   const cards = [
-    { label: 'Total views', value: fmtCompact(totals.views || 0), sub: `${fmtCompact(totals.likes || 0)} likes · ${fmtCompact(totals.comments || 0)} komentar`, series: sViews, delta: delta7(sViews) },
-    { label: 'Terverifikasi', value: fmt((k.ok || 0) + (k.partial || 0)), sub: `OK ${fmt(k.ok)} · sebagian ${fmt(k.partial)}`, series: sVerified, delta: delta7(sVerified) },
-    { label: 'Tingkat berhasil', value: successPct, sub: `${fmt(scraped)} dari ${fmt(targets)} target terproses (${shareScraped}%)`, series: null, delta: null },
-    { label: 'Akun terpantau', value: fmt(k.accounts || 0), sub: `${fmt(k.audits || 0)} audit · ${fmt(targets)} target`, series: null, delta: null },
+    { label: 'Total views', value: fmtCompact(totals.views || 0), sub: `${fmtCompact(totals.likes || 0)} likes · ${fmtCompact(totals.comments || 0)} komentar`, series: sViews, delta: delta7(sViews), action: 'targets' },
+    { label: 'Terverifikasi', value: fmt((k.ok || 0) + (k.partial || 0)), sub: `OK ${fmt(k.ok)} · sebagian ${fmt(k.partial)}`, series: sVerified, delta: delta7(sVerified), action: 'targets' },
+    { label: 'Tingkat berhasil', value: successPct, sub: `${fmt(scraped)} dari ${fmt(targets)} target terproses (${shareScraped}%)`, series: null, delta: null, action: 'targets' },
+    { label: 'Akun terpantau', value: fmt(k.accounts || 0), sub: `${fmt(k.audits || 0)} audit · ${fmt(targets)} target`, series: null, delta: null, action: 'accounts' },
   ];
   $('#kpi-grid').innerHTML = cards.map((c) => `
-    <article class="kpi">
+    <article class="kpi kpi-action" role="button" tabindex="0" data-kpi-action="${c.action}" aria-label="Buka ${esc(c.label)}" title="Buka ${esc(c.label)}">
       <div class="kpi-top">
         <span class="kpi-lbl">${esc(c.label)}</span>
         ${c.series
@@ -292,6 +292,19 @@ export async function refreshDashboard() {
 }
 
 export function bindDashboardEvents() {
+  // Kartu KPI (deep-link ke tab relevan)
+  document.addEventListener('click', (e) => {
+    const kpi = e.target.closest('[data-kpi-action]');
+    if (kpi) document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: kpi.dataset.kpiAction }));
+  });
+  document.addEventListener('keydown', (e) => {
+    const kpi = e.target.closest ? e.target.closest('[data-kpi-action]') : null;
+    if (kpi && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: kpi.dataset.kpiAction }));
+    }
+  });
+
   $('#trend-chart').addEventListener('mousemove', onTrendMove);
   $('#trend-chart').addEventListener('mouseenter', onTrendMove);
   $('#trend-chart').addEventListener('mouseleave', hideTrendTooltip);
