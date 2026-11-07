@@ -1,6 +1,6 @@
 /**
  * sunscrap v2 — Ringkasan (dashboard action-first)
- * Urutan: perlu tindakan → KPI → tren + komposisi → tema/top konten → platform/kualitas.
+ * Urutan: perlu tindakan → KPI → tren → tema/top konten → platform/kualitas.
  */
 import { $, $$, toast } from './dom.js';
 import {
@@ -8,9 +8,8 @@ import {
   delta7, signedPct, sparklinePoints, emptyState, sum, summarySignature, idID,
 } from './helpers.js';
 import { state } from './state.js';
-import { applyStatusFilter } from './targets.js';
-import { refreshAccountIntel } from './intel.js';
 import { setNavTargetCount } from './chrome.js';
+import { refreshAccountIntel } from './intel.js';
 
 // ── timeseries (cache per audit) ───────────────────────────────
 async function loadTimeseries() {
@@ -131,69 +130,6 @@ function hideTrendTooltip() {
   const tip = $('#chart-tooltip');
   if (tip) { tip.hidden = true; tip.style.opacity = '0'; }
   $$('#trend-chart .trend-dot').forEach((d) => d.setAttribute('opacity', '0'));
-}
-
-// ── Komposisi status (stacked bar) ─────────────────────────────
-const STACK_SEGS = [
-  { key: 'done', label: 'Berhasil', cls: 'seg-ok' },
-  { key: 'pending', label: 'Menunggu', cls: 'seg-idle' },
-  { key: 'failed', label: 'Gagal', cls: 'seg-err' },
-];
-
-function stackCounts(k) {
-  k = k || {};
-  return {
-    done: (k.ok || 0) + (k.partial || 0),
-    pending: (k.pending || 0) + (k.running || 0),
-    failed: k.failed || 0,
-  };
-}
-
-function renderStackbar(summary) {
-  const k = (summary && summary.kpi) || {};
-  const counts = stackCounts(k);
-  const total = counts.done + counts.pending + counts.failed;
-  const active = state.statusFilterActive;
-
-  const bar = $('#stackbar');
-  if (bar) {
-    if (!total) {
-      bar.innerHTML = '<span class="stackbar-empty">Belum ada data — import target dulu</span>';
-    } else {
-      bar.innerHTML = STACK_SEGS.map((s) => {
-        const v = counts[s.key];
-        const pct = (v / total) * 100;
-        const isActive = active === s.key;
-        return `<button class="${s.cls}${isActive ? ' is-active' : ''}" data-key="${s.key}" style="width:${Math.max(pct, v ? 4 : 0)}%" aria-pressed="${isActive}" aria-label="Filter Target: ${esc(s.label)} — ${fmt(v)} target" title="${esc(s.label)} — ${fmt(v)} target (${idIDSafe(pct)}%)">${v ? fmt(v) : ''}</button>`;
-      }).join('');
-      bar.querySelectorAll('button').forEach((btn) => btn.addEventListener('click', () => toggleStackFilter(btn.dataset.key)));
-    }
-    bar.classList.toggle('dim', !!active);
-  }
-
-  const legend = $('#stack-legend');
-  if (legend) {
-    legend.innerHTML = STACK_SEGS.map((s) => {
-      const v = counts[s.key];
-      const pct = total ? (v / total) * 100 : 0;
-      const isActive = active === s.key;
-      return `<button class="legend-row" data-key="${s.key}" aria-pressed="${isActive}">
-        <span class="legend-dot ${s.cls}"></span>
-        <b>${esc(s.label)}</b>
-        <small>${fmt(v)} target</small>
-        <span class="pct">${idIDSafe(pct)}%</span>
-      </button>`;
-    }).join('');
-    legend.querySelectorAll('.legend-row').forEach((btn) => btn.addEventListener('click', () => toggleStackFilter(btn.dataset.key)));
-  }
-}
-const idIDSafe = (n) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: 1 }) : '0');
-
-function toggleStackFilter(key) {
-  const current = state.statusFilterActive;
-  state.statusFilterActive = current === key ? null : key;
-  applyStatusFilter(state.statusFilterActive);
-  renderStackbar(state.summary);
 }
 
 // ── Tema teratas ───────────────────────────────────────────────
@@ -376,7 +312,6 @@ export async function refreshDashboard() {
     renderAttention(summary);
     renderKpis(summary, ts);
     renderTrend();
-    renderStackbar(summary);
     renderTemaTable(summary);
     renderTopPosts(summary);
     renderPlatformCompare(summary);
@@ -409,8 +344,6 @@ export function bindDashboardEvents() {
     $('#top-views').hidden = btn.dataset.postsTab !== 'views';
     $('#top-er').hidden = btn.dataset.postsTab !== 'er';
   }));
-  $('#btn-clear-status-filter').addEventListener('click', () => { state.statusFilterActive = null; applyStatusFilter(null, { activate: false }); renderStackbar(state.summary); });
-
   // Kartu "Perlu tindakan"
   $('#att-review').addEventListener('click', () => {
     if (state.needsReview <= 0) return;
