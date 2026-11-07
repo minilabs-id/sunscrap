@@ -97,6 +97,18 @@ async function main() {
   await page.click('#targets-table th.th-sort[data-sort="views"]');
   await page.waitForTimeout(700);
   pass('sort Views di-klik');
+  // pemilih kolom: sembunyikan lalu reset
+  await page.click('#btn-columns');
+  await page.waitForTimeout(250);
+  expect(await page.isVisible('#columns-pop'), 'popover Pilih kolom terbuka');
+  const thBefore = await page.$$eval('#targets-table thead th', (els) => els.length);
+  await page.click('#columns-pop input[data-col="followers"]');
+  await page.waitForTimeout(250);
+  const thAfter = await page.$$eval('#targets-table thead th', (els) => els.length);
+  expect(thAfter === thBefore - 1, `kolom Followers disembunyikan (${thBefore} -> ${thAfter})`);
+  await page.click('#cols-reset');
+  await page.waitForTimeout(250);
+  expect(await page.$$eval('#targets-table thead th', (els) => els.length) === thBefore, 'kolom di-reset');
   // seleksi semua + tombol retry terpilih aktif
   await page.click('#targets-checkall');
   await page.waitForTimeout(300);

@@ -16,42 +16,56 @@ export function statusBadge(status) {
   return `<span class="status ${s}"><span class="sdot"></span>${esc(label)}</span>`;
 }
 
+// ── Kolom tabel Target (satu sumber kebenaran header + sel) ──
+const TARGET_COLUMNS = [
+  { key: 'pl', label: 'Platform', th: 'Pl.', thClass: '', cell: (r) => `<td><span class="badge ${r.platform === 'instagram' ? 'ig' : 'tk'}">${r.platform === 'instagram' ? 'IG' : 'TK'}</span></td>` },
+  { key: 'akun', label: 'Akun', th: 'Akun', thClass: '', cell: (r) => `<td class="wrap" title="${esc(r.url)}">@${esc(r.username || '—')}</td>` },
+  { key: 'tema', label: 'Tema', th: 'Tema', thClass: '', cell: (r) => { const t = r.tema || shortUrl(r.url); return `<td class="wrap cell-clip" title="${esc(t)}">${esc(t)}</td>`; } },
+  { key: 'followers', label: 'Followers', th: 'Fol.', thClass: 'num th-sort', sort: 'followers', cell: (r) => `<td class="num">${fmt(r.follower_count)}</td>` },
+  { key: 'likes', label: 'Likes', th: 'Likes', thClass: 'num th-sort', sort: 'likes', cell: (r) => `<td class="num"><b>${fmt(r.likes)}</b></td>` },
+  { key: 'delta_likes', label: 'Delta likes', th: 'Δ L', thClass: 'num th-sort', sort: 'delta_likes', title: 'Delta likes vs snapshot sebelumnya', cell: (r) => `<td class="num">${deltaBadge(r.delta_likes)}</td>` },
+  { key: 'views', label: 'Views', th: 'Views', thClass: 'num th-sort', sort: 'views', cell: (r) => `<td class="num">${fmt(r.views)}</td>` },
+  { key: 'delta_views', label: 'Delta views', th: 'Δ V', thClass: 'num th-sort', sort: 'delta_views', title: 'Delta views vs snapshot sebelumnya', cell: (r) => `<td class="num">${deltaBadge(r.delta_views)}</td>` },
+  { key: 'er', label: 'Engagement rate', th: 'ER', thClass: 'num th-sort', sort: 'er', title: 'Engagement rate', cell: (r) => `<td class="num">${r.engagement_rate !== null && r.engagement_rate !== undefined ? fmtPct(r.engagement_rate) : '—'}</td>` },
+  { key: 'recent', label: 'Terakhir di-scrape', th: 'Di-scrape', thClass: 'th-sort', sort: 'recent', cell: (r) => `<td class="muted" title="${esc(fmtWhen(r.snapshot_at))}">${esc(relTime(r.snapshot_at))}</td>` },
+  { key: 'status', label: 'Status', th: 'Status', thClass: '', cell: (r) => `<td>${statusBadge(r.status)}</td>` },
+];
+const ALL_COL_KEYS = TARGET_COLUMNS.map((c) => c.key);
+const COLS_STORAGE = 'sa_target_cols';
+let visibleCols = null;
+
+function loadVisibleCols() {
+  if (Array.isArray(visibleCols)) return visibleCols;
+  try {
+    const raw = localStorage.getItem(COLS_STORAGE);
+    if (raw) {
+      const keys = JSON.parse(raw).filter((k) => ALL_COL_KEYS.includes(k));
+      if (keys.length) { visibleCols = keys; return visibleCols; }
+    }
+  } catch { /* abaikan */ }
+  visibleCols = [...ALL_COL_KEYS];
+  return visibleCols;
+}
+function persistVisibleCols() { try { localStorage.setItem(COLS_STORAGE, JSON.stringify(visibleCols)); } catch { /* abaikan */ } }
+function visibleColumns() { const set = new Set(loadVisibleCols()); return TARGET_COLUMNS.filter((c) => set.has(c.key)); }
+
 function renderTargetsTable(items) {
+  const cols = visibleColumns();
   const rows = items.map((r) => {
     const checked = state.targets.selected.has(r.target_id);
     const tema = r.tema || shortUrl(r.url);
     return `<tr data-target="${r.target_id}" class="clickable" tabindex="0" role="button" aria-label="Buka riwayat ${esc(tema)}">
       <td><input type="checkbox" class="sel" data-id="${r.target_id}" aria-label="Pilih target ${esc(tema)}" ${checked ? 'checked' : ''}></td>
-      <td><span class="badge ${r.platform === 'instagram' ? 'ig' : 'tk'}">${r.platform === 'instagram' ? 'IG' : 'TK'}</span></td>
-      <td class="wrap" title="${esc(r.url)}">@${esc(r.username || '—')}</td>
-      <td class="wrap cell-clip" title="${esc(tema)}">${esc(tema)}</td>
-      <td class="num">${fmt(r.follower_count)}</td>
-      <td class="num"><b>${fmt(r.likes)}</b></td>
-      <td class="num">${deltaBadge(r.delta_likes)}</td>
-      <td class="num">${fmt(r.views)}</td>
-      <td class="num">${deltaBadge(r.delta_views)}</td>
-      <td class="num">${r.engagement_rate !== null && r.engagement_rate !== undefined ? fmtPct(r.engagement_rate) : '—'}</td>
-      <td class="muted" title="${esc(fmtWhen(r.snapshot_at))}">${esc(relTime(r.snapshot_at))}</td>
-      <td>${statusBadge(r.status)}</td>
+      ${cols.map((c) => c.cell(r)).join('')}
     </tr>`;
   }).join('');
 
   $('#targets-table').innerHTML = `
     <thead><tr>
       <th scope="col" class="w-36"><input type="checkbox" id="targets-checkall" aria-label="Pilih semua"></th>
-      <th scope="col">Pl.</th>
-      <th scope="col">Akun</th>
-      <th scope="col">Tema</th>
-      <th scope="col" class="num th-sort" data-sort="followers">Fol.</th>
-      <th scope="col" class="num th-sort" data-sort="likes">Likes</th>
-      <th scope="col" class="num th-sort" data-sort="delta_likes" title="Delta likes vs snapshot sebelumnya">Δ L</th>
-      <th scope="col" class="num th-sort" data-sort="views">Views</th>
-      <th scope="col" class="num th-sort" data-sort="delta_views" title="Delta views vs snapshot sebelumnya">Δ V</th>
-      <th scope="col" class="num th-sort" data-sort="er" title="Engagement rate">ER</th>
-      <th scope="col" class="th-sort" data-sort="recent">Di-scrape</th>
-      <th scope="col">Status</th>
+      ${cols.map((c) => `<th scope="col" class="${c.thClass}"${c.sort ? ` data-sort="${c.sort}"` : ''}${c.title ? ` title="${c.title}"` : ''}>${c.th}</th>`).join('')}
     </tr></thead>
-    <tbody>${rows || `<tr><td colspan="12">${emptyState('Tidak ada target', 'Tidak ada target yang cocok dengan filter ini.')}</td></tr>`}</tbody>`;
+    <tbody>${rows || `<tr><td colspan="${cols.length + 1}">${emptyState('Tidak ada target', 'Tidak ada target yang cocok dengan filter ini.')}</td></tr>`}</tbody>`;
 
   $$('#targets-table .th-sort').forEach((th) => {
     th.classList.toggle('desc', th.dataset.sort === state.targets.sort && state.targets.dir === 'desc');
@@ -81,6 +95,38 @@ function renderTargetsTable(items) {
     renderTargetsTable(state.targets.items);
     updateRetrySelected();
   });
+}
+
+// ── Pilih kolom (popover) ──────────────────────────────────────
+function openColumnsPop() {
+  const btn = $('#btn-columns');
+  const pop = $('#columns-pop');
+  if (!btn || !pop) return;
+  if (btn.getAttribute('aria-expanded') === 'true') { closeColumnsPop(); return; }
+  btn.setAttribute('aria-expanded', 'true');
+  const keys = new Set(loadVisibleCols());
+  pop.innerHTML = `
+    <div class="menu-head">Pilih kolom</div>
+    ${TARGET_COLUMNS.map((c) => `<label><input type="checkbox" data-col="${c.key}" ${keys.has(c.key) ? 'checked' : ''}>${esc(c.label)}</label>`).join('')}
+    <div class="menu-foot"><button class="linklike" id="cols-reset" type="button">Reset</button></div>`;
+  pop.hidden = false;
+  const rect = btn.getBoundingClientRect();
+  let left = rect.right - 224;
+  if (left < 8) left = rect.left;
+  let top = rect.bottom + 6;
+  const popH = Math.min(420, pop.scrollHeight);
+  if (top + popH > window.innerHeight - 8) top = Math.max(8, rect.top - popH - 6);
+  pop.style.left = Math.round(left) + 'px';
+  pop.style.top = Math.round(top) + 'px';
+  const reset = $('#cols-reset');
+  if (reset) reset.addEventListener('click', () => { visibleCols = [...ALL_COL_KEYS]; persistVisibleCols(); renderTargetsTable(state.targets.items); closeColumnsPop(); });
+}
+
+function closeColumnsPop() {
+  const pop = $('#columns-pop');
+  const btn = $('#btn-columns');
+  if (pop) pop.hidden = true;
+  if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 
 export async function loadTargets() {
@@ -183,6 +229,24 @@ export function bindTargetEvents() {
   });
   $('#targets-prev').addEventListener('click', () => { state.targets.offset = prevOffset(state.targets.offset, state.targets.limit); loadTargets(); });
   $('#targets-next').addEventListener('click', () => { state.targets.offset = nextOffset(state.targets.offset, state.targets.limit, state.targets.total); loadTargets(); });
+
+  // ── pemilih kolom ──
+  $('#btn-columns').addEventListener('click', openColumnsPop);
+  $('#columns-pop').addEventListener('change', (e) => {
+    const cb = e.target.closest('input[data-col]');
+    if (!cb) return;
+    const set = new Set(loadVisibleCols());
+    if (cb.checked) set.add(cb.dataset.col); else set.delete(cb.dataset.col);
+    if (set.size === 0) { set.add('status'); toast('Minimal satu kolom wajib tampil.', 'warning'); }
+    visibleCols = Array.from(set);
+    persistVisibleCols();
+    renderTargetsTable(state.targets.items);
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#columns-pop') || e.target.closest('#btn-columns')) return;
+    closeColumnsPop();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeColumnsPop(); });
 
   $('#btn-retry-failed').addEventListener('click', async () => {
     if (!state.auditId) { toast('Pilih audit dulu (di atas).'); return; }
