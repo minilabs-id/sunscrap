@@ -53,7 +53,12 @@ async function main() {
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 
   for (const w of WIDTHS) {
-    await page.setViewportSize({ width: w, height: 860 });
+    await app.evaluate(({ BrowserWindow }, s) => { BrowserWindow.getAllWindows()[0].setSize(s, s * 0.5 + 360); }, w);
+    for (let i = 0; i < 30; i++) {
+      const r = await page.evaluate(() => window.innerWidth);
+      if (r === w) break;
+      await new Promise((r2) => setTimeout(r2, 100));
+    }
     await page.waitForTimeout(350);
     for (const t of TABS) {
       await page.click(`.nav-link[data-tab="${t}"]`);
