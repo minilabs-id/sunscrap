@@ -475,6 +475,11 @@ button { font: inherit; color: inherit; }
   padding: var(--sp-5) var(--sp-5) var(--sp-6);
   scroll-behavior: smooth;
 }
+.main > * { max-width: 1720px; margin-inline: auto; }
+
+@media (max-width: 1200px) {
+  .main { padding: var(--sp-4) var(--sp-4) var(--sp-5); }
+}
 
 .tab { display: none; }
 .tab.active { display: block; animation: tabIn var(--dur-med) var(--ease); }
@@ -528,11 +533,7 @@ button { font: inherit; color: inherit; }
 .card-title { font-size: var(--fs-title); font-weight: 700; letter-spacing: -.01em; }
 .card-sub { margin-top: 2px; font-size: var(--fs-meta); color: var(--ink-3); }
 
-.grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4); }
-.grid-hero { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: var(--sp-4); margin-bottom: var(--sp-4); }
-.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-4); }
-@media (max-width: 1240px) { .grid-hero { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+.grid-2, .grid-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-4); }
 
 /* ============================================================
    Tombol — WinUI-ish
@@ -783,8 +784,9 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
   gap: var(--sp-4);
   margin-bottom: var(--sp-4);
 }
-@media (max-width: 1240px) { .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 720px) { .kpi-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 .kpi {
   background: var(--surface);
@@ -811,11 +813,10 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
    ============================================================ */
 .attention {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
   gap: var(--sp-3);
   margin-bottom: var(--sp-4);
 }
-@media (max-width: 900px) { .attention { grid-template-columns: 1fr; } }
 
 .attention-item {
   display: flex;
@@ -836,7 +837,7 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
 .attention-item[data-tone="ok"] { border-left-color: var(--ok-dot); }
 .attention-item[aria-disabled="true"] { opacity: .55; cursor: default; }
 .attention-item[aria-disabled="true"]:hover { transform: none; box-shadow: none; }
-.attention-num { font-size: var(--fs-page); font-weight: 800; letter-spacing: -.02em; min-width: 44px; }
+.attention-num { font-size: var(--fs-page); font-weight: 800; letter-spacing: -.02em; min-width: 44px; flex: none; }
 .attention-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .attention-title { font-size: var(--fs-meta); font-weight: 700; }
 .attention-sub { font-size: var(--fs-micro); color: var(--ink-3); }
@@ -1409,8 +1410,7 @@ body.modal-open { overflow: hidden; }
 /* ============================================================
    Pengaturan — seksi & zona berbahaya
    ============================================================ */
-.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-4); }
-@media (max-width: 1100px) { .settings-grid { grid-template-columns: 1fr; } }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-4); }
 
 .db-info { display: flex; flex-wrap: wrap; gap: 8px; }
 .db-chip {

@@ -48,10 +48,20 @@ Tanpa dukungan backdrop-filter, permukaan tetap terbaca (≥ 82% opak di palette
 
 ## 4. Grid & spacing
 
-Grid 4px (`4/8/12/16/24/32/48/64`). Konten: padding 24px; gap kartu 16px;
-sidebar 248px (kompak 76px < 1120px, ikon saja). Breakpoint grid: 1240px (2→1 kolom area
-hero/3-kolom), 1100px. Kepadatan tabel: `data-density=padat|normal|lapang`
-(+ `auto` mengikuti lebar jendela), tersimpan di `localStorage('sa_density')`.
+Grid 4px (`4/8/12/16/24/32/48/64`). Konten: padding 24px (16px di bawah 1200px);
+gap kartu 16px; kolom konten dibatasi **1720px** dan terpusat di layar ultra-lebar.
+
+**Tata letak elastis (fluid, tanpa patah mendadak):**
+- KPI: `repeat(4, 1fr)` — turun ke `repeat(2, 1fr)` di bawah 1200px.
+- Kartu ganda (Grid/hero/settings): `repeat(auto-fit, minmax(min(430px, 100%), 1fr))`
+  — otomatis 2 kolom atau 1 kolom menyesuaikan lebar, tanpa media query.
+- Baris aksi (Perlu tinjauan): `auto-fit minmax(min(250px, 100%), 1fr)`.
+- Sidebar: 248px, kompak **76px (ikon saja)** di bawah 1120px; tooltip via `title`.
+- Tabel: `overflow:auto` + header sticky — menggulir horizontal, tidak pernah memaksa
+  halaman melebar. Tiada overflow horizontal di seluruh rentang 1024–1920px (diverifikasi).
+
+Kepadatan tabel: `data-density=padat|normal|lapang` (+ `auto`: lapang ≥1680, normal ≥1280,
+padat di bawahnya), tersimpan di `localStorage('sa_density')`.
 
 ## 5. IA & redundansi (yang dihapus)
 

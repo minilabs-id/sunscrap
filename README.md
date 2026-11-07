@@ -41,7 +41,9 @@ Prasyarat: Node.js 22+, Windows (target utama; `node:sqlite` bawaan runtime Elec
 npm test             # 80 unit test (node --test)
 npx electron scripts/smoke.js   # smoke require-graph + DB + worker (di runtime Electron)
 node scripts/e2e.js  # e2e Playwright (import file & tempel link, tanpa error console)
-node scripts/screenshot.js      # tangkapan layar semua tab (dev helper, .screens/)
+node scripts/interact.js     # uji interaksi 21 langkah (profil sekali pakai)
+node scripts/responsive.js   # matriks screenshot 1024–1920px (semua tab)
+node scripts/screenshot.js   # tangkapan layar semua tab (dev helper, .screens/)
 ```
 
 ## Struktur proyek (v2)
