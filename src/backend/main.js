@@ -32,7 +32,7 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'sa-avatar', privileges: { secure: true, supportFetchAPI: true } },
 ]);
 
-const ICON_FILE = path.join(__dirname, '..', '..', 'assets', 'icon.png');
+const ICON_FILE = path.join(__dirname, '..', '..', 'assets', 'icon.ico');
 const LIMITER_STATE = 'worker-state.json';
 const WINDOW_STATE = 'window-state.json';
 const RENDERER_INDEX_PATH = path.join(__dirname, '..', 'frontend', 'index.html');
@@ -381,7 +381,7 @@ async function boot() {
   windowStore = createStorage(path.join(userData, WINDOW_STATE));
   const reviewStore = createStorage(path.join(userData, 'review-state.json'));
 
-  scraper = createScraper({ onLog: log });
+  scraper = createScraper({ onLog: log, icon: ICON_FILE });
 
   const storage = createStorage(path.join(userData, LIMITER_STATE));
   const limiter = createRateLimiter(storage).init();

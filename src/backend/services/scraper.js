@@ -52,7 +52,7 @@ function withTimeout(promise, ms, message) {
   ]);
 }
 
-function createScraper({ onLog, resolvePage, partition } = {}) {
+function createScraper({ onLog, resolvePage, partition, icon } = {}) {
   const say = typeof onLog === 'function' ? onLog : () => {};
   const resolve = typeof resolvePage === 'function' ? resolvePage : (url) => url;
   const partitionName = partition || PARTITION;
@@ -75,6 +75,7 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
       show: false,
       width: 1280, height: 900,
       title: 'sunscrap worker',
+      icon: icon || undefined,
       webPreferences: {
         partition: partitionName,
         nodeIntegration: false,
@@ -202,6 +203,7 @@ function createScraper({ onLog, resolvePage, partition } = {}) {
       const win = new BrowserWindow({
         width: 1100, height: 820,
         title: `Login ${platform}`,
+        icon: icon || undefined,
         webPreferences: { partition: partitionName, nodeIntegration: false, contextIsolation: true, sandbox: true },
       });
       win.webContents.setWindowOpenHandler(({ url }) => {

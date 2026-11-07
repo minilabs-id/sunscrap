@@ -103,6 +103,31 @@ function drawSun(size) {
   return rgba;
 }
 
+function encodeIco(pngs) {
+  // pngs: [{ size, buf }] — masukkan PNG langsung sebagai frame ICO (Vista+).
+  const count = pngs.length;
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0); // reserved
+  header.writeUInt16LE(1, 2); // type = icon
+  header.writeUInt16LE(count, 4);
+  const entries = Buffer.alloc(16 * count);
+  let offset = 6 + 16 * count;
+  const data = [];
+  pngs.forEach((p, i) => {
+    const e = i * 16;
+    const b = p.size >= 256 ? 0 : p.size; // 0 = 256
+    entries[e] = b; entries[e + 1] = b;
+    entries[e + 2] = 0; entries[e + 3] = 0;
+    entries.writeUInt16LE(1, e + 4);      // planes
+    entries.writeUInt16LE(32, e + 6);     // bitCount
+    entries.writeUInt32LE(p.buf.length, e + 8);
+    entries.writeUInt32LE(offset, e + 12);
+    offset += p.buf.length;
+    data.push(p.buf);
+  });
+  return Buffer.concat([header, entries, ...data]);
+}
+
 const SIZE = 512;
 const png = encodePng(SIZE, SIZE, drawSun(SIZE));
 const root = path.join(__dirname, '..');
@@ -110,4 +135,11 @@ fs.mkdirSync(path.join(root, 'assets'), { recursive: true });
 fs.mkdirSync(path.join(root, 'build'), { recursive: true });
 fs.writeFileSync(path.join(root, 'assets', 'icon.png'), png);
 fs.writeFileSync(path.join(root, 'build', 'icon.png'), png);
+
+// ICO multi-ukuran untuk ikon taskbar/window (pengganti ikon Electron saat dev).
+const sizes = [16, 24, 32, 48, 64, 128, 256];
+const ico = encodeIco(sizes.map((s) => ({ size: s, buf: encodePng(s, s, drawSun(s)) })));
+fs.writeFileSync(path.join(root, 'assets', 'icon.ico'), ico);
+
 console.log('icon.png generated at', path.join(root, 'assets', 'icon.png'), `(${png.length} bytes)`);
+console.log('icon.ico generated at', path.join(root, 'assets', 'icon.ico'), `(${ico.length} bytes)`);
