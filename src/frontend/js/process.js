@@ -22,6 +22,7 @@ export async function loadProcess() {
 function renderLive(queue, w) {
   const dot = $('#proses-dot');
   const name = $('#proses-name');
+  const bar = $('#proses-bar');
   const meter = $('#proses-meter');
   const meta = $('#proses-meta');
   if (!name) return;
@@ -37,21 +38,22 @@ function renderLive(queue, w) {
 
   if (active) {
     const curName = cur.username ? `@${cur.username} (${cur.platform === 'instagram' ? 'IG' : 'TK'})` : null;
-    name.innerHTML = curName
-      ? `<span class="muted">Mengumpulkan</span> <b>${esc(curName)}</b><span class="muted">…</span>`
-      : `<b>Sedang memproses</b><span class="muted">…</span>`;
-    const cyclePct = r.visitBudget ? Math.min(100, Math.round((r.cycleVisits || 0) / r.visitBudget * 100)) : 0;
-    if (meter) meter.style.width = cyclePct + '%';
+    name.innerHTML = curName ? `<span class="muted">Mengumpulkan</span> <b>${esc(curName)}</b>` : `<b>Sedang memproses</b>`;
+    const pct = r.visitBudget ? Math.min(100, Math.round((r.cycleVisits || 0) / r.visitBudget * 100)) : 0;
+    if (bar) bar.hidden = false;
+    if (meter) meter.style.width = pct + '%';
     const eta = w.eta || null;
-    if (meta) meta.textContent = `${fmt(r.cycleVisits)}/${fmt(r.visitBudget)} dikumpulkan · ${qsum}${eta ? ` · sisa ±${eta}` : ''}`;
+    if (meta) meta.textContent = `${fmt(r.cycleVisits)}/${fmt(r.visitBudget)}${eta ? ` · sisa ±${eta}` : ''} · ${qsum}`;
   } else {
+    if (bar) bar.hidden = true;
     if (meter) meter.style.width = '0%';
     if (errored) {
-      name.innerHTML = `<b>Terhenti</b> — ${esc(w.lastError)}`;
+      name.innerHTML = `<b>Terhenti</b>`;
+      if (meta) meta.textContent = `${esc(w.lastError)} · ${qsum}`;
     } else {
-      name.innerHTML = `<b>Siaga</b> — klik <b>Mulai worker</b> di sidebar`;
+      name.innerHTML = `<b>Siaga</b>`;
+      if (meta) meta.textContent = qsum;
     }
-    if (meta) meta.textContent = qsum;
   }
 }
 
