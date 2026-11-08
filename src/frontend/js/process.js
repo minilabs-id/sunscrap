@@ -3,6 +3,31 @@ import { $ } from './dom.js';
 import { api, esc, fmt, fmtWhen, deltaBadge } from './helpers.js';
 import { statusBadge } from './targets.js';
 
+// Estimasi % "loading" per akun (scraper tak melapor progres sub-task, jadi ini perkiraan visual).
+let liveTimer = null;
+let livePct = 0;
+let liveKey = null;
+
+function stopLive() {
+  if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+  liveKey = null;
+  livePct = 0;
+}
+
+function startLive(key) {
+  if (liveKey === key) return;
+  stopLive();
+  liveKey = key;
+  livePct = 0;
+  liveTimer = setInterval(() => {
+    if (livePct < 97) livePct += 1 + Math.random() * 2; // mendekati 100% secara bertahap
+    const meter = $('#proses-meter');
+    const pct = $('#proses-pct');
+    if (meter) meter.style.width = Math.round(livePct) + '%';
+    if (pct) pct.textContent = `${Math.round(livePct)}%`;
+  }, 220);
+}
+
 export async function loadProcess() {
   try {
     const [queue, w, latest] = await Promise.all([
@@ -39,14 +64,16 @@ function renderLive(queue, w) {
   if (active) {
     const curName = cur.username ? `@${cur.username} (${cur.platform === 'instagram' ? 'IG' : 'TK'})` : null;
     name.innerHTML = curName ? `<span class="muted">Mengumpulkan</span> <b>${esc(curName)}</b>` : `<b>Sedang memproses</b>`;
-    const pct = r.visitBudget ? Math.min(100, Math.round((r.cycleVisits || 0) / r.visitBudget * 100)) : 0;
     if (bar) bar.hidden = false;
-    if (meter) meter.style.width = pct + '%';
+    // Mulai/pakai estimator % per akun (reset saat akun berganti).
+    startLive(`${cur.platform || '?'}:${cur.username || ''}:${w.lastTaskId || ''}`);
     const eta = w.eta || null;
     if (meta) meta.textContent = `${fmt(r.cycleVisits)}/${fmt(r.visitBudget)}${eta ? ` · sisa ±${eta}` : ''} · ${qsum}`;
   } else {
+    stopLive();
     if (bar) bar.hidden = true;
     if (meter) meter.style.width = '0%';
+    const pct = $('#proses-pct'); if (pct) pct.textContent = '';
     if (errored) {
       name.innerHTML = `<b>Terhenti</b>`;
       if (meta) meta.textContent = `${esc(w.lastError)} · ${qsum}`;

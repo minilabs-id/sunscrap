@@ -1456,6 +1456,7 @@ body.modal-open { overflow: hidden; }
 .proses-name { display: flex; align-items: center; gap: 8px; font-size: var(--fs-title); font-weight: 700; margin-bottom: 8px; }
 .proses-name .dot { width: 10px; height: 10px; }
 .proses-name .muted { font-weight: 500; }
+.proses-pct { font-size: var(--fs-meta); font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
 .proses-bar { height: 8px; border-radius: 999px; background: var(--sunken); overflow: hidden; }
 .proses-bar > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-strong), var(--accent)); border-radius: 999px; transition: width .5s var(--ease); }
 .proses-meta { font-size: var(--fs-micro); color: var(--ink-3); margin-top: 6px; }
