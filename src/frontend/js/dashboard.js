@@ -133,16 +133,21 @@ function hideTrendTooltip() {
 
 // ── Top konten (per platform) ──────────────────────────────────
 function renderTopPosts(summary) {
-  const views = (summary && summary.posts && summary.posts.top_views) || [];
-  const row = (p, i) => `
+  const ig = (summary && summary.posts && summary.posts.top_instagram) || [];
+  const tk = (summary && summary.posts && summary.posts.top_tiktok) || [];
+  const row = (p, i) => {
+    // IG: postingan foto tak punya "views", jadi pakai likes; reels/video & TikTok pakai views.
+    const showViews = p.platform !== 'instagram' || (p.views !== null && p.views !== undefined);
+    const value = showViews ? (p.views ?? 0) : (p.likes ?? 0);
+    const unit = showViews ? 'views' : 'likes';
+    return `
     <div class="leader-row${i < 3 ? ' is-top' : ''}">
       <span class="rank">${i + 1}</span>
       <span class="leader-main"><b>${esc(p.handle || '—')}</b>${p.scraped_at ? `<span class="muted"> · ${esc(relTime(p.scraped_at))}</span>` : ''}</span>
-      <span class="leader-num"><b>${esc(fmtCompact(p.views ?? 0))}</b><span class="muted">views</span></span>
+      <span class="leader-num"><b>${esc(fmtCompact(value))}</b><span class="muted">${unit}</span></span>
       <span class="leader-num"><b>${p.er !== null && p.er !== undefined ? fmtPct(p.er) : '—'}</b><span class="muted">ER</span></span>
     </div>`;
-  const ig = views.filter((p) => p.platform === 'instagram').slice(0, 6);
-  const tk = views.filter((p) => p.platform === 'tiktok').slice(0, 6);
+  };
   $('#top-ig').innerHTML = ig.length ? ig.map(row).join('') : emptyState('Belum ada data Instagram', 'Import data, lalu jalankan worker.');
   $('#top-tk').innerHTML = tk.length ? tk.map(row).join('') : emptyState('Belum ada data TikTok', 'Import data, lalu jalankan worker.');
 }

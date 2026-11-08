@@ -1300,8 +1300,11 @@ function createDatabase(dbPath) {
       return { ...a, er_rows: er.length, median_er: recapMedian(er) };
     }).sort((a, b) => b.targets - a.targets || a.audit_id - b.audit_id);
 
-    const rankedViews = posts.filter((p) => p.views !== null).sort((a, b) => b.views - a.views).slice(0, 10);
-    const rankedEr = posts.filter((p) => p.er !== null).sort((a, b) => b.er - a.er).slice(0, 5);
+    const igScore = (p) => (p.views ?? p.likes ?? 0);
+    const rankedIg = posts.filter((p) => p.platform === 'instagram' && (p.views !== null || p.likes !== null))
+      .sort((a, b) => igScore(b) - igScore(a)).slice(0, 6);
+    const rankedTk = posts.filter((p) => p.platform === 'tiktok' && p.views !== null)
+      .sort((a, b) => b.views - a.views).slice(0, 6);
     const scraped = platforms.reduce((s, p) => s + p.scraped, 0);
     const verified = statusCounts.OK + statusCounts.PARTIAL;
 
@@ -1322,7 +1325,7 @@ function createDatabase(dbPath) {
       platforms, accounts: accounts.slice(0, 20), accounts_total: accounts.length,
       temas: temas.slice(0, 12), temas_total: temas.length,
       audits: auditList,
-      posts: { top_views: rankedViews, top_er: rankedEr },
+      posts: { top_instagram: rankedIg, top_tiktok: rankedTk },
       quality,
     };
     summaryMemo = { gen: intelGen, key: memoKey, value: result };
