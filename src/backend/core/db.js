@@ -1774,6 +1774,8 @@ function createDatabase(dbPath) {
   }
 
   // Seri waktu observasi per hari untuk grafik Dashboard. Mengisi hari kosong agar grafik mulus.
+  // `views/likes/comments` tetap Σ mentah (dipakai sparkline KPI), sedangkan `d_views/d_likes/d_comments`
+  // adalah DELTA (pertumbuhan) vs scrape sebelumnya — metrik jujur untuk kartu Tren.
   function getTimeseries(auditId, days = 30) {
     const hasAudit = auditId !== null && auditId !== undefined && auditId !== '';
     const aid = hasAudit ? Number(auditId) : null;
@@ -1796,16 +1798,44 @@ function createDatabase(dbPath) {
       WHERE ${conditions.join(' AND ')}
       GROUP BY date(s.scraped_at)
       ORDER BY d ASC`, ...params);
+
+    // Δ per hari: pertumbuhan vs snapshot SMA (LAG per target). Snapshot tanpa metrik (gagal)
+    // dilewati agar rantai delta tidak putus. Scrape pertama dihitung penuh (baseline).
+    const auditCond = aid !== null ? 'AND t.audit_id = ?' : '';
+    const deltaParams = aid !== null ? [aid, span] : [span];
+    const deltaRows = all(`
+      WITH usable AS (
+        SELECT s.target_id, s.id, s.scraped_at, s.views, s.likes, s.comments
+        FROM snapshots s JOIN targets t ON t.id = s.target_id
+        WHERE (s.views IS NOT NULL OR s.likes IS NOT NULL) ${auditCond}
+      ),
+      ranked AS (
+        SELECT *,
+          LAG(views) OVER (PARTITION BY target_id ORDER BY id) AS prev_views,
+          LAG(likes) OVER (PARTITION BY target_id ORDER BY id) AS prev_likes,
+          LAG(comments) OVER (PARTITION BY target_id ORDER BY id) AS prev_comments
+        FROM usable
+      )
+      SELECT date(scraped_at) AS d,
+        SUM(CASE WHEN prev_views IS NULL THEN COALESCE(views, 0) WHEN views IS NULL THEN 0 ELSE MAX(views - prev_views, 0) END) AS d_views,
+        SUM(CASE WHEN prev_likes IS NULL THEN COALESCE(likes, 0) WHEN likes IS NULL THEN 0 ELSE MAX(likes - prev_likes, 0) END) AS d_likes,
+        SUM(CASE WHEN prev_comments IS NULL THEN COALESCE(comments, 0) WHEN comments IS NULL THEN 0 ELSE MAX(comments - prev_comments, 0) END) AS d_comments
+      FROM ranked
+      WHERE scraped_at >= datetime('now', '-' || ? || ' days')
+      GROUP BY date(scraped_at)
+      ORDER BY d ASC`, ...deltaParams);
     const byDate = new Map(rows.map((r) => [r.d, r]));
+    const deltaByDate = new Map(deltaRows.map((r) => [r.d, r]));
     const now = new Date();
     const out = [];
     for (let i = span - 1; i >= 0; i--) {
       const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i));
       const key = day.toISOString().slice(0, 10);
       const r = byDate.get(key);
+      const d = deltaByDate.get(key) || {};
       out.push(r
-        ? { date: key, scraped: r.scraped, targets: r.targets, views: r.views, likes: r.likes, comments: r.comments, ok_count: r.ok_count, partial_count: r.partial_count, failed_count: r.failed_count }
-        : { date: key, scraped: 0, targets: 0, views: 0, likes: 0, comments: 0, ok_count: 0, partial_count: 0, failed_count: 0 });
+        ? { date: key, scraped: r.scraped, targets: r.targets, views: r.views, likes: r.likes, comments: r.comments, ok_count: r.ok_count, partial_count: r.partial_count, failed_count: r.failed_count, d_views: d.d_views || 0, d_likes: d.d_likes || 0, d_comments: d.d_comments || 0 }
+        : { date: key, scraped: 0, targets: 0, views: 0, likes: 0, comments: 0, ok_count: 0, partial_count: 0, failed_count: 0, d_views: 0, d_likes: 0, d_comments: 0 });
     }
     return { range_days: span, days: out };
   }

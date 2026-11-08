@@ -63,6 +63,26 @@ test('retryTargets membatalkan memo summary (pending ikut naik, bukan basi)', ()
   db.close();
 });
 
+test('getTimeseries: delta = pertumbuhan (bukan Σ dobel) vs views mentah', () => {
+  const db = makeDb();
+  const r = db.createAuditWithTasks([t1], { name: 'ts-delta' });
+  const targetId = db.getTargets({ auditId: r.audit_id }).items[0].target_id;
+
+  let task = db.getNextTask();
+  db.updateTaskResult(task.id, { platform: 'instagram', username: 'aku', likes: 40, comments: 3, views: 1000, shares: null, followerCount: 9000, status: 'OK' });
+  // audit ulang: scrape lagi dengan views naik
+  db.retryTargets(r.audit_id, [targetId]);
+  task = db.getNextTask();
+  db.updateTaskResult(task.id, { platform: 'instagram', username: 'aku', likes: 60, comments: 4, views: 1500, shares: null, followerCount: 9000, status: 'OK' });
+
+  const ts = db.getTimeseries(null, 30);
+  const today = ts.days[ts.days.length - 1];
+  assert.equal(today.d_views, 1500, 'delta = 1000 baseline + 500 pertumbuhan');
+  assert.equal(today.d_likes, 60, 'delta likes = 40 baseline + 20 pertumbuhan');
+  assert.equal(today.views, 2500, 'Σ mentah = dobel hitung (1000+1500); sengaja dibedakan dari delta');
+  db.close();
+});
+
 test('loop siklus berulang: summary konsisten & tanpa pending bocor', () => {
   const db = makeDb();
   const r = db.createAuditWithTasks([t1, t2], { name: 'loop' });

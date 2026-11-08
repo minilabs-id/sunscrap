@@ -152,15 +152,16 @@
         <div class="grid-hero">
           <div class="card" aria-label="Tren aktivitas 30 hari">
             <div class="card-hd">
-              <div><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Tren 30 hari</div><div class="card-sub">Aktivitas worker per hari · pilih metrik</div></div>
+              <div><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Tren 30 hari</div><div class="card-sub">Pertumbuhan per hari · pilih metrik</div></div>
               <div class="mini-tabs" role="tablist" aria-label="Metrik tren">
-                <button role="tab" data-metric="views" aria-selected="true">Views</button>
-                <button role="tab" data-metric="likes" aria-selected="false">Likes</button>
-                <button role="tab" data-metric="scraped" aria-selected="false">Post</button>
+                <button role="tab" data-metric="d_views" aria-selected="true">Δ Views</button>
+                <button role="tab" data-metric="d_likes" aria-selected="false">Δ Likes</button>
+                <button role="tab" data-metric="d_comments" aria-selected="false">Δ Komentar</button>
+                <button role="tab" data-metric="scraped" aria-selected="false">Diproses</button>
               </div>
             </div>
             <div class="chart-box" id="trend-chart">
-              <svg viewBox="0 0 660 220" role="img" aria-label="Grafik area aktivitas 30 hari">
+              <svg viewBox="0 0 660 220" role="img" aria-label="Grafik pertumbuhan &amp; aktivitas 30 hari">
                 <line class="grid-line" x1="36" y1="40" x2="650" y2="40"/>
                 <line class="grid-line" x1="36" y1="80" x2="650" y2="80"/>
                 <line class="grid-line" x1="36" y1="120" x2="650" y2="120"/>

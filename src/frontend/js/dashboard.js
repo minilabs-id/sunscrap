@@ -63,7 +63,7 @@ function renderTrend() {
   const days = (state.timeseries && state.timeseries.days) || [];
   const line = $('#trend-line');
   const area = $('#trend-area');
-  if (!days.length) {
+  if (!days.length || (state.timeseries && days.every((d) => (d.scraped || 0) === 0))) {
     if (line) line.setAttribute('d', '');
     if (area) area.setAttribute('d', 'M36,190 L650,190 Z');
     $('#trend-y').innerHTML = '';
@@ -98,10 +98,12 @@ function renderTrend() {
   const tickLabel = (v) => (v >= 10 ? fmtCompact(Math.round(v)) : idID(v, 1));
   $('#trend-y').innerHTML = ticks.map((t) => `<text class="axis-label" x="30" y="${(t.y + 3).toFixed(1)}" text-anchor="end">${esc(tickLabel(t.v))}</text>`).join('');
 
-  const metricLabel = { views: 'Views', likes: 'Likes', scraped: 'Post' }[metric] || metric;
-  const peak = Math.max(...vals);
+  const metricLabel = { d_views: 'Δ Views', d_likes: 'Δ Likes', d_comments: 'Δ Komentar', scraped: 'Diproses' }[metric] || metric;
   const totalV = sum(vals);
-  $('#trend-sub').textContent = `${metricLabel} — ${fmt(totalV)} dalam 30 hari · puncak ${fmtCompact(peak)} (${fmtDayShort(days[vals.indexOf(peak)].date)})`;
+  const activeDays = days.filter((d) => (d.scraped || 0) > 0).length;
+  $('#trend-sub').textContent = metric === 'scraped'
+    ? `Diproses — ${fmt(totalV)} scrape · ${activeDays} hari aktif`
+    : `${metricLabel} — Σ ${fmtCompact(totalV)} pertumbuhan · ${activeDays} hari diproses`;
 }
 
 function onTrendMove(e) {
@@ -115,7 +117,7 @@ function onTrendMove(e) {
   let idx = Math.round(innerX / step);
   idx = Math.max(0, Math.min(days.length - 1, idx));
   const d = days[idx];
-  tip.innerHTML = `<b>${esc(fmtDateFull(d.date))}</b><br>${fmtCompact(d.views)} views · ${fmtCompact(d.likes)} likes<br>${fmt(d.scraped)} post · ${fmt(d.targets)} akun<br><span class="muted">OK ${fmt(d.ok_count)} · sebagian ${fmt(d.partial_count)} · gagal ${fmt(d.failed_count)}</span>`;
+  tip.innerHTML = `<b>${esc(fmtDateFull(d.date))}</b><br>Δ ${fmtCompact(d.d_views || 0)} views · Δ ${fmtCompact(d.d_likes || 0)} likes · Δ ${fmtCompact(d.d_comments || 0)} komentar<br>${fmt(d.scraped)} diproses · ${fmt(d.targets)} postingan<br><span class="muted">OK ${fmt(d.ok_count)} · sebagian ${fmt(d.partial_count)} · gagal ${fmt(d.failed_count)}</span>`;
   tip.hidden = false;
   tip.style.opacity = '1';
   const maxX = Math.max(8, rect.width - 240);

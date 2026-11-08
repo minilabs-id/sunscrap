@@ -19,7 +19,7 @@
       accountsSummary: null,
       temaSort: 'views', // konsisten: dibaca/ditulis sebagai `temaSort` di seluruh app.js
       postsTab: 'views',
-      metric: 'views',
+      metric: 'd_views',
       trendSeq: 0,
       dbInfoCache: null,
       searchSeq: 0,
