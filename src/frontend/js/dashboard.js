@@ -214,7 +214,7 @@ function renderPlatformCompare(summary) {
 function renderQuality(summary) {
   const q = (summary && summary.quality) || {};
   const rows = [
-    { n: q.without_followers || 0, label: 'akun tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', issue: 'no_followers', btn: 'Kunjungi & kumpulkan', primary: true },
+    { n: q.without_followers || 0, label: 'akun tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', issue: 'no_followers', btn: 'Kunjungi & kumpulkan' },
     { n: q.partial || 0, label: 'akun sebagian terbaca', hint: 'Metrik tidak lengkap — kemungkinan privat / age-gated', issue: 'partial', btn: 'Scrape ulang' },
     { n: q.missing_views || 0, label: 'TikTok tanpa views', hint: 'Video privat / age-gated, atau post foto', issue: 'no_views', btn: 'Scrape ulang' },
     { n: q.missing_username || 0, label: 'postingan tanpa handle', hint: 'Username tidak ter-parse dari URL', issue: 'no_username', btn: 'Scrape ulang' },
@@ -226,7 +226,7 @@ function renderQuality(summary) {
     return;
   }
   $('#quality-list').innerHTML = visible.map((r) => `
-    <div class="check-row"><div class="min-0"><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted text-micro">${esc(r.hint)}</div></div><button class="btn ${r.primary ? 'btn-primary' : 'btn-ghost'} btn-sm" data-quality-action="fix" data-quality-issue="${r.issue}">${esc(r.btn)}</button></div>`).join('');
+    <div class="check-row"><div class="min-0"><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted text-micro">${esc(r.hint)}</div></div><button class="btn btn-ghost btn-sm" data-quality-action="fix" data-quality-issue="${r.issue}">${esc(r.btn)}</button></div>`).join('');
 }
 
 // ── Perbandingan periode (hanya tampil bila ≥ 2 periode) ───────

@@ -1089,6 +1089,7 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
   border-bottom: 1px solid var(--line);
 }
 .check-row:last-child { border-bottom: 0; }
+#quality-list .check-row .btn { min-width: 148px; }
 
 /* Kuadran followers × reach (scatter) */
 .scatter-wrap { position: relative; }
