@@ -125,7 +125,7 @@ export function showScoreHelp() {
         <li><b>+4</b> Unggahan sama muncul di akun lain</li>
         <li><b>+3</b> Kontak (nomor/email) di bio dipakai akun lain</li>
         <li><b>+2</b> Caption seragam lintas akun · jangkauan sangat rendah · komentar nyaris nol · unggahan bertumpuk · follower datar</li>
-        <li><b>+1</b> Unggahan serentak · following &gt; followers</li>
+        <li><b>+1</b> Caption mirip (berbagi kata kunci) · unggahan serentak · following &gt; followers</li>
       </ul>
       <p class="muted warn-notebox"><b>Disclaimer:</b> ini indikasi otomatis dari data publik — bukan identifikasi orang dan bukan vonis. Wajib verifikasi manual sebelum tindakan apa pun. Data dapat dihapus atas permintaan.</p>`,
     foot: `<button class="btn btn-ghost" data-close>Tutup</button>`,

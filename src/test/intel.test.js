@@ -142,3 +142,41 @@ test('lonjakan followers bulan terakhir yang tak wajar memberi flag', () => {
   const r = intel.analyseAccount(a, [], history, {});
   assert.ok(r.flags.some((f) => f.key === 'followers_spike'));
 });
+
+test('caption mirip (bukan identik) menautkan dua akun lewat kata kunci', () => {
+  const a1 = account('miripa', 10000);
+  const a2 = account('miripb', 10000);
+  const posts1 = [{ post_ref: 'a', posted_at: t0, likes: 100, comments: 5, views: null, caption: 'jual sepatu kulit handmade asli dari bandung' }];
+  const posts2 = [{ post_ref: 'b', posted_at: t1, likes: 90, comments: 4, views: null, caption: 'sepatu kulit handmade asli bandung promo terbatas' }];
+  const links = intel.findAccountLinks([a1, a2], { 'instagram:miripa': posts1, 'instagram:miripb': posts2 });
+  const edges = links['instagram:miripa'] || {};
+  assert.ok(edges['instagram:miripb'] && edges['instagram:miripb'].has('caption_mirip'));
+});
+
+test('caption yang hanya beda mention & URL dianggap template sama', () => {
+  const a = 'Promo besar untuk member setia kami, cek sekarang juga ya semuanya';
+  const b = 'Promo besar untuk member setia kami, cek sekarang juga ya semuanya @akun https://t.co/abc';
+  assert.equal(intel.captionTemplateKey(a), intel.captionTemplateKey(b));
+});
+
+test('akun besar tidak diberi flag reach_rendah (band 5K-20K saja)', () => {
+  const a = account('besar', 500000);
+  const posts = [
+    { post_ref: 'a', posted_at: t0, likes: 4000, comments: 10, views: null, caption: null },
+    { post_ref: 'b', posted_at: t1, likes: 4000, comments: 10, views: null, caption: null },
+    { post_ref: 'c', posted_at: t2, likes: 4000, comments: 10, views: null, caption: null },
+  ];
+  const r = intel.analyseAccount(a, posts, [], {});
+  assert.ok(!r.flags.some((f) => f.key === 'reach_rendah'));
+});
+
+test('median shares TikTok tersimpan ke metrics', () => {
+  const a = account('share', 10000, { platform: 'tiktok' });
+  const posts = [
+    { post_ref: 'a', posted_at: t0, likes: 100, comments: 5, shares: 20, views: 1000, caption: null },
+    { post_ref: 'b', posted_at: t1, likes: 100, comments: 5, shares: 30, views: 1000, caption: null },
+    { post_ref: 'c', posted_at: t2, likes: 100, comments: 5, shares: 40, views: 1000, caption: null },
+  ];
+  const r = intel.analyseAccount(a, posts, [], {});
+  assert.equal(r.metrics.median_shares, 30);
+});

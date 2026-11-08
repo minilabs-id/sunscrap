@@ -24,6 +24,22 @@ const MAX_FANOUT = 50;
 // Template caption yang dipakai >10 akun dianggap generik (konten viral), bukan bukti pasangan.
 const MAX_TEMPLATE_FANOUT = 10;
 const CAPTION_TEMPLATE_PREFIX = 40;
+// Caption "mirip" (serupa tapi tak identik): dua akun ditautkan bila caption mereka
+// berbagi >= MIN_SHARED_CAPTION_TOKENS token bermakna (panjang >= MIN_CAPTION_TOKEN_LEN,
+// bukan stopword/angka). Ambang 3 dipilih agar deskripsi yang benar-benar senada terdeteksi
+// tanpa terlalu banyak derau dari kata dagang umum yang sudah masuk daftar stopword.
+const MIN_CAPTION_TOKEN_LEN = 3;
+const MIN_SHARED_CAPTION_TOKENS = 3;
+const CAPTION_STOPWORDS = new Set([
+  // kata fungsi id/en agar tidak dianggap "kata kunci bersama"
+  'yang', 'dan', 'dengan', 'untuk', 'dari', 'ini', 'itu', 'ada', 'agar', 'atau', 'juga', 'karena',
+  'di', 'ke', 'pada', 'akan', 'kamu', 'aku', 'saya', 'kami', 'kita', 'nya', 'aja', 'sih', 'dong',
+  'jadi', 'gak', 'ga', 'tak', 'bisa', 'harus', 'sudah', 'lagi', 'lebih', 'sama', 'cuma', 'hanya',
+  'the', 'and', 'for', 'with', 'this', 'that', 'you', 'your', 'not', 'but', 'our', 'are', 'was',
+  // kata platform/interaksi yang universal
+  'follow', 'followers', 'like', 'share', 'comment', 'video', 'photo', 'reels', 'instagram', 'tiktok',
+  'fyp', 'foryou', 'viral', 'lihat', 'tonton', 'subscribe', 'subscriber',
+]);
 const FLAT_FOLLOWER_BANDS = [[TERNAK_BAND_MIN, TERNAK_BAND_MAX], [20000, 100000]];
 const FLAT_FOLLOWER_TOLERANCE = 0.03;
 const FLAT_FOLLOWER_MIN_POST_GROWTH = 5;
@@ -39,6 +55,10 @@ const RISK_FLOORS = Object.fromEntries(RISK_LEVELS);
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
 const PHONE_RUN_RE = /\d[\d\s\-.,()/]{5,}\d/;
 const HASHTAG_RE = /#[a-z0-9_]+/g;
+const URL_RE = /https?:\/\/\S+/g;
+const MENTION_RE = /@[\w.]+\b/g;
+const DIGITS_RE = /\d+(?:[.,]\d+)?/g;
+const NON_WORD_RE = /[^a-z0-9#\s]/g;
 
 const { cleanText, cleanUsername, toNumber, parseUtc, displayInt, displayPct } = require('./util');
 
@@ -96,10 +116,22 @@ function bioContactTokens(bio) {
 }
 
 function captionTemplateKey(caption) {
-  let text = HASHTAG_RE ? String(caption || '').toLowerCase().replace(HASHTAG_RE, '') : String(caption || '').toLowerCase();
-  text = text.replace(/\d/g, '#').split(/\s+/).filter(Boolean).join(' ');
+  let text = String(caption || '').toLowerCase();
+  text = text.replace(URL_RE, ' ').replace(MENTION_RE, ' ').replace(HASHTAG_RE, ' ');
+  text = text.replace(DIGITS_RE, '#').replace(NON_WORD_RE, ' ');
+  text = text.replace(/\s+/g, ' ').trim();
   if (text.length < CAPTION_TEMPLATE_PREFIX) return null;
   return text.slice(0, CAPTION_TEMPLATE_PREFIX);
+}
+
+/** Token "bermakna" dari caption untuk membandingkan deskripsi antar akun. */
+function captionTokens(caption) {
+  if (!caption) return [];
+  let text = String(caption).toLowerCase();
+  text = text.replace(URL_RE, ' ').replace(MENTION_RE, ' ').replace(HASHTAG_RE, ' ');
+  text = text.replace(DIGITS_RE, ' ').replace(NON_WORD_RE, ' ');
+  return text.split(/\s+/).map((t) => t.trim()).filter((t) =>
+    t.length >= MIN_CAPTION_TOKEN_LEN && /[a-z]/.test(t) && !CAPTION_STOPWORDS.has(t));
 }
 
 function _pairOff(keys, reason, links) {
@@ -207,6 +239,36 @@ function findAccountLinks(accounts, postsByAccount) {
     _pairOff(keys, 'template', links);
   }
 
+  // Caption "mirip" (berbagi kata kunci bermakna, bukan identik): indeks token -> akun.
+  const bySigToken = {};
+  for (const [key, posts] of Object.entries(postsByAccount)) {
+    const seen = new Set();
+    for (const post of posts) {
+      for (const tok of captionTokens(post.caption)) {
+        if (seen.has(tok)) continue;
+        seen.add(tok);
+        (bySigToken[tok] ||= new Set()).add(key);
+      }
+    }
+  }
+  const pairHits = {};
+  for (const keys of Object.values(bySigToken)) {
+    if (keys.size < 2 || keys.size > MAX_FANOUT) continue;
+    const arr = Array.from(keys);
+    for (let i = 0; i < arr.length; i++) {
+      for (let j = i + 1; j < arr.length; j++) {
+        const pair = arr[i] < arr[j] ? `${arr[i]}|${arr[j]}` : `${arr[j]}|${arr[i]}`;
+        pairHits[pair] = (pairHits[pair] || 0) + 1;
+      }
+    }
+  }
+  for (const [pair, hits] of Object.entries(pairHits)) {
+    if (hits < MIN_SHARED_CAPTION_TOKENS) continue;
+    const [first, second] = pair.split('|');
+    ((links[first] ||= {})[second] ||= new Set()).add('caption_mirip');
+    ((links[second] ||= {})[first] ||= new Set()).add('caption_mirip');
+  }
+
   return links;
 }
 
@@ -282,6 +344,7 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
   const medianViews = _median(videos.map((p) => p.views));
   const medianLikes = _median(liked.map((p) => p.likes));
   const medianComments = _median(posts.map((p) => p.comments));
+  const medianShares = _median(posts.map((p) => p.shares));
 
   const viewReach = (followers && medianViews !== null) ? medianViews / followers * 100.0 : null;
   const likeReach = (followers && medianLikes !== null) ? medianLikes / followers * 100.0 : null;
@@ -328,7 +391,7 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
   const floorValue = isTiktok ? VIEW_REACH_FLOOR : IG_LIKE_REACH_FLOOR;
   const unit = isTiktok ? 'views' : 'likes';
   const sample = isTiktok ? videos.length : liked.length;
-  if (reach !== null && followers >= TERNAK_BAND_MIN && sample >= MIN_POSTS_FOR_RATIO) {
+  if (reach !== null && followers >= TERNAK_BAND_MIN && followers <= TERNAK_BAND_MAX && sample >= MIN_POSTS_FOR_RATIO) {
     if (reach < floorValue) {
       flag('reach_rendah', 'Jangkauan rendah',
         `Rata-rata ${displayInt(isTiktok ? medianViews : medianLikes)} ${unit} dari ${displayInt(followers)} followers (${displayPct(reach)})`, 2);
@@ -364,6 +427,8 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
     `Nomor atau email di bio dipakai juga oleh ${peerList('kontak')}`, 3);
   if (reasonsByPeer.template) flag('caption_template', 'Caption berpola',
     `Caption seragam (hanya angka/hashtag yang beda) dengan ${peerList('template')}`, 2);
+  if (reasonsByPeer.caption_mirip) flag('caption_mirip', 'Caption mirip akun lain',
+    `Deskripsi berbagi kata kunci dengan ${peerList('caption_mirip')}`, 1);
   if (reasonsByPeer.serentak) flag('unggah_serentak', 'Unggahan serentak',
     `Jam upload bergeser beberapa menit saja dengan ${peerList('serentak')}`, 1);
 
@@ -434,6 +499,7 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
       median_views: medianViews !== null ? Math.round(medianViews) : null,
       median_likes: medianLikes !== null ? Math.round(medianLikes) : null,
       median_comments: medianComments !== null ? Math.round(medianComments) : null,
+      median_shares: medianShares !== null ? Math.round(medianShares) : null,
       view_reach_pct: viewReach !== null ? Math.round(viewReach * 100) / 100 : null,
       like_reach_pct: likeReach !== null ? Math.round(likeReach * 100) / 100 : null,
       posts_per_week: postsPerWeek,
@@ -505,6 +571,7 @@ module.exports = {
   UPLOAD_BURST_MIN_COUNT, UPLOAD_BURST_WINDOW_MINUTES, FLAT_FOLLOWER_TOLERANCE,
   RISK_LEVELS, RISK_FLOORS, CACHE_TTL_MINUTES: 7 * 24 * 60,
   MAX_FANOUT, MAX_TEMPLATE_FANOUT,
-  _accountKey, _number, _median, bioContactTokens, captionTemplateKey,
+  MIN_CAPTION_TOKEN_LEN, MIN_SHARED_CAPTION_TOKENS, CAPTION_STOPWORDS,
+  _accountKey, _number, _median, bioContactTokens, captionTemplateKey, captionTokens,
   sharedCaptionTemplates, findAccountLinks, buildClusters, riskLevel, analyseAccount, snapshotFromRows,
 };
