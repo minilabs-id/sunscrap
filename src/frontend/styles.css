@@ -499,6 +499,7 @@ button { font: inherit; color: inherit; }
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--sp-3);
   margin-bottom: var(--sp-3);
 }
@@ -894,7 +895,7 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
 .chart-tooltip {
   position: absolute;
   z-index: 5;
-  max-width: 230px;
+  max-width: min(230px, calc(100% - 16px));
   padding: 8px 10px;
   border-radius: var(--r-sm);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
@@ -907,9 +908,14 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
 }
 .day-cap { fill: transparent; }
 .day-cell:hover .day-cap { fill: var(--accent-wash); }
+.trend-bar { fill: var(--accent-strong); opacity: .82; }
+.trend-last { font-weight: 750; fill: var(--ink-2); }
 
 .mini-tabs {
   display: inline-flex;
+  flex: none;
+  max-width: 100%;
+  overflow-x: auto;
   gap: 2px;
   padding: 2px;
   border-radius: var(--r-sm);

@@ -63,9 +63,16 @@ function renderTrend() {
   const days = (state.timeseries && state.timeseries.days) || [];
   const line = $('#trend-line');
   const area = $('#trend-area');
-  if (!days.length || (state.timeseries && days.every((d) => (d.scraped || 0) === 0))) {
+  const bars = $('#trend-bars');
+  const grid = $('#trend-grid');
+  const todayEl = $('#trend-today');
+  const empty = !days.length || (state.timeseries && days.every((d) => (d.scraped || 0) === 0));
+  if (empty) {
     if (line) line.setAttribute('d', '');
     if (area) area.setAttribute('d', 'M36,190 L650,190 Z');
+    if (bars) bars.innerHTML = '';
+    if (grid) grid.innerHTML = '';
+    if (todayEl) todayEl.innerHTML = '';
     $('#trend-y').innerHTML = '';
     $('#trend-cells').innerHTML = '';
     $('#trend-axis-x').innerHTML = '';
@@ -73,20 +80,34 @@ function renderTrend() {
     return;
   }
   const metric = state.metric;
+  const isBars = metric === 'scraped';
   const vals = days.map((d) => Number(d[metric]) || 0);
   const max = niceCeil(Math.max(...vals, 1));
   const x0 = 36, x1 = 650, yTop = 24, yBase = 190;
   const step = (x1 - x0) / (days.length - 1);
   const pts = vals.map((v, i) => [Math.round(x0 + i * step), Math.round(yBase - (v / max) * (yBase - yTop))]);
-  const lineD = 'M' + pts.map(([x, y]) => `${x},${y}`).join(' L');
-  if (line) line.setAttribute('d', lineD);
-  if (area) area.setAttribute('d', `${lineD} L${x1},${yBase} L${x0},${yBase} Z`);
 
-  $('#trend-cells').innerHTML = pts.map(([x, y], i) => `
-    <g class="day-cell" data-idx="${i}">
+  if (isBars) {
+    if (line) line.setAttribute('d', '');
+    if (area) area.setAttribute('d', 'M36,190 L650,190 Z');
+    if (bars) bars.innerHTML = pts.map(([x, y]) => `<rect class="trend-bar" x="${x - 6}" y="${y}" width="12" height="${Math.max(1, yBase - y)}" rx="2"></rect>`).join('');
+  } else {
+    if (bars) bars.innerHTML = '';
+    const lineD = 'M' + pts.map(([x, y]) => `${x},${y}`).join(' L');
+    if (line) line.setAttribute('d', lineD);
+    if (area) area.setAttribute('d', `${lineD} L${x1},${yBase} L${x0},${yBase} Z`);
+  }
+
+  // Sel hover + dot; titik terakhir selalu tampil sebagai jangkar "hari ini".
+  $('#trend-cells').innerHTML = pts.map(([x, y], i) => {
+    const last = i === days.length - 1;
+    return `<g class="day-cell${last ? ' is-last' : ''}" data-idx="${i}">
       <rect class="day-cap" x="${x - 12}" y="16" width="24" height="176"></rect>
-      <circle class="trend-dot" cx="${x}" cy="${y}" r="4.2" fill="var(--accent-strong)" stroke="var(--surface)" stroke-width="2" opacity="0"></circle>
-    </g>`).join('');
+      <circle class="trend-dot${last ? ' keep' : ''}" cx="${x}" cy="${y}" r="4.2" fill="var(--accent-strong)" stroke="var(--surface)" stroke-width="2" opacity="${last ? '1' : '0'}"></circle>
+    </g>`;
+  }).join('');
+
+  // Sumbu X: awal / tengah / akhir.
   const mid = Math.floor((days.length - 1) / 2);
   const midDate = days[mid] && days[mid].date ? days[mid].date : days[0].date;
   $('#trend-axis-x').innerHTML = [
@@ -94,14 +115,23 @@ function renderTrend() {
     `<text class="axis-label" x="${pts[mid][0]}" y="212" text-anchor="middle">${esc(fmtDayShort(midDate))}</text>`,
     `<text class="axis-label" x="650" y="212" text-anchor="end">${esc(fmtDayShort(days[days.length - 1].date))}</text>`,
   ].join('');
-  const ticks = [0.25, 0.5, 0.75, 1].map((f) => ({ y: 190 - f * 166, v: max * f }));
-  const tickLabel = (v) => (v >= 10 ? fmtCompact(Math.round(v)) : idID(v, 1));
-  $('#trend-y').innerHTML = ticks.map((t) => `<text class="axis-label" x="30" y="${(t.y + 3).toFixed(1)}" text-anchor="end">${esc(tickLabel(t.v))}</text>`).join('');
 
-  const metricLabel = { d_views: 'Δ Views', d_likes: 'Δ Likes', d_comments: 'Δ Komentar', scraped: 'Diproses' }[metric] || metric;
+  // Grid + sumbu Y dari SATU sumber (selaras), termasuk label 0.
+  const fractions = [0, 0.25, 0.5, 0.75, 1];
+  const ticks = fractions.map((f) => ({ y: Math.round(yBase - f * (yBase - yTop)), v: max * f, f }));
+  const tickLabel = (v) => (v >= 10 ? fmtCompact(Math.round(v)) : idID(v, 1));
+  if (grid) grid.innerHTML = ticks.filter((t) => t.f > 0).map((t) => `<line class="grid-line" x1="36" y1="${t.y}" x2="650" y2="${t.y}"></line>`).join('');
+  $('#trend-y').innerHTML = ticks.map((t) => `<text class="axis-label" x="30" y="${t.y + 3}" text-anchor="end">${esc(tickLabel(t.v))}</text>`).join('');
+
+  // Nilai titik terakhir.
+  const lastVal = vals[vals.length - 1];
+  const [lx, ly] = pts[pts.length - 1];
+  if (todayEl) todayEl.innerHTML = `<text class="axis-label trend-last" x="${Math.min(lx, 636)}" y="${Math.max(16, ly - 10)}" text-anchor="middle">${isBars ? fmt(lastVal) : fmtCompact(lastVal)}</text>`;
+
+  const metricLabel = { d_views: 'Δ Views', d_likes: 'Δ Likes', d_comments: 'Δ Komen', scraped: 'Diproses' }[metric] || metric;
   const totalV = sum(vals);
   const activeDays = days.filter((d) => (d.scraped || 0) > 0).length;
-  $('#trend-sub').textContent = metric === 'scraped'
+  $('#trend-sub').textContent = isBars
     ? `Diproses — ${fmt(totalV)} scrape · ${activeDays} hari aktif`
     : `${metricLabel} — Σ ${fmtCompact(totalV)} pertumbuhan · ${activeDays} hari diproses`;
 }
@@ -130,7 +160,7 @@ function onTrendMove(e) {
 function hideTrendTooltip() {
   const tip = $('#chart-tooltip');
   if (tip) { tip.hidden = true; tip.style.opacity = '0'; }
-  $$('#trend-chart .trend-dot').forEach((d) => d.setAttribute('opacity', '0'));
+  $$('#trend-chart .trend-dot:not(.keep)').forEach((d) => d.setAttribute('opacity', '0'));
 }
 
 // ── Top konten (per platform) ──────────────────────────────────
