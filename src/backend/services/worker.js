@@ -38,7 +38,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
 
   const state = {
     active: false, busy: false, timer: null,
-    cycleId: null, lastPlatform: null, blockedInARow: 0,
+    cycleId: null, lastPlatform: null, lastUsername: null, blockedInARow: 0,
     lastError: null, lastTaskId: null, lastEta: null,
     harvested: new Set(), followerAttempts: new Set(),
     platformErrors: { instagram: 0, tiktok: 0 },
@@ -68,6 +68,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
     return {
       active: state.active, busy: state.busy, label,
       cycleId: state.cycleId, lastError: state.lastError, lastTaskId: state.lastTaskId, eta: state.lastEta,
+      current: { platform: state.lastPlatform, username: state.lastUsername || null },
       rate: limiter.getStatus(),
       platforms: {
         instagram: { paused: (state.platformPauseUntil.instagram || 0) > Date.now(), errors: state.platformErrors.instagram },
@@ -254,6 +255,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
       const result = await processTask(task);
       state.lastTaskId = task.id;
       state.lastPlatform = task.platform;
+      state.lastUsername = task.username || null;
 
       const outcome = outcomeOf(result, state.blockedInARow);
       state.blockedInARow = outcome.blockedInARow;

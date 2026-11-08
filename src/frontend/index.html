@@ -339,14 +339,10 @@
             <div class="page-sub">Pantau worker &amp; aktivitas terbaru</div>
           </div>
         </header>
-        <div class="card mb-4" aria-label="Proses live">
-          <div class="card-hd">
-            <div><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-6.5 4 13L16 12h5"/></svg>Proses live</div><div class="card-sub">Status worker &amp; antrean saat ini</div></div>
-          </div>
-          <div class="proses-status" aria-live="polite">
-            <span class="dot" id="proses-dot"></span>
-            <div class="proses-status-text" id="proses-live-text">Memuat…</div>
-          </div>
+        <div class="proses-collect" aria-live="polite">
+          <div class="proses-name"><span class="dot" id="proses-dot"></span><span id="proses-name">Siaga</span></div>
+          <div class="proses-bar"><span id="proses-meter"></span></div>
+          <div class="proses-meta" id="proses-meta"></div>
         </div>
         <div class="card mb-4" aria-label="Aktivitas terbaru">
           <div class="card-hd"><div><div class="card-title">Aktivitas terbaru</div><div class="card-sub">Feed live · delta vs kunjungan sebelumnya</div></div></div>

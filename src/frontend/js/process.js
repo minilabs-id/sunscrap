@@ -21,29 +21,37 @@ export async function loadProcess() {
 
 function renderLive(queue, w) {
   const dot = $('#proses-dot');
-  const text = $('#proses-live-text');
-  if (!text) return;
+  const name = $('#proses-name');
+  const meter = $('#proses-meter');
+  const meta = $('#proses-meta');
+  if (!name) return;
   const active = !!w && !!w.active;
   const errored = !!w && !active && !!w.lastError;
   const r = (w && w.rate) || {};
+  const cur = (w && w.current) || {};
   const pending = queue.pending || 0, ok = queue.ok || 0, partial = queue.partial || 0, failed = queue.failed || 0;
 
   if (dot) dot.className = 'dot' + (active ? ' active' : errored ? ' error' : '');
 
-  const qsum = `<span class="muted">antrean</span>&nbsp; <b>${fmt(ok)}</b> OK · <b>${fmt(partial)}</b> sebagian · <b>${fmt(failed)}</b> gagal · <b>${fmt(pending)}</b> menunggu`;
+  const qsum = `${fmt(ok)} OK · ${fmt(partial)} sebagian · ${fmt(failed)} gagal · ${fmt(pending)} menunggu`;
 
   if (active) {
+    const curName = cur.username ? `@${cur.username} (${cur.platform === 'instagram' ? 'IG' : 'TK'})` : null;
+    name.innerHTML = curName
+      ? `<span class="muted">Mengumpulkan</span> <b>${esc(curName)}</b><span class="muted">…</span>`
+      : `<b>Sedang memproses</b><span class="muted">…</span>`;
+    const cyclePct = r.visitBudget ? Math.min(100, Math.round((r.cycleVisits || 0) / r.visitBudget * 100)) : 0;
+    if (meter) meter.style.width = cyclePct + '%';
     const eta = w.eta || null;
-    const plats = w.platforms || {};
-    const paused = [
-      plats.instagram && plats.instagram.paused ? 'IG' : null,
-      plats.tiktok && plats.tiktok.paused ? 'TK' : null,
-    ].filter(Boolean).join(' & ');
-    text.innerHTML = `<b>${w.busy ? 'Sedang memproses' : 'Menunggu antrean'}</b> · jeda ${r.paceLabel || '—'} · siklus ${fmt(r.cycleVisits)}/${fmt(r.visitBudget)}${eta ? ` · sisa ±${eta}` : ''}${paused ? ` · ⏸ ${paused} dijeda` : ''} &nbsp;—&nbsp; ${qsum}`;
-  } else if (errored) {
-    text.innerHTML = `<b>Terhenti</b> — ${esc(w.lastError)} &nbsp;·&nbsp; ${qsum}`;
+    if (meta) meta.textContent = `${fmt(r.cycleVisits)}/${fmt(r.visitBudget)} dikumpulkan · ${qsum}${eta ? ` · sisa ±${eta}` : ''}`;
   } else {
-    text.innerHTML = `<b>Siaga</b> — klik <b>Mulai worker</b> di sidebar &nbsp;·&nbsp; ${qsum}`;
+    if (meter) meter.style.width = '0%';
+    if (errored) {
+      name.innerHTML = `<b>Terhenti</b> — ${esc(w.lastError)}`;
+    } else {
+      name.innerHTML = `<b>Siaga</b> — klik <b>Mulai worker</b> di sidebar`;
+    }
+    if (meta) meta.textContent = qsum;
   }
 }
 
