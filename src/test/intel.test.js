@@ -213,3 +213,13 @@ test('caption identik hanya memicu template, bukan caption_mirip (anti dobel)', 
   assert.ok(edges['instagram:t2'] && edges['instagram:t2'].has('template'));
   assert.ok(!(edges['instagram:t2'] && edges['instagram:t2'].has('caption_mirip')));
 });
+
+test('kata dagang/CTA generik tidak dianggap bukti caption_mirip', () => {
+  const a1 = account('n1', 10000);
+  const a2 = account('n2', 10000);
+  const posts1 = [{ post_ref: 'a', posted_at: t0, likes: 100, comments: 5, views: null, caption: 'promo diskon gratis ongkir cod cek sekarang' }];
+  const posts2 = [{ post_ref: 'b', posted_at: t1, likes: 90, comments: 4, views: null, caption: 'promo diskon gratis murah sale cek link info' }];
+  const links = intel.findAccountLinks([a1, a2], { 'instagram:n1': posts1, 'instagram:n2': posts2 });
+  const edges = links['instagram:n1'] || {};
+  assert.ok(!(edges['instagram:n2'] && edges['instagram:n2'].has('caption_mirip')));
+});

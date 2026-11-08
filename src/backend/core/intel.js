@@ -26,8 +26,8 @@ const MAX_TEMPLATE_FANOUT = 10;
 const CAPTION_TEMPLATE_PREFIX = 40;
 // Caption "mirip" (serupa tapi tak identik): dua akun ditautkan bila caption mereka
 // berbagi >= MIN_SHARED_CAPTION_TOKENS token bermakna (panjang >= MIN_CAPTION_TOKEN_LEN,
-// bukan stopword/angka). Ambang 3 dipilih agar deskripsi yang benar-benar senada terdeteksi
-// tanpa terlalu banyak derau dari kata dagang umum yang sudah masuk daftar stopword.
+// bukan stopword/angka). Stopword "dagang/CTA" penting: kata promosi generik dipakai
+// hampir semua niaga sehingga TIDAK boleh dianggap bukti koordinasi antar akun.
 const MIN_CAPTION_TOKEN_LEN = 3;
 const MIN_SHARED_CAPTION_TOKENS = 3;
 const CAPTION_STOPWORDS = new Set([
@@ -39,6 +39,13 @@ const CAPTION_STOPWORDS = new Set([
   // kata platform/interaksi yang universal
   'follow', 'followers', 'like', 'share', 'comment', 'video', 'photo', 'reels', 'instagram', 'tiktok',
   'fyp', 'foryou', 'viral', 'lihat', 'tonton', 'subscribe', 'subscriber',
+  // kata dagang / ajakan (CTA) generik — bukan bukti pasangan
+  'promo', 'diskon', 'discount', 'gratis', 'sale', 'murah', 'mahal', 'baru', 'jual', 'beli', 'order',
+  'cek', 'link', 'dm', 'wa', 'whatsapp', 'hubungi', 'info', 'kontak', 'konsultasi', 'layanan', 'garansi',
+  'original', 'ori', 'orisinil', 'asli', 'replika', 'kw', 'brand', 'produk', 'kualitas', 'berkualitas',
+  'terpercaya', 'terbaik', 'favorit', 'rekomendasi', 'terbatas', 'limited', 'harga', 'ongkir', 'pengiriman',
+  'cod', 'bayar', 'transfer', 'ready', 'stock', 'stok', 'shopee', 'tokopedia', 'lazada', 'bukalapak',
+  'reseller', 'dropship', 'official', 'officialstore', 'sekarang',
 ]);
 const FLAT_FOLLOWER_BANDS = [[TERNAK_BAND_MIN, TERNAK_BAND_MAX], [20000, 100000]];
 const FLAT_FOLLOWER_TOLERANCE = 0.03;
