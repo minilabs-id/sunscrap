@@ -213,9 +213,8 @@ function renderPlatformCompare(summary) {
 // ── Kualitas data (setiap baris = aksi) ────────────────────────
 function renderQuality(summary) {
   const q = (summary && summary.quality) || {};
-  const auditId = state.auditId;
   const rows = [
-    { n: q.without_followers || 0, label: 'akun tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', action: auditId ? { label: 'Kunjungi profil', act: 'profile', primary: true } : null },
+    { n: q.without_followers || 0, label: 'akun tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', action: { label: 'Kunjungi & kumpulkan', act: 'profile', primary: true } },
     { n: q.partial || 0, label: 'akun sebagian terbaca', hint: 'Metrik tidak lengkap — kemungkinan privat / age-gated', action: { label: 'Lihat', act: 'partial' } },
     { n: q.missing_views || 0, label: 'TikTok tanpa views', hint: 'Video privat / age-gated, atau post foto', action: { label: 'Lihat', act: 'views' } },
     { n: q.missing_username || 0, label: 'postingan tanpa handle', hint: 'Username tidak ter-parse dari URL', action: null },
@@ -386,11 +385,22 @@ export function bindDashboardEvents() {
     if (!btn) return;
     const act = btn.dataset.qualityAction;
     if (act === 'profile') {
-      if (!state.auditId) return;
-      api.enqueueProfileVisits(state.auditId).then((r) => {
-        if (!r) return toast('Gagal menjadwalkan kunjungan profil.', 'error');
-        toast(r.error || (r.pending ? 'Kunjungan profil sudah antre.' : `Menjadwalkan ${fmt(r.created)} kunjungan profil.`), r.error ? 'error' : 'ok');
-      }).catch(() => toast('Gagal menjadwalkan kunjungan profil.', 'error'));
+      (async () => {
+        try {
+          const r = state.auditId ? await api.enqueueProfileVisits(state.auditId) : await api.enqueueProfileVisitsAll();
+          if (!r) return toast('Gagal menjadwalkan kunjungan profil.', 'error');
+          if (r.error) return toast(r.error, 'error');
+          const created = r.created || 0;
+          if (!created) return toast(r.empty ? 'Tidak ada akun yang perlu dikunjungi.' : 'Kunjungan profil sudah antre.', 'ok');
+          toast(`Menjadwalkan ${fmt(created)} kunjungan profil…`, 'ok');
+          if (!(state.worker && state.worker.active)) {
+            document.dispatchEvent(new CustomEvent('sunscrap:toggle-worker'));
+            toast('Worker dimulai — sedang mengumpulkan data profil.', 'ok');
+          }
+        } catch {
+          toast('Gagal menjadwalkan kunjungan profil.', 'error');
+        }
+      })();
     } else if (act === 'views') {
       state.targets.issue = 'no_views'; state.targets.status = ''; state.targets.offset = 0; state.targets.selected.clear();
       state.statusFilterActive = null;

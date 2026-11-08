@@ -167,6 +167,11 @@ function registerDataIpc(ctx) {
     dataChanged();
     return r;
   });
+  ipcMain.handle('data:profileVisitsAll', () => {
+    const r = db.enqueueProfileVisitsAll();
+    dataChanged();
+    return r;
+  });
   ipcMain.handle('data:updateAudit', (event, { auditId, patch } = {}) => {
     const id = num(auditId);
     if (id === null) return { error: 'auditId tidak valid.' };

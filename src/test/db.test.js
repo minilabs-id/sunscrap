@@ -83,6 +83,17 @@ test('getTimeseries: delta = pertumbuhan (bukan Σ dobel) vs views mentah', () =
   db.close();
 });
 
+test('enqueueProfileVisitsAll mengantre kunjungan profil lintas semua audit', () => {
+  const db = makeDb();
+  const a1 = db.createAuditWithTasks([t1], { name: 'a1' }).audit_id;
+  const a2 = db.createAuditWithTasks([t2], { name: 'a2' }).audit_id;
+  const r = db.enqueueProfileVisitsAll();
+  assert.equal(r.audits, 2);
+  assert.equal(r.created, 2, 'dua akun berbeda (aku/dia) di dua audit');
+  assert.equal(r.empty, false);
+  db.close();
+});
+
 test('loop siklus berulang: summary konsisten & tanpa pending bocor', () => {
   const db = makeDb();
   const r = db.createAuditWithTasks([t1, t2], { name: 'loop' });

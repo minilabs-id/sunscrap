@@ -533,6 +533,19 @@ function createDatabase(dbPath) {
     }
   }
 
+  // Kunjungi profil untuk SEMUA audit (untuk kartu Kualitas data saat "Semua audit" dipilih).
+  function enqueueProfileVisitsAll() {
+    markIntelDirty();
+    const audits = all('SELECT id FROM audits ORDER BY id ASC');
+    let created = 0;
+    let empty = true;
+    for (const a of audits) {
+      const r = enqueueProfileVisits(a.id, true);
+      if (r && r.created) { created += r.created; empty = false; }
+    }
+    return { created, audits: audits.length, empty };
+  }
+
   function updateAudit(auditId, patch = {}) {
     if (!one('SELECT id FROM audits WHERE id = ?', auditId)) return null;
     exec('BEGIN IMMEDIATE');
@@ -1846,7 +1859,7 @@ function createDatabase(dbPath) {
     inferErrorCode,
     // write
     createAuditWithTasks, appendTargetsToAudit, enqueueRun, retryTargets, retryFailedTargets,
-    enqueueProfileVisits, updateAudit, deleteAudit, clearAll, deleteAccount,
+    enqueueProfileVisits, enqueueProfileVisitsAll, updateAudit, deleteAudit, clearAll, deleteAccount,
     getNextTask, updateTaskResult, recordAccountProfile,
     // read
     getAudits, getAudit, getQueueStats, getDashboardStats, getTargets, getLatest, getTargetHistory, getTargetWithAudit,
