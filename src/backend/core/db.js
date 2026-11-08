@@ -551,8 +551,8 @@ function createDatabase(dbPath) {
   // partial/no_views/no_username -> scrape ulang target yang tepat.
   function enqueueFix(auditId, issue) {
     const aid = auditId === null || auditId === undefined || auditId === '' ? null : Number(auditId);
-    if (!Number.isFinite(aid)) return { error: 'auditId tidak valid.' };
     if (aid === null) return enqueueFixAll(issue);
+    if (!Number.isFinite(aid)) return { error: 'auditId tidak valid.' };
     if (!one('SELECT id FROM audits WHERE id = ?', aid)) return { error: 'Audit tidak ditemukan.' };
 
     if (issue === 'no_followers') {

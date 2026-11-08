@@ -325,6 +325,16 @@ test('enqueueFix partial -> scrape ulang target PARTIAL', () => {
   db.close();
 });
 
+test('enqueueFix(null) = semua audit, bukan error auditId', () => {
+  const db = makeDb();
+  db.createAuditWithTasks([t1], { name: 'a1' });
+  db.createAuditWithTasks([t2], { name: 'a2' });
+  const r = db.enqueueFix(null, 'no_followers');
+  assert.ok(r && !r.error, 'auditId null harus didelegasikan ke semua audit');
+  assert.ok(r.created >= 2, 'dua akun berbeda di dua audit');
+  db.close();
+});
+
 test('getSummary worst_instagram urut median ER terendah (butuh >=2 post terukur)', () => {
   const db = makeDb();
   db.createAuditWithTasks([
