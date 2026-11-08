@@ -190,6 +190,7 @@ function createDatabase(dbPath) {
   function insertTask(auditId, runId, target, kind = 'POST') {
     run('INSERT INTO tasks (url, platform, username, tema, audit_id, run_id, target_id, kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       target.url, target.platform, target.username, target.tema, auditId, runId, target.id, kind);
+    markIntelDirty();
   }
 
   function insertTarget(auditId, task, seen) {
@@ -252,6 +253,7 @@ function createDatabase(dbPath) {
       }
     }
     for (const runId of new Set(expired.map((t) => t.run_id).filter(Boolean))) finalizeRun(runId);
+    if (expired.length) markIntelDirty();
   }
 
   function autoEnqueueDue(limit = 5) {

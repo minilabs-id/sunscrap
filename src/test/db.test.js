@@ -45,6 +45,41 @@ test('createAuditWithTasks + getAudits + getNextTask + hasil', () => {
   db.close();
 });
 
+test('retryTargets membatalkan memo summary (pending ikut naik, bukan basi)', () => {
+  const db = makeDb();
+  const r = db.createAuditWithTasks([t1], { name: 'retry-memo' });
+  const targetId = db.getTargets({ auditId: r.audit_id }).items[0].target_id;
+
+  let task = db.getNextTask();
+  db.updateTaskResult(task.id, { platform: 'instagram', username: 'aku', likes: 100, comments: 5, views: null, shares: null, followerCount: 9000, status: 'OK' });
+  let s = db.getSummary(null);
+  assert.equal(s.kpi.pending + s.kpi.running, 0, 'setelah selesai: tidak ada pending');
+
+  const rr = db.retryTargets(r.audit_id, [targetId]);
+  assert.equal(rr.created, 1, 'satu task baru diantrekan');
+
+  s = db.getSummary(null); // memo harus dibatalkan
+  assert.equal(s.kpi.pending + s.kpi.running, 1, 'retry menambah pending');
+  db.close();
+});
+
+test('loop siklus berulang: summary konsisten & tanpa pending bocor', () => {
+  const db = makeDb();
+  const r = db.createAuditWithTasks([t1, t2], { name: 'loop' });
+  const targets = db.getTargets({ auditId: r.audit_id }).items.map((t) => t.target_id);
+  for (let cycle = 0; cycle < 3; cycle++) {
+    db.retryTargets(r.audit_id, targets);
+    let task;
+    while ((task = db.getNextTask())) {
+      db.updateTaskResult(task.id, { platform: task.platform, username: task.username, likes: 10 + cycle, comments: 1, views: null, shares: null, followerCount: 9000, status: 'OK' });
+    }
+    const s = db.getSummary(null);
+    assert.equal(s.kpi.pending + s.kpi.running, 0, `siklus ${cycle}: tidak boleh ada pending tersisa`);
+    assert.ok(s.kpi.scraped >= 1, `siklus ${cycle}: ada yang terproses`);
+  }
+  db.close();
+});
+
 test('hasil tanpa metrik tidak berstatus OK', () => {
   const db = makeDb();
   db.createAuditWithTasks([t1], { name: 'x' });
