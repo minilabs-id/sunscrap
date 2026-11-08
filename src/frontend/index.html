@@ -336,7 +336,7 @@
         <header class="page-head">
           <div>
             <h1>Proses</h1>
-            <div class="page-sub">Pace worker, antrean, dan aktivitas terbaru</div>
+            <div class="page-sub">Status worker, antrean, dan aktivitas terbaru</div>
           </div>
         </header>
         <div class="card mb-4" aria-label="Status worker">
@@ -348,40 +348,29 @@
             </div>
             <button id="proses-worker-toggle" class="btn btn-primary">Mulai worker</button>
           </div>
+          <div class="health-line" id="worker-health-line" hidden></div>
         </div>
-        <div class="grid-2">
-          <div class="card" aria-label="Pace worker">
-            <div class="card-hd">
-              <div><div class="card-title">Pace &amp; budget</div><div class="card-sub">Monitoring rate limiter real-time</div></div>
-              <span class="pill ok">LIVE</span>
-            </div>
-            <div class="pace-wrap">
-              <div class="pace-budget">
-                <div class="pace-row"><span class="muted">Jeda antar kunjungan</span><b id="pace-num">—</b></div>
-                <div class="pace-row"><span class="muted">Siklus</span><b id="pb-cycle">—</b></div>
-                <div class="bar" id="pace-bar" role="progressbar" aria-label="Anggaran siklus worker terpakai" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="pace-meter"></span></div>
-                <div class="pace-row"><span class="muted">Harian</span><b id="pb-daily">—</b></div>
-                <div class="pace-row"><span class="muted">Sesi</span><b id="pb-session">—</b></div>
-                <div class="pace-row"><span class="muted">Mode</span><b id="pb-mode">—</b></div>
-              </div>
-            </div>
-            <div class="page-sub mt-3" id="worker-detail"></div>
-          </div>
-          <div class="card" aria-label="Antrean">
-            <div class="card-hd"><div><div class="card-title">Antrean</div><div class="card-sub" id="queue-eta">Memuat…</div></div></div>
-            <div class="queue-bar" id="queue-bar" role="img" aria-label="Komposisi antrean"></div>
-            <div class="queue-legend" id="queue-legend"></div>
-            <div class="queue-stats" id="queue-stats"></div>
-          </div>
+        <div class="card mb-4" aria-label="Antrean">
+          <div class="card-hd"><div><div class="card-title">Antrean</div><div class="card-sub" id="queue-eta">Memuat…</div></div></div>
+          <div class="queue-bar" id="queue-bar" role="img" aria-label="Komposisi antrean"></div>
+          <div class="queue-legend" id="queue-legend"></div>
+          <div class="queue-stats" id="queue-stats"></div>
         </div>
-        <div class="card mb-4" aria-label="Kesehatan worker">
-          <div class="card-hd"><div><div class="card-title">Kesehatan siklus</div><div class="card-sub">Ringkasan aktivitas worker terbaru</div></div></div>
-          <div id="worker-health"></div>
-        </div>
-        <div class="card" aria-label="Aktivitas terbaru">
+        <div class="card mb-4" aria-label="Aktivitas terbaru">
           <div class="card-hd"><div><div class="card-title">Aktivitas terbaru</div><div class="card-sub">Delta vs kunjungan sebelumnya</div></div></div>
           <div class="table-wrap flush"><table class="table" id="latest-table"></table></div>
         </div>
+        <details class="card tech-details" aria-label="Detail teknis worker">
+          <summary><span>Detail teknis</span><span class="muted" id="tech-summary">—</span><span class="tech-chev" aria-hidden="true">▾</span></summary>
+          <div class="pace-budget">
+            <div class="pace-row"><span class="muted">Jeda antar kunjungan</span><b id="pace-num">—</b></div>
+            <div class="pace-row"><span class="muted">Siklus</span><b id="pb-cycle">—</b></div>
+            <div class="bar" id="pace-bar" role="progressbar" aria-label="Anggaran siklus worker terpakai" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="pace-meter"></span></div>
+            <div class="pace-row"><span class="muted">Harian</span><b id="pb-daily">—</b></div>
+            <div class="pace-row"><span class="muted">Sesi</span><b id="pb-session">—</b></div>
+            <div class="pace-row"><span class="muted">Mode</span><b id="pb-mode">—</b></div>
+          </div>
+        </details>
       </section>
 
       <!-- ─────────── SESI & LOGIN ─────────── -->
