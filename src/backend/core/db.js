@@ -1167,6 +1167,11 @@ function createDatabase(dbPath) {
       LEFT JOIN latest_snapshots ls ON ls.target_id = t.id AND ls.rn = 1
       ${where}`, ...cparams);
 
+    // Total seluruh target audit ini (tanpa filter status/isu/pencarian) untuk label "X dari Y".
+    const totalAllRow = (params.auditId !== undefined && params.auditId !== null && params.auditId !== '')
+      ? one('SELECT COUNT(*) AS n FROM targets WHERE audit_id = ?', Number(params.auditId))
+      : one('SELECT COUNT(*) AS n FROM targets');
+
     const rows = all(`${base}
       SELECT t.id AS target_id, t.audit_id, a.name AS audit_name, t.platform, t.url, t.username, t.tema, t.created_at,
         lt.id AS task_id, COALESCE(lt.status, 'PENDING') AS status, lt.error_code, lt.error_message,
@@ -1197,7 +1202,7 @@ function createDatabase(dbPath) {
       }
       return item;
     });
-    return { items, total: totalRow.n, limit, offset };
+    return { items, total: totalRow.n, total_all: totalAllRow.n, limit, offset };
   }
 
   function getLatest(limit = 10, auditId) {
@@ -1692,7 +1697,33 @@ const MIN_POSTS_FOR_WORST = 2;
     return { account: plain(account), posts };
   }
 
-  function getExportRows(auditId, status) {
+  // Set target_id yang cocok dengan isu kualitas — dipakai utk filter ekspor agar sesuai tampilan.
+  function exportIssueTargetIds(auditId, issue) {
+    if (!issue) return null;
+    const cond = {
+      no_followers: 'ls.id IS NOT NULL AND ls.follower_count IS NULL',
+      no_views: 'ls.id IS NOT NULL AND ls.views IS NULL',
+      partial: "COALESCE(lt.status,'PENDING') = 'PARTIAL'",
+      failed: "COALESCE(lt.status,'PENDING') = 'FAILED'",
+      no_username: "(t.username IS NULL OR t.username = '')",
+      never_scraped: 'ls.id IS NULL',
+    }[issue];
+    if (!cond) return null;
+    const aid = auditId === null || auditId === undefined || auditId === '' ? null : Number(auditId);
+    const auditCond = aid !== null ? 'AND t.audit_id = ?' : '';
+    const params = aid !== null ? [aid] : [];
+    const rows = all(`
+      SELECT t.id
+      FROM targets t
+      LEFT JOIN (SELECT s.target_id, s.id, s.follower_count, s.views, ROW_NUMBER() OVER (PARTITION BY s.target_id ORDER BY s.id DESC) AS rn FROM snapshots s) ls
+        ON ls.target_id = t.id AND ls.rn = 1
+      LEFT JOIN (SELECT tk.target_id, tk.status, ROW_NUMBER() OVER (PARTITION BY tk.target_id ORDER BY tk.id DESC) AS rn FROM tasks tk) lt
+        ON lt.target_id = t.id AND lt.rn = 1
+      WHERE ${cond} ${auditCond}`, ...params);
+    return new Set(rows.map((r) => r.id));
+  }
+
+  function getExportRows(auditId, status, issue) {
     const aid = auditId === null || auditId === undefined ? null : Number(auditId);
     if (auditId !== null && auditId !== undefined && !Number.isFinite(aid)) return [];
     const conditions = [];
@@ -1701,7 +1732,7 @@ const MIN_POSTS_FOR_WORST = 2;
     if (status === 'DONE') { conditions.push("s.status IN ('OK','PARTIAL')"); }
     else if (status) { conditions.push('s.status = ?'); params.push(status); }
     const where = 'WHERE s.attempt_rn = 1' + (conditions.length ? ' AND ' + conditions.join(' AND ') : '');
-    return all(`
+    const rows = all(`
       WITH attempts AS (
         SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.target_id, s.run_id ORDER BY s.id DESC) AS attempt_rn FROM snapshots s
       ),
@@ -1723,12 +1754,18 @@ const MIN_POSTS_FOR_WORST = 2;
         LEFT JOIN accounts acct ON acct.platform = t.platform AND acct.username = t.username ${where}
       )
       SELECT * FROM ordered ORDER BY audit_id ASC, target_id ASC, id ASC`, ...params).map(plain);
+    if (issue) {
+      const set = exportIssueTargetIds(auditId, issue);
+      if (set) return rows.filter((r) => set.has(r.target_id));
+    }
+    return rows;
   }
 
-  function getExportCount(auditId, status) {
+  function getExportCount(auditId, status, issue) {
     // Hitung langsung dengan COUNT(*) — jangan memuat seluruh baris ke memori (T-6).
     const aid = auditId === null || auditId === undefined ? null : Number(auditId);
     if (auditId !== null && auditId !== undefined && !Number.isFinite(aid)) return 0;
+    if (issue) return getExportRows(auditId, status, issue).length;
     const conditions = [];
     const params = [];
     if (aid !== null) { conditions.push('t.audit_id = ?'); params.push(aid); }

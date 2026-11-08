@@ -196,10 +196,6 @@
             <div class="page-sub"><span id="targets-total">0 postingan</span></div>
           </div>
           <div class="page-actions">
-            <button class="btn btn-ghost" id="btn-columns" title="Pilih kolom" aria-haspopup="true" aria-expanded="false">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/></svg>
-              Kolom
-            </button>
             <button class="btn btn-ghost" id="btn-export">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
               Export
@@ -208,7 +204,7 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 3v5h-5"/></svg>
               Ulangi yang gagal
             </button>
-            <button class="btn btn-primary" id="btn-retry-selected" disabled>Ulangi terpilih</button>
+            <button class="btn btn-primary" id="btn-retry-selected" disabled title="Centang baris dulu untuk memilih, lalu ulangi">Ulangi terpilih</button>
           </div>
         </header>
 
@@ -217,6 +213,16 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             <input id="target-q" placeholder="Cari username / link / tema…" aria-label="Cari postingan" autocomplete="off" spellcheck="false" />
           </label>
+          <select id="target-platform" class="select" aria-label="Filter platform">
+            <option value="">Semua platform</option>
+            <option value="instagram">Instagram</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="btn-columns" title="Pilih kolom" aria-haspopup="true" aria-expanded="false">Kolom</button>
+          <button class="btn btn-ghost btn-sm" id="targets-reset-filter" hidden>Hapus filter</button>
+        </div>
+        <div class="toolbar toolbar-filters">
+          <span class="filter-label">Status</span>
           <div class="chip-row" role="group" aria-label="Filter status">
             <button class="filter-chip" data-status="" aria-pressed="true">Semua</button>
             <button class="filter-chip" data-status="ok" aria-pressed="false">OK</button>
@@ -224,31 +230,28 @@
             <button class="filter-chip" data-status="failed" aria-pressed="false">Gagal</button>
             <button class="filter-chip" data-status="pending" aria-pressed="false">Menunggu</button>
           </div>
+          <span class="filter-label">Masalah</span>
           <div class="chip-row" role="group" aria-label="Filter masalah data">
             <button class="filter-chip" data-issue="no_followers" aria-pressed="false">Tanpa followers</button>
             <button class="filter-chip" data-issue="no_views" aria-pressed="false">TikTok tanpa views</button>
             <button class="filter-chip" data-issue="no_username" aria-pressed="false">Tanpa handle</button>
             <button class="filter-chip" data-issue="never_scraped" aria-pressed="false">Belum diproses</button>
           </div>
-          <select id="target-platform" class="select" aria-label="Filter platform">
-            <option value="">Semua platform</option>
-            <option value="instagram">Instagram</option>
-            <option value="tiktok">TikTok</option>
-          </select>
-          <select id="targets-limit" class="select" aria-label="Jumlah baris per halaman" title="Jumlah baris per halaman">
-            <option value="50">50</option>
-            <option value="100">100</option>
-            <option value="300">300</option>
-          </select>
         </div>
 
         <div class="table-wrap">
           <table class="table" id="targets-table"></table>
         </div>
         <div class="pager">
+          <select id="targets-limit" class="select select-sm" aria-label="Jumlah baris per halaman" title="Jumlah baris per halaman">
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="300">300</option>
+          </select>
           <button class="btn btn-ghost btn-sm" id="targets-prev">‹ Prev</button>
           <span class="muted" id="targets-page">Hal 1</span>
           <button class="btn btn-ghost btn-sm" id="targets-next">Next ›</button>
+          <span class="muted" id="targets-selected" hidden></span>
         </div>
       </section>
 

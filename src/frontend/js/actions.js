@@ -11,15 +11,18 @@ const statusToExport = (val) => ({ ok: 'OK', partial: 'PARTIAL', failed: 'FAILED
 
 export async function openExport() {
   const status = statusToExport(state.targets.status);
+  const issue = state.targets.issue || null;
   const audit = (state.audits || []).find((a) => a.id === state.auditId);
   const statusLabel = { done: 'Selesai (OK + sebagian)', ok: 'OK', partial: 'Sebagian', failed: 'Gagal' }[state.targets.status] || 'Semua status';
+  const issueLabel = { no_followers: 'Tanpa followers', no_views: 'TikTok tanpa views', no_username: 'Tanpa handle', never_scraped: 'Belum diproses', partial: 'Sebagian', failed: 'Gagal' }[issue] || null;
   let count = null;
-  try { count = await api.exportCount({ auditId: state.auditId || null, status }); } catch { count = null; }
+  try { count = await api.exportCount({ auditId: state.auditId || null, status, issue }); } catch { count = null; }
   openModal(modalShell({
     title: 'Export data',
     body: `<p>Anda akan mengekspor:</p><ul>
       <li><b>Audit:</b> ${esc(audit ? audit.name : 'Semua audit')}</li>
       <li><b>Status:</b> ${esc(statusLabel)}</li>
+      ${issueLabel ? `<li><b>Filter isu:</b> ${esc(issueLabel)}</li>` : ''}
       <li><b>Baris:</b> ${fmt(count)}</li></ul>
       <p class="muted">File .xlsx berisi kolom metrik + delta + keputusan tinjauan + rekap. Simpan di lokasi aman.</p>`,
     foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" id="confirm-export">Unduh .xlsx…</button>`,
@@ -27,7 +30,7 @@ export async function openExport() {
   $('#confirm-export').addEventListener('click', async () => {
     closeModal();
     try {
-      const r = await api.exportExcel({ auditId: state.auditId || null, status });
+      const r = await api.exportExcel({ auditId: state.auditId || null, status, issue });
       if (r && r.error) toast(r.error, 'error');
       else if (r && !r.canceled) toast(`Export selesai: ${fmt(r.rows)} baris.`, 'ok');
     } catch { toast('Export gagal.', 'error'); }

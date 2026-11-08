@@ -28,10 +28,12 @@ const TARGET_COLUMNS = [
   { key: 'delta_views', label: 'Delta views', th: 'Δ V', thClass: 'num th-sort', sort: 'delta_views', title: 'Delta views vs snapshot sebelumnya', cell: (r) => `<td class="num">${deltaBadge(r.delta_views)}</td>` },
   { key: 'er', label: 'Engagement rate', th: 'ER', thClass: 'num th-sort', sort: 'er', title: 'Engagement rate', cell: (r) => `<td class="num">${r.engagement_rate !== null && r.engagement_rate !== undefined ? fmtPct(r.engagement_rate) : '—'}</td>` },
   { key: 'recent', label: 'Terakhir di-scrape', th: 'Di-scrape', thClass: 'th-sort', sort: 'recent', cell: (r) => `<td class="muted" title="${esc(fmtWhen(r.snapshot_at))}">${esc(relTime(r.snapshot_at))}</td>` },
-  { key: 'status', label: 'Status', th: 'Status', thClass: '', cell: (r) => `<td>${statusBadge(r.status)}</td>` },
+  { key: 'status', label: 'Status', th: 'Status', thClass: '', cell: (r) => `<td>${statusBadge(r.status)} <span class="row-chev" aria-hidden="true">›</span></td>` },
 ];
 const ALL_COL_KEYS = TARGET_COLUMNS.map((c) => c.key);
-const COLS_STORAGE = 'sa_target_cols';
+// Default ringkas — kolom lain tampil lewat tombol "Kolom".
+const DEFAULT_COL_KEYS = ['pl', 'akun', 'followers', 'likes', 'views', 'er', 'status'];
+const COLS_STORAGE = 'sa_target_cols_v2';
 let visibleCols = null;
 
 function loadVisibleCols() {
@@ -43,7 +45,7 @@ function loadVisibleCols() {
       if (keys.length) { visibleCols = keys; return visibleCols; }
     }
   } catch { /* abaikan */ }
-  visibleCols = [...ALL_COL_KEYS];
+  visibleCols = [...DEFAULT_COL_KEYS];
   return visibleCols;
 }
 function persistVisibleCols() { try { localStorage.setItem(COLS_STORAGE, JSON.stringify(visibleCols)); } catch { /* abaikan */ } }
@@ -121,7 +123,7 @@ function openColumnsPop() {
   pop.style.left = Math.round(left) + 'px';
   pop.style.top = Math.round(top) + 'px';
   const reset = $('#cols-reset');
-  if (reset) reset.addEventListener('click', () => { visibleCols = [...ALL_COL_KEYS]; persistVisibleCols(); renderTargetsTable(state.targets.items); closeColumnsPop(); });
+  if (reset) reset.addEventListener('click', () => { visibleCols = [...DEFAULT_COL_KEYS]; persistVisibleCols(); renderTargetsTable(state.targets.items); closeColumnsPop(); });
 }
 
 function closeColumnsPop() {
@@ -151,10 +153,24 @@ export async function loadTargets() {
   }
   state.targets.items = res.items || [];
   state.targets.total = res.total || 0;
-  $('#targets-total').textContent = `${fmt(res.total)} postingan`;
+  const filtered = hasActiveFilter();
+  const totalAll = res.total_all != null ? res.total_all : res.total;
+  $('#targets-total').textContent = filtered ? `${fmt(res.total)} dari ${fmt(totalAll)} postingan` : `${fmt(res.total)} postingan`;
   setNavTargetCount(res.total);
   $('#targets-page').textContent = pageLabel(state.targets.offset, state.targets.limit, res.total);
   renderTargetsTable(state.targets.items);
+  updateFilterUi();
+}
+
+function hasActiveFilter() {
+  const platform = $('#target-platform');
+  const q = $('#target-q');
+  return !!(state.targets.status || state.targets.issue || (platform && platform.value) || (q && q.value));
+}
+
+function updateFilterUi() {
+  const reset = $('#targets-reset-filter');
+  if (reset) reset.hidden = !hasActiveFilter();
 }
 
 export function syncTargetChips() {
@@ -181,8 +197,14 @@ export function registerActivateTab(fn) { activateTabSafe = fn; }
 export function updateRetrySelected() {
   const btn = $('#btn-retry-selected');
   if (!btn) return;
-  btn.disabled = state.targets.selected.size === 0;
-  btn.textContent = state.targets.selected.size ? `Ulangi terpilih (${state.targets.selected.size})` : 'Ulangi terpilih';
+  const n = state.targets.selected.size;
+  btn.disabled = n === 0;
+  btn.textContent = n ? `Ulangi terpilih (${n})` : 'Ulangi terpilih';
+  const sel = $('#targets-selected');
+  if (sel) {
+    sel.hidden = n === 0;
+    sel.textContent = n ? `${n} dipilih` : '';
+  }
 }
 
 export function openTarget(targetId, url) {
@@ -242,6 +264,17 @@ export function bindTargetEvents() {
     const n = Number(e.target.value);
     state.targets.limit = Number.isFinite(n) && n > 0 ? n : 50;
     state.targets.offset = 0;
+    loadTargets();
+  });
+  $('#targets-reset-filter').addEventListener('click', () => {
+    state.targets.status = '';
+    state.targets.issue = '';
+    state.targets.offset = 0;
+    state.targets.selected.clear();
+    const q = $('#target-q'); if (q) q.value = '';
+    const p = $('#target-platform'); if (p) p.value = '';
+    syncTargetChips();
+    updateRetrySelected();
     loadTargets();
   });
   $('#targets-prev').addEventListener('click', () => { state.targets.offset = prevOffset(state.targets.offset, state.targets.limit); loadTargets(); });

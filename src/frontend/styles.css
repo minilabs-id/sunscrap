@@ -655,6 +655,15 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; }
   border-color: var(--ink);
   color: var(--surface);
 }
+.filter-label {
+  font-size: var(--fs-caps);
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  align-self: center;
+  margin-right: 2px;
+}
 
 .badge {
   display: inline-flex;
@@ -1617,6 +1626,8 @@ body.modal-open { overflow: hidden; }
 .clickable { cursor: pointer; }
 .row-open { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; padding: 0 4px; margin-left: 4px; font-size: var(--fs-micro); line-height: 1; border-radius: var(--r-xs); vertical-align: middle; }
 .row-open:hover { color: var(--accent); background: var(--surface-3); }
+.row-chev { color: var(--ink-3); font-size: var(--fs-meta); margin-left: 8px; }
+.select-sm { height: 28px; font-size: var(--fs-micro); padding: 0 8px; }
 .truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .flush { box-shadow: none; border: 0; max-height: none; }
 .tall { max-height: 56vh; }

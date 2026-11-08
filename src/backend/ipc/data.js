@@ -213,13 +213,13 @@ function registerDataIpc(ctx) {
   });
 
   // ---- export ----
-  ipcMain.handle('data:exportCount', (event, { auditId, status } = {}) => {
+  ipcMain.handle('data:exportCount', (event, { auditId, status, issue } = {}) => {
     const aid = auditId == null ? null : num(auditId);
-    return db.getExportCount(aid, status || null);
+    return db.getExportCount(aid, status || null, issue || null);
   });
-  ipcMain.handle('data:export', async (event, { auditId, status } = {}) => {
+  ipcMain.handle('data:export', async (event, { auditId, status, issue } = {}) => {
     const aid = auditId == null ? null : num(auditId);
-    const rows = db.getExportRows(aid, status || null);
+    const rows = db.getExportRows(aid, status || null, issue || null);
     if (!rows.length) {
       return { error: status === 'FAILED' ? 'Belum ada snapshot gagal untuk diexport.'
         : status ? `Belum ada snapshot berstatus ${status} untuk diexport.`
@@ -229,7 +229,7 @@ function registerDataIpc(ctx) {
     const result = await dlg(parentOf(event), dialog.showSaveDialog, { title: 'Simpan export', defaultPath: defaultName, filters: [{ name: 'Excel', extensions: ['xlsx'] }] });
     if (result.canceled || !result.filePath) return { canceled: true };
     try {
-      const out = await require('../core/export').writeExport(db, { auditId: aid, status: status || null, filePath: result.filePath, reviews: reviewStore ? reviewStore.get(null) : {} });
+      const out = await require('../core/export').writeExport(db, { auditId: aid, status: status || null, issue: issue || null, filePath: result.filePath, reviews: reviewStore ? reviewStore.get(null) : {} });
       return { ok: true, rows: out.rows, filePath: out.filePath };
     } catch (e) {
       return { error: e.message };

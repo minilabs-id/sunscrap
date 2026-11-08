@@ -170,8 +170,8 @@ function styleSheet(sheet, headerCount, { autofilter = false } = {}) {
  * Tulis export ke filePath. Return summary {rows, filePath, audit_label}.
  * Throws bila tidak ada data.
  */
-async function writeExport(db, { auditId, status, filePath, reviews }) {
-  const rows = db.getExportRows(auditId, status);
+async function writeExport(db, { auditId, status, issue, filePath, reviews }) {
+  const rows = db.getExportRows(auditId, status, issue);
   if (!rows.length) {
     throw new Error(status === 'FAILED' ? 'Belum ada snapshot gagal untuk diexport.'
       : status ? `Belum ada snapshot berstatus ${status} untuk diexport.`
