@@ -463,6 +463,15 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
       `${displayInt(following)} following berbanding ${displayInt(followers)} followers, ciri akun salur`, 1);
   }
 
+  // Kejujuran data: akun di band ternak yang terlihat "bersih" padahal sinyal kuncinya
+  // belum sempat dihitung (data unggahan kurang) diberi catatan — bukan vonis, supaya
+  // tidak disalahartikan sebagai "bebas risiko".
+  const dataComplete = followers !== null && reach !== null && posts.length >= MIN_POSTS_FOR_RATIO;
+  if (flags.length === 0 && inBand && !dataComplete) {
+    flag('data_tidak_lengkap', 'Belum bisa dinilai',
+      `Baru ${posts.length} unggahan terbaca — sinyal jangkauan/komentar belum dapat dihitung`, 0);
+  }
+
   let score = flags.reduce((sum, f) => sum + f.points, 0);
   if (account.is_verified) score = Math.max(0, score - 1);
   let level = riskLevel(score);
@@ -488,6 +497,7 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
     data_age_minutes: age,
     needs_refresh: age === null || age > (7 * 24 * 60),
     in_ternak_band: inBand,
+    data_incomplete: !dataComplete,
     audits_seen: appearance.audits_seen || 0,
     targets_seen: appearance.targets_seen || 0,
     last_verified_at: appearance.last_verified_at || null,

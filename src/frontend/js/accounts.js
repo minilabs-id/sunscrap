@@ -89,7 +89,7 @@ export async function loadAccounts() {
   state.accounts.items = res.items || [];
   state.accounts.total = res.total || 0;
   state.accountsSummary = res.summary || {};
-  $('#accounts-total').textContent = `${fmt(res.total)} akun · ${fmt((res.summary || {}).flagged)} terindikasi · ${fmt((res.summary || {}).clusters)} klaster`;
+  $('#accounts-total').textContent = `${fmt(res.total)} akun · ${fmt((res.summary || {}).flagged)} terindikasi · ${fmt((res.summary || {}).clusters)} klaster${(res.summary || {}).incomplete ? ` · ${fmt(res.summary.incomplete)} belum bisa dinilai` : ''}`;
   $('#accounts-page').textContent = pageLabel(state.accounts.offset, state.accounts.limit, res.total);
   renderAccountsTable(state.accounts.items);
 }

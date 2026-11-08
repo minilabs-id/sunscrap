@@ -1515,6 +1515,7 @@ function createDatabase(dbPath) {
         shown: total,
         flagged: items.filter((i) => i.score >= intel.RISK_FLOORS.amati).length,
         in_band: items.filter((i) => i.in_ternak_band).length,
+        incomplete: items.filter((i) => i.data_incomplete).length,
         needs_refresh: items.filter((i) => i.needs_refresh).length,
         clusters: clusters.length,
         levels,

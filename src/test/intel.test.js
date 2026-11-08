@@ -180,3 +180,24 @@ test('median shares TikTok tersimpan ke metrics', () => {
   const r = intel.analyseAccount(a, posts, [], {});
   assert.equal(r.metrics.median_shares, 30);
 });
+
+test('akun di band ternak tanpa data unggahan diberi catatan data_tidak_lengkap (skor 0)', () => {
+  const a = account('kabur', 10000);
+  const r = intel.analyseAccount(a, [], [], {});
+  assert.ok(r.flags.some((f) => f.key === 'data_tidak_lengkap'));
+  assert.equal(r.score, 0);
+  assert.equal(r.level, 'bersih');
+  assert.equal(r.data_incomplete, true);
+});
+
+test('akun di band ternak yang datanya lengkap tidak dicap data_tidak_lengkap', () => {
+  const a = account('lengkap', 10000);
+  const posts = [
+    { post_ref: 'a', posted_at: '2026-09-01T08:00:00Z', likes: 500, comments: 10, views: null, caption: null },
+    { post_ref: 'b', posted_at: '2026-09-08T08:00:00Z', likes: 500, comments: 10, views: null, caption: null },
+    { post_ref: 'c', posted_at: '2026-09-15T08:00:00Z', likes: 500, comments: 10, views: null, caption: null },
+  ];
+  const r = intel.analyseAccount(a, posts, [], {});
+  assert.ok(!r.flags.some((f) => f.key === 'data_tidak_lengkap'));
+  assert.equal(r.data_incomplete, false);
+});
