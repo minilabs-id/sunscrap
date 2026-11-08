@@ -1045,7 +1045,7 @@ function createDatabase(dbPath) {
     const where = 'WHERE ' + conditions.join(' AND ');
 
     const orderMap = {
-      followers: 'COALESCE(ls.follower_count, -1)',
+      followers: 'COALESCE(ls.follower_count, acct.follower_count, -1)',
       likes: 'COALESCE(ls.likes, -1)',
       comments: 'COALESCE(ls.comments, -1)',
       views: 'COALESCE(ls.views, -1)',
@@ -1074,15 +1074,15 @@ function createDatabase(dbPath) {
       SELECT t.id AS target_id, t.audit_id, a.name AS audit_name, t.platform, t.url, t.username, t.tema, t.created_at,
         lt.id AS task_id, COALESCE(lt.status, 'PENDING') AS status, lt.error_code, lt.error_message,
         COALESCE(lt.retry_count, 0) AS retry_count, lt.claimed_at, lt.scraped_at AS task_scraped_at,
-        ls.likes, ls.comments, ls.views, ls.shares, ls.follower_count, ls.scraped_at AS snapshot_at, ls.post_date, ls.caption,
+        ls.likes, ls.comments, ls.views, ls.shares, COALESCE(ls.follower_count, acct.follower_count) AS follower_count, ls.scraped_at AS snapshot_at, ls.post_date, ls.caption,
         ps.likes AS prev_likes, ps.comments AS prev_comments, ps.views AS prev_views, ps.scraped_at AS prev_scraped_at,
         CASE WHEN ps.likes IS NOT NULL AND ls.likes IS NOT NULL THEN ls.likes - ps.likes ELSE NULL END AS delta_likes,
         CASE WHEN ps.views IS NOT NULL AND ls.views IS NOT NULL THEN ls.views - ps.views ELSE NULL END AS delta_views,
         CASE
           WHEN t.platform = 'tiktok' AND COALESCE(ls.views, 0) > 0
             THEN (COALESCE(ls.likes,0)+COALESCE(ls.comments,0)+COALESCE(ls.shares,0)) * 100.0 / ls.views
-          WHEN t.platform = 'instagram' AND COALESCE(ls.follower_count, 0) > 0
-            THEN (COALESCE(ls.likes,0)+COALESCE(ls.comments,0)) * 100.0 / ls.follower_count
+          WHEN t.platform = 'instagram' AND COALESCE(ls.follower_count, acct.follower_count, 0) > 0
+            THEN (COALESCE(ls.likes,0)+COALESCE(ls.comments,0)) * 100.0 / COALESCE(ls.follower_count, acct.follower_count)
           ELSE NULL
         END AS engagement_rate
       FROM targets t
@@ -1090,6 +1090,7 @@ function createDatabase(dbPath) {
       LEFT JOIN latest_tasks lt ON lt.target_id = t.id AND lt.rn = 1
       LEFT JOIN latest_snapshots ls ON ls.target_id = t.id AND ls.rn = 1
       LEFT JOIN prev_snapshots ps ON ps.target_id = t.id AND ps.rn = 2
+      LEFT JOIN accounts acct ON acct.platform = t.platform AND acct.username = t.username
       ${where} ORDER BY ${order} LIMIT ? OFFSET ?`, ...cparams, limit, offset);
 
     const items = rows.map((r) => {
@@ -1598,7 +1599,7 @@ function createDatabase(dbPath) {
       ),
       ordered AS (
         SELECT s.id, s.target_id, s.run_id, s.task_id, s.scraped_at, s.status, s.error_code, s.error_message,
-               s.likes, s.comments, s.views, s.shares, s.follower_count, s.post_date, s.caption,
+               s.likes, s.comments, s.views, s.shares, COALESCE(s.follower_count, acct.follower_count) AS follower_count, s.post_date, s.caption,
                t.platform, t.username, t.tema, t.url, t.audit_id, a.name AS audit_name, a.period,
                COALESCE(tk.retry_count, 0) AS retry_count,
                LAG(s.likes) OVER (PARTITION BY s.target_id ORDER BY s.id) AS prev_likes,
@@ -1610,7 +1611,8 @@ function createDatabase(dbPath) {
         FROM attempts s
         JOIN targets t ON t.id = s.target_id
         JOIN audits a ON a.id = t.audit_id
-        LEFT JOIN tasks tk ON tk.id = s.task_id ${where}
+        LEFT JOIN tasks tk ON tk.id = s.task_id
+        LEFT JOIN accounts acct ON acct.platform = t.platform AND acct.username = t.username ${where}
       )
       SELECT * FROM ordered ORDER BY audit_id ASC, target_id ASC, id ASC`, ...params).map(plain);
   }
