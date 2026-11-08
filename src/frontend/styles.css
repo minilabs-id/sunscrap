@@ -504,6 +504,13 @@ button { font: inherit; color: inherit; }
   margin-bottom: var(--sp-3);
 }
 .card-title { font-size: var(--fs-title); font-weight: 700; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.section-label { font-size: var(--fs-caps); font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); margin: var(--sp-2) 0 var(--sp-2); }
+.section-label:first-child { margin-top: 0; }
+.hint-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: var(--sp-2); border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface-2); font-size: var(--fs-micro); color: var(--ink-2); }
+.hint-body { flex: 1; min-width: 0; }
+.hint-banner kbd { font-family: ui-monospace, monospace; background: var(--surface-3); border: 1px solid var(--line-strong); border-radius: 4px; padding: 1px 6px; font-size: var(--fs-micro); }
+.hint-close { border: 0; background: transparent; color: var(--ink-3); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 4px; flex: none; }
+.hint-close:hover { color: var(--ink); }
 .card-title svg { flex: none; width: 1em; height: 1em; color: var(--accent); }
 .card-sub { margin-top: 2px; font-size: var(--fs-meta); color: var(--ink-3); }
 

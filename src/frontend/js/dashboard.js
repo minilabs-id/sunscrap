@@ -159,11 +159,11 @@ function renderAttention(summary) {
   const failed = k.failed || 0;
   const partial = k.partial || 0;
   const pending = (k.pending || 0) + (k.running || 0);
-  const set = (id, num, enabled) => {
+  const set = (id, num, clickable) => {
     const n = $(id + '-num');
     const btn = $(id);
     if (n) n.textContent = fmt(num);
-    if (btn) btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    if (btn) btn.setAttribute('aria-disabled', clickable ? 'false' : 'true');
   };
   set('#att-failed', failed, failed > 0);
   set('#att-partial', partial, partial > 0);
@@ -211,9 +211,16 @@ async function renderOnboarding() {
 }
 
 // ── Refresh utama (render-gate via signature) ──────────────────
+function maybeShowShortcutsHint() {
+  try { if (localStorage.getItem('sa_shortcuts_dismissed') === '1') return; } catch { /* abaikan */ }
+  const el = $('#shortcuts-hint');
+  if (el) el.hidden = false;
+}
+
 export async function refreshDashboard() {
   if (state.tab !== 'dashboard') return;
   renderOnboarding();
+  maybeShowShortcutsHint();
   try {
     const summary = await api.getSummary(state.auditId);
     if (!summary) return;
@@ -242,6 +249,12 @@ export async function refreshDashboard() {
 }
 
 export function bindDashboardEvents() {
+  $('#shortcuts-hint-close').addEventListener('click', () => {
+    const el = $('#shortcuts-hint');
+    if (el) el.hidden = true;
+    try { localStorage.setItem('sa_shortcuts_dismissed', '1'); } catch { /* abaikan */ }
+  });
+
   // Kartu KPI (deep-link ke tab relevan)
   document.addEventListener('click', (e) => {
     const kpi = e.target.closest('[data-kpi-action]');

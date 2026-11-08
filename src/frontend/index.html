@@ -110,6 +110,13 @@
 
         <div id="onboarding-host" hidden></div>
 
+        <div class="hint-banner" id="shortcuts-hint" hidden>
+          <div class="hint-body"><b>Mulai cepat</b> — 1) Import data · 2) Login di tab Sesi · 3) Jalankan worker.&nbsp;&nbsp;Pintasan: <kbd>Ctrl&nbsp;K</kbd> cari · <kbd>Ctrl&nbsp;I</kbd> import · <kbd>Ctrl&nbsp;E</kbd> export</div>
+          <button class="hint-close" id="shortcuts-hint-close" aria-label="Tutup tip">×</button>
+        </div>
+
+        <div class="section-label">Perlu tindakan</div>
+
         <!-- Action-first: pekerjaan yang menunggu keputusan -->
         <div class="attention" id="attention-row" aria-label="Perlu tindakan">
           <button class="attention-item" id="att-review" data-tone="warn">
@@ -146,8 +153,12 @@
           </button>
         </div>
 
+        <div class="section-label">Ikhtisar</div>
+
         <!-- KPI murni -->
         <div class="kpi-grid" id="kpi-grid" aria-label="Metrik utama"></div>
+
+        <div class="section-label">Analisis</div>
 
         <div class="grid-2">
           <div class="card" aria-label="Performa terburuk Instagram">
