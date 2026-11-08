@@ -1375,6 +1375,14 @@ function createDatabase(dbPath) {
     const scraped = platforms.reduce((s, p) => s + p.scraped, 0);
     const verified = statusCounts.OK + statusCounts.PARTIAL;
 
+    // Akun dengan performa TERBURUK per platform — median ER terendah (punya followers & ER).
+    const worstBy = (platform) => accounts
+      .filter((a) => a.platform === platform && a.median_er !== null && a.followers)
+      .sort((a, b) => a.median_er - b.median_er)
+      .slice(0, 6);
+    const worstIg = worstBy('instagram');
+    const worstTk = worstBy('tiktok');
+
     const result = {
       audit_id: idNum,
       generated_at: isoNow(),
@@ -1393,6 +1401,7 @@ function createDatabase(dbPath) {
       temas: temas.slice(0, 12), temas_total: temas.length,
       audits: auditList,
       posts: { top_instagram: rankedIg, top_tiktok: rankedTk },
+      worst_instagram: worstIg, worst_tiktok: worstTk,
       quality,
     };
     summaryMemo = { gen: intelGen, key: memoKey, value: result };

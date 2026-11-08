@@ -4,8 +4,8 @@
  */
 import { $, $$, toast } from './dom.js';
 import {
-  api, esc, fmt, fmtPct, fmtCompact, fmtDayShort, fmtDateFull, relTime,
-  delta7, signedPct, sparklinePoints, emptyState, sum, summarySignature, idID,
+  api, esc, fmt, fmtPct, fmtCompact, relTime,
+  delta7, signedPct, sparklinePoints, emptyState, summarySignature,
 } from './helpers.js';
 import { state } from './state.js';
 import { setNavTargetCount } from './chrome.js';
@@ -26,8 +26,6 @@ async function loadTimeseries() {
 }
 
 // ── KPI murni ──────────────────────────────────────────────────
-function niceCeil(n) { if (n <= 1) return 1; const p = Math.pow(10, Math.floor(Math.log10(n))); return Math.ceil(n / p) * p; }
-
 function renderKpis(summary, ts) {
   const k = (summary && summary.kpi) || {};
   const totals = k.totals || {};
@@ -56,111 +54,18 @@ function renderKpis(summary, ts) {
     </article>`).join('');
 }
 
-// ── Tren (SVG area chart) ──────────────────────────────────────
-function renderTrend() {
-  const box = $('#trend-chart');
-  if (!box) return;
-  const days = (state.timeseries && state.timeseries.days) || [];
-  const line = $('#trend-line');
-  const area = $('#trend-area');
-  const bars = $('#trend-bars');
-  const grid = $('#trend-grid');
-  const todayEl = $('#trend-today');
-  const empty = !days.length || (state.timeseries && days.every((d) => (d.scraped || 0) === 0));
-  if (empty) {
-    if (line) line.setAttribute('d', '');
-    if (area) area.setAttribute('d', 'M36,190 L650,190 Z');
-    if (bars) bars.innerHTML = '';
-    if (grid) grid.innerHTML = '';
-    if (todayEl) todayEl.innerHTML = '';
-    $('#trend-y').innerHTML = '';
-    $('#trend-cells').innerHTML = '';
-    $('#trend-axis-x').innerHTML = '';
-    $('#trend-sub').textContent = 'Belum ada aktivitas dalam 30 hari terakhir.';
-    return;
-  }
-  const metric = state.metric;
-  const isBars = metric === 'scraped';
-  const vals = days.map((d) => Number(d[metric]) || 0);
-  const max = niceCeil(Math.max(...vals, 1));
-  const x0 = 36, x1 = 650, yTop = 24, yBase = 190;
-  const step = (x1 - x0) / (days.length - 1);
-  const pts = vals.map((v, i) => [Math.round(x0 + i * step), Math.round(yBase - (v / max) * (yBase - yTop))]);
-
-  if (isBars) {
-    if (line) line.setAttribute('d', '');
-    if (area) area.setAttribute('d', 'M36,190 L650,190 Z');
-    if (bars) bars.innerHTML = pts.map(([x, y]) => `<rect class="trend-bar" x="${x - 6}" y="${y}" width="12" height="${Math.max(1, yBase - y)}" rx="2"></rect>`).join('');
-  } else {
-    if (bars) bars.innerHTML = '';
-    const lineD = 'M' + pts.map(([x, y]) => `${x},${y}`).join(' L');
-    if (line) line.setAttribute('d', lineD);
-    if (area) area.setAttribute('d', `${lineD} L${x1},${yBase} L${x0},${yBase} Z`);
-  }
-
-  // Sel hover + dot; titik terakhir selalu tampil sebagai jangkar "hari ini".
-  $('#trend-cells').innerHTML = pts.map(([x, y], i) => {
-    const last = i === days.length - 1;
-    return `<g class="day-cell${last ? ' is-last' : ''}" data-idx="${i}">
-      <rect class="day-cap" x="${x - 12}" y="16" width="24" height="176"></rect>
-      <circle class="trend-dot${last ? ' keep' : ''}" cx="${x}" cy="${y}" r="4.2" fill="var(--accent-strong)" stroke="var(--surface)" stroke-width="2" opacity="${last ? '1' : '0'}"></circle>
-    </g>`;
-  }).join('');
-
-  // Sumbu X: awal / tengah / akhir.
-  const mid = Math.floor((days.length - 1) / 2);
-  const midDate = days[mid] && days[mid].date ? days[mid].date : days[0].date;
-  $('#trend-axis-x').innerHTML = [
-    `<text class="axis-label" x="36" y="212" text-anchor="start">${esc(fmtDayShort(days[0].date))}</text>`,
-    `<text class="axis-label" x="${pts[mid][0]}" y="212" text-anchor="middle">${esc(fmtDayShort(midDate))}</text>`,
-    `<text class="axis-label" x="650" y="212" text-anchor="end">${esc(fmtDayShort(days[days.length - 1].date))}</text>`,
-  ].join('');
-
-  // Grid + sumbu Y dari SATU sumber (selaras), termasuk label 0.
-  const fractions = [0, 0.25, 0.5, 0.75, 1];
-  const ticks = fractions.map((f) => ({ y: Math.round(yBase - f * (yBase - yTop)), v: max * f, f }));
-  const tickLabel = (v) => (v >= 10 ? fmtCompact(Math.round(v)) : idID(v, 1));
-  if (grid) grid.innerHTML = ticks.filter((t) => t.f > 0).map((t) => `<line class="grid-line" x1="36" y1="${t.y}" x2="650" y2="${t.y}"></line>`).join('');
-  $('#trend-y').innerHTML = ticks.map((t) => `<text class="axis-label" x="30" y="${t.y + 3}" text-anchor="end">${esc(tickLabel(t.v))}</text>`).join('');
-
-  // Nilai titik terakhir.
-  const lastVal = vals[vals.length - 1];
-  const [lx, ly] = pts[pts.length - 1];
-  if (todayEl) todayEl.innerHTML = `<text class="axis-label trend-last" x="${Math.min(lx, 636)}" y="${Math.max(16, ly - 10)}" text-anchor="middle">${isBars ? fmt(lastVal) : fmtCompact(lastVal)}</text>`;
-
-  const metricLabel = { d_views: 'Δ Views', d_likes: 'Δ Likes', d_comments: 'Δ Komen', scraped: 'Diproses' }[metric] || metric;
-  const totalV = sum(vals);
-  const activeDays = days.filter((d) => (d.scraped || 0) > 0).length;
-  $('#trend-sub').textContent = isBars
-    ? `Diproses — ${fmt(totalV)} scrape · ${activeDays} hari aktif`
-    : `${metricLabel} — Σ ${fmtCompact(totalV)} pertumbuhan · ${activeDays} hari diproses`;
-}
-
-function onTrendMove(e) {
-  const box = $('#trend-chart');
-  const days = (state.timeseries && state.timeseries.days) || [];
-  const tip = $('#chart-tooltip');
-  if (!box || !days.length || !tip) return;
-  const rect = box.getBoundingClientRect();
-  const innerX = (e.clientX - rect.left) * (660 / rect.width) - 36;
-  const step = (650 - 36) / (days.length - 1);
-  let idx = Math.round(innerX / step);
-  idx = Math.max(0, Math.min(days.length - 1, idx));
-  const d = days[idx];
-  tip.innerHTML = `<b>${esc(fmtDateFull(d.date))}</b><br>Δ ${fmtCompact(d.d_views || 0)} views · Δ ${fmtCompact(d.d_likes || 0)} likes · Δ ${fmtCompact(d.d_comments || 0)} komentar<br>${fmt(d.scraped)} diproses · ${fmt(d.targets)} postingan<br><span class="muted">OK ${fmt(d.ok_count)} · sebagian ${fmt(d.partial_count)} · gagal ${fmt(d.failed_count)}</span>`;
-  tip.hidden = false;
-  tip.style.opacity = '1';
-  const maxX = Math.max(8, rect.width - 240);
-  tip.style.left = Math.min(maxX, Math.max(8, e.clientX - rect.left - 12)) + 'px';
-  tip.style.top = Math.max(0, e.clientY - rect.top - 12) + 'px';
-  const dot = box.querySelector(`.day-cell[data-idx="${idx}"] .trend-dot`);
-  if (dot) dot.setAttribute('opacity', '1');
-}
-
-function hideTrendTooltip() {
-  const tip = $('#chart-tooltip');
-  if (tip) { tip.hidden = true; tip.style.opacity = '0'; }
-  $$('#trend-chart .trend-dot:not(.keep)').forEach((d) => d.setAttribute('opacity', '0'));
+// ── Performa terburuk (per platform) ───────────────────────────
+function renderWorst(summary) {
+  const ig = (summary && summary.worst_instagram) || [];
+  const tk = (summary && summary.worst_tiktok) || [];
+  const row = (p, i) => `
+    <div class="leader-row${i < 3 ? ' is-top' : ''}">
+      <span class="rank">${i + 1}</span>
+      <span class="leader-main"><b>@${esc(p.handle || p.username || '—')}</b><span class="muted"> · ${fmtCompact(p.followers || 0)} followers · ${fmt(p.posts || 0)} post</span></span>
+      <span class="leader-num"><b>${p.median_er !== null && p.median_er !== undefined ? fmtPct(p.median_er) : '—'}</b><span class="muted">ER</span></span>
+    </div>`;
+  $('#worst-ig').innerHTML = ig.length ? ig.map(row).join('') : emptyState('Belum ada data Instagram', 'Import data, lalu jalankan worker.');
+  $('#worst-tk').innerHTML = tk.length ? tk.map(row).join('') : emptyState('Belum ada data TikTok', 'Import data, lalu jalankan worker.');
 }
 
 // ── Top konten (per platform) ──────────────────────────────────
@@ -318,7 +223,7 @@ export async function refreshDashboard() {
 
     renderAttention(summary);
     renderKpis(summary, ts);
-    renderTrend();
+    renderWorst(summary);
     renderTopPosts(summary);
     renderPlatformCompare(summary);
     renderQuality(summary);
@@ -344,15 +249,6 @@ export function bindDashboardEvents() {
     }
   });
 
-  $('#trend-chart').addEventListener('mousemove', onTrendMove);
-  $('#trend-chart').addEventListener('mouseenter', onTrendMove);
-  $('#trend-chart').addEventListener('mouseleave', hideTrendTooltip);
-  $$('.mini-tabs [data-metric]').forEach((btn) => btn.addEventListener('click', () => {
-    state.metric = btn.dataset.metric;
-    $$('.mini-tabs [data-metric]').forEach((b) => b.setAttribute('aria-selected', String(b === btn)));
-    renderTrend();
-  }));
-  // Kartu "Perlu tindakan"
   $('#att-review').addEventListener('click', () => {
     if (state.needsReview <= 0) return;
     document.dispatchEvent(new CustomEvent('sunscrap:open-triage'));
