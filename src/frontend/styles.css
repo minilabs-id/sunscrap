@@ -503,7 +503,7 @@ button { font: inherit; color: inherit; }
   margin-bottom: var(--sp-3);
 }
 .card-title { font-size: var(--fs-title); font-weight: 700; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
-.card-title svg { flex: none; color: var(--accent); }
+.card-title svg { flex: none; width: 1em; height: 1em; color: var(--accent); }
 .card-sub { margin-top: 2px; font-size: var(--fs-meta); color: var(--ink-3); }
 
 .grid-2, .grid-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(430px, 100%), 1fr)); gap: var(--gap-card); margin-bottom: var(--sp-4); }
