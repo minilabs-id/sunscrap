@@ -10,7 +10,7 @@ test('createState menghasilkan instance independen', () => {
   assert.ok(a.targets.selected instanceof Set);
   assert.equal(a.targets.selected.size, 0);
   assert.equal(a.temaSort, 'views');
-  assert.equal(a.targets.limit, 25);
+  assert.equal(a.targets.limit, 50);
   assert.equal(a.accounts.limit, 50);
   a.targets.selected.add(123);
   assert.equal(b.targets.selected.size, 0);

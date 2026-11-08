@@ -151,11 +151,21 @@ function registerDataIpc(ctx) {
     dataChanged();
     return r;
   });
+  ipcMain.handle('data:retryFailedAll', () => {
+    const r = db.retryFailedTargetsAll();
+    dataChanged();
+    return r;
+  });
   ipcMain.handle('data:retryTargets', (event, { auditId, ids } = {}) => {
     const id = num(auditId);
     if (id === null) return { error: 'auditId tidak valid.' };
     const r = db.retryTargets(id, ids);
     if (!r) return { error: 'Audit tidak ditemukan.' };
+    dataChanged();
+    return r;
+  });
+  ipcMain.handle('data:retryTargetsAny', (event, ids) => {
+    const r = db.retryTargetsAny(ids);
     dataChanged();
     return r;
   });

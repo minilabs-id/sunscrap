@@ -335,6 +335,17 @@ test('enqueueFix(null) = semua audit, bukan error auditId', () => {
   db.close();
 });
 
+test('retryFailedTargetsAll & retryTargetsAny mengembalikan bentuk valid (lintas audit)', () => {
+  const db = makeDb();
+  db.createAuditWithTasks([t1], { name: 'a1' });
+  db.createAuditWithTasks([t2], { name: 'a2' });
+  const all = db.retryFailedTargetsAll();
+  assert.ok(all && typeof all.created === 'number' && !all.error);
+  const any = db.retryTargetsAny([1, 2]);
+  assert.ok(any && typeof any.created === 'number' && !any.error);
+  db.close();
+});
+
 test('getSummary worst_instagram urut median ER terendah (butuh >=2 post terukur)', () => {
   const db = makeDb();
   db.createAuditWithTasks([

@@ -1615,6 +1615,8 @@ body.modal-open { overflow: hidden; }
 .min-0 { min-width: 0; }
 .end { justify-content: flex-end; }
 .clickable { cursor: pointer; }
+.row-open { border: 0; background: transparent; color: var(--ink-3); cursor: pointer; padding: 0 4px; margin-left: 4px; font-size: var(--fs-micro); line-height: 1; border-radius: var(--r-xs); vertical-align: middle; }
+.row-open:hover { color: var(--accent); background: var(--surface-3); }
 .truncate { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .flush { box-shadow: none; border: 0; max-height: none; }
 .tall { max-height: 56vh; }

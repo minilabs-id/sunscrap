@@ -19,7 +19,7 @@ export function statusBadge(status) {
 // ── Kolom tabel Target (satu sumber kebenaran header + sel) ──
 const TARGET_COLUMNS = [
   { key: 'pl', label: 'Platform', th: 'Pl.', thClass: '', cell: (r) => `<td><span class="badge ${r.platform === 'instagram' ? 'ig' : 'tk'}">${r.platform === 'instagram' ? 'IG' : 'TK'}</span></td>` },
-  { key: 'akun', label: 'Akun', th: 'Akun', thClass: '', cell: (r) => `<td class="wrap" title="${esc(r.url)}">@${esc(r.username || '—')}</td>` },
+  { key: 'akun', label: 'Akun', th: 'Akun', thClass: '', cell: (r) => `<td class="wrap" title="${esc(r.url)}">@${esc(r.username || '—')}${r.url ? `<button class="row-open" data-open-url="${esc(r.url)}" title="Buka di browser" aria-label="Buka postingan di browser">↗</button>` : ''}</td>` },
   { key: 'tema', label: 'Tema', th: 'Tema', thClass: '', cell: (r) => { const t = r.tema || shortUrl(r.url); return `<td class="wrap cell-clip" title="${esc(t)}">${esc(t)}</td>`; } },
   { key: 'followers', label: 'Followers', th: 'Fol.', thClass: 'num th-sort', sort: 'followers', cell: (r) => `<td class="num">${fmt(r.follower_count)}</td>` },
   { key: 'likes', label: 'Likes', th: 'Likes', thClass: 'num th-sort', sort: 'likes', cell: (r) => `<td class="num"><b>${fmt(r.likes)}</b></td>` },
@@ -51,10 +51,11 @@ function visibleColumns() { const set = new Set(loadVisibleCols()); return TARGE
 
 function renderTargetsTable(items) {
   const cols = visibleColumns();
+  const allChecked = items.length > 0 && items.every((r) => state.targets.selected.has(r.target_id));
   const rows = items.map((r) => {
     const checked = state.targets.selected.has(r.target_id);
     const tema = r.tema || shortUrl(r.url);
-    return `<tr data-target="${r.target_id}" class="clickable" tabindex="0" role="button" aria-label="Buka riwayat ${esc(tema)}">
+    return `<tr data-target="${r.target_id}" data-url="${esc(r.url || '')}" class="clickable" tabindex="0" role="button" aria-label="Buka riwayat ${esc(tema)}">
       <td><input type="checkbox" class="sel" data-id="${r.target_id}" aria-label="Pilih postingan ${esc(tema)}" ${checked ? 'checked' : ''}></td>
       ${cols.map((c) => c.cell(r)).join('')}
     </tr>`;
@@ -62,8 +63,8 @@ function renderTargetsTable(items) {
 
   $('#targets-table').innerHTML = `
     <thead><tr>
-      <th scope="col" class="w-36"><input type="checkbox" id="targets-checkall" aria-label="Pilih semua"></th>
-      ${cols.map((c) => `<th scope="col" class="${c.thClass}"${c.sort ? ` data-sort="${c.sort}"` : ''}${c.title ? ` title="${c.title}"` : ''}>${c.th}</th>`).join('')}
+      <th scope="col" class="w-36"><input type="checkbox" id="targets-checkall" aria-label="Pilih semua" ${allChecked ? 'checked' : ''}></th>
+      ${cols.map((c) => `<th scope="col" class="${c.thClass}"${c.sort ? ` data-sort="${c.sort}" tabindex="0" role="button"` : ''}${c.title ? ` title="${c.title}"` : ''}>${c.th}</th>`).join('')}
     </tr></thead>
     <tbody>${rows || `<tr><td colspan="${cols.length + 1}">${emptyState('Tidak ada postingan', 'Tidak ada postingan yang cocok dengan filter ini.')}</td></tr>`}</tbody>`;
 
@@ -76,10 +77,11 @@ function renderTargetsTable(items) {
   $$('#targets-table tr[data-target]').forEach((row) => {
     row.addEventListener('click', (e) => {
       if (e.target.classList.contains('sel')) return;
-      openTarget(Number(row.dataset.target));
+      if (e.target.closest('[data-open-url]')) return;
+      openTarget(Number(row.dataset.target), row.dataset.url);
     });
     row.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTarget(Number(row.dataset.target)); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openTarget(Number(row.dataset.target), row.dataset.url); }
     });
   });
   $$('#targets-table .sel').forEach((cb) => cb.addEventListener('change', (e) => {
@@ -183,13 +185,13 @@ export function updateRetrySelected() {
   btn.textContent = state.targets.selected.size ? `Ulangi terpilih (${state.targets.selected.size})` : 'Ulangi terpilih';
 }
 
-export function openTarget(targetId) {
+export function openTarget(targetId, url) {
   api.getTargetHistory(targetId).then((snapshots) => {
     const rows = (snapshots || []).map((s) => `<tr><td>${esc(fmtWhen(s.scraped_at))}</td><td>${statusBadge(s.status)}</td><td class="num">${fmt(s.follower_count)}</td><td class="num">${fmt(s.likes)}</td><td class="num">${fmt(s.comments)}</td><td class="num">${fmt(s.views)}</td><td class="wrap">${esc(s.error_message || '')}</td></tr>`).join('');
     openModal(modalShell({
       title: 'Riwayat postingan',
       body: `<div class="table-wrap flush tall"><table class="table"><thead><tr><th scope="col">Waktu</th><th scope="col">Status</th><th scope="col" class="num">Fol.</th><th scope="col" class="num">Likes</th><th scope="col" class="num">Komen</th><th scope="col" class="num">Views</th><th scope="col">Error</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="muted">Belum ada snapshot.</td></tr>'}</tbody></table></div>`,
-      foot: `<button class="btn btn-ghost" data-close>Tutup</button>`,
+      foot: `<button class="btn btn-ghost" data-close>Tutup</button>${url ? `<button class="btn btn-ghost" data-close data-open-url="${esc(url)}">Buka di browser</button>` : ''}`,
     }));
   }).catch(() => toast('Gagal memuat riwayat postingan.', 'error'));
 }
@@ -227,6 +229,21 @@ export function bindTargetEvents() {
     state.targets.dir = s.dir;
     loadTargets();
   });
+  $('#targets-table').addEventListener('keydown', (e) => {
+    const th = e.target.closest('.th-sort');
+    if (!th || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    const s = toggleSort(state.targets.sort, state.targets.dir, th.dataset.sort);
+    state.targets.sort = s.sort;
+    state.targets.dir = s.dir;
+    loadTargets();
+  });
+  $('#targets-limit').addEventListener('change', (e) => {
+    const n = Number(e.target.value);
+    state.targets.limit = Number.isFinite(n) && n > 0 ? n : 50;
+    state.targets.offset = 0;
+    loadTargets();
+  });
   $('#targets-prev').addEventListener('click', () => { state.targets.offset = prevOffset(state.targets.offset, state.targets.limit); loadTargets(); });
   $('#targets-next').addEventListener('click', () => { state.targets.offset = nextOffset(state.targets.offset, state.targets.limit, state.targets.total); loadTargets(); });
 
@@ -249,18 +266,17 @@ export function bindTargetEvents() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeColumnsPop(); });
 
   $('#btn-retry-failed').addEventListener('click', async () => {
-    if (!state.auditId) { toast('Pilih audit dulu (di atas).', 'warning'); return; }
     try {
-      const r = await api.retryFailed(state.auditId);
+      const r = state.auditId ? await api.retryFailed(state.auditId) : await api.retryFailedAll();
       toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} postingan.`, r && r.error ? 'error' : 'ok');
       loadTargets();
     } catch { toast('Gagal menjadwalkan ulang.', 'error'); }
   });
   $('#btn-retry-selected').addEventListener('click', async () => {
     if (!state.targets.selected.size) return;
-    if (!state.auditId) { toast('Pilih audit dulu (di atas).', 'warning'); return; }
     try {
-      const r = await api.retryTargets(state.auditId, Array.from(state.targets.selected));
+      const ids = Array.from(state.targets.selected);
+      const r = state.auditId ? await api.retryTargets(state.auditId, ids) : await api.retryTargetsAny(ids);
       toast((r && r.error) || (r && r.message) || `Dijadwalkan ulang ${fmt(r && r.created)} postingan.`, r && r.error ? 'error' : 'ok');
       state.targets.selected.clear();
       updateRetrySelected();

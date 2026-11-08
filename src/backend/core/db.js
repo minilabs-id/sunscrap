@@ -498,6 +498,37 @@ function createDatabase(dbPath) {
     }
   }
 
+  // Ulangi yang gagal lintas SEMUA audit (untuk tombol di mode "Semua audit").
+  function retryFailedTargetsAll() {
+    const audits = all('SELECT id FROM audits ORDER BY id ASC');
+    let created = 0;
+    let skipped_permanent = 0;
+    for (const a of audits) {
+      const r = retryFailedTargets(a.id);
+      if (r && r.created) created += r.created;
+      if (r && r.skipped_permanent) skipped_permanent += r.skipped_permanent;
+    }
+    return { created, skipped_permanent, audits: audits.length, empty: created === 0 };
+  }
+
+  // Ulangi target yang dipilih, apa pun auditnya (dikelompokkan per audit).
+  function retryTargetsAny(targetIds) {
+    const ids = Array.from(new Set((targetIds || []).map(Number).filter(Number.isFinite))).slice(0, 500);
+    if (!ids.length) return { created: 0, empty: true };
+    const ph = ids.map(() => '?').join(',');
+    const rows = all(`SELECT id, audit_id FROM targets WHERE id IN (${ph})`, ...ids);
+    const byAudit = {};
+    for (const r of rows) (byAudit[r.audit_id] ||= []).push(r.id);
+    let created = 0;
+    let skipped_running = 0;
+    for (const [auditId, tids] of Object.entries(byAudit)) {
+      const r = retryTargets(Number(auditId), tids);
+      if (r && r.created) created += r.created;
+      if (r && r.skipped_running) skipped_running += r.skipped_running;
+    }
+    return { created, skipped_running, empty: created === 0 };
+  }
+
   function enqueueProfileVisits(auditId, onlyMissing = true) {
     exec('BEGIN IMMEDIATE');
     try {
@@ -1058,7 +1089,7 @@ function createDatabase(dbPath) {
   }
 
   function getTargets(params = {}) {
-    const limit = clampLimit(params.limit, 1, 200, 50);
+    const limit = clampLimit(params.limit, 1, 500, 50);
     const offRaw = Number(params.offset);
     const offset = Number.isFinite(offRaw) && offRaw > 0 ? Math.floor(offRaw) : 0;
     const base = `
@@ -1106,6 +1137,8 @@ function createDatabase(dbPath) {
     else if (issue === 'no_views') conditions.push('ls.id IS NOT NULL AND ls.views IS NULL');
     else if (issue === 'partial') conditions.push("COALESCE(lt.status, 'PENDING') = 'PARTIAL'");
     else if (issue === 'failed') conditions.push("COALESCE(lt.status, 'PENDING') = 'FAILED'");
+    else if (issue === 'no_username') conditions.push("(t.username IS NULL OR t.username = '')");
+    else if (issue === 'never_scraped') conditions.push('ls.id IS NULL');
     const where = 'WHERE ' + conditions.join(' AND ');
 
     const orderMap = {
@@ -1918,7 +1951,7 @@ const MIN_POSTS_FOR_WORST = 2;
     initSchema,
     inferErrorCode,
     // write
-    createAuditWithTasks, appendTargetsToAudit, enqueueRun, retryTargets, retryFailedTargets,
+    createAuditWithTasks, appendTargetsToAudit, enqueueRun, retryTargets, retryFailedTargets, retryFailedTargetsAll, retryTargetsAny,
     enqueueProfileVisits, enqueueProfileVisitsAll, enqueueFix, updateAudit, deleteAudit, clearAll, deleteAccount,
     getNextTask, updateTaskResult, recordAccountProfile,
     // read

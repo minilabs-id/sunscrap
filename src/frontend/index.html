@@ -227,11 +227,18 @@
           <div class="chip-row" role="group" aria-label="Filter masalah data">
             <button class="filter-chip" data-issue="no_followers" aria-pressed="false">Tanpa followers</button>
             <button class="filter-chip" data-issue="no_views" aria-pressed="false">TikTok tanpa views</button>
+            <button class="filter-chip" data-issue="no_username" aria-pressed="false">Tanpa handle</button>
+            <button class="filter-chip" data-issue="never_scraped" aria-pressed="false">Belum diproses</button>
           </div>
           <select id="target-platform" class="select" aria-label="Filter platform">
             <option value="">Semua platform</option>
             <option value="instagram">Instagram</option>
             <option value="tiktok">TikTok</option>
+          </select>
+          <select id="targets-limit" class="select" aria-label="Jumlah baris per halaman" title="Jumlah baris per halaman">
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="300">300</option>
           </select>
         </div>
 
