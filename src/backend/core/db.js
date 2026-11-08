@@ -546,6 +546,55 @@ function createDatabase(dbPath) {
     return { created, audits: audits.length, empty };
   }
 
+  // Eksekusi perbaikan untuk SATU isu kualitas data. `auditId` null = semua audit.
+  // no_followers -> kunjungan profil; never_scraped -> run baru;
+  // partial/no_views/no_username -> scrape ulang target yang tepat.
+  function enqueueFix(auditId, issue) {
+    const aid = auditId === null || auditId === undefined || auditId === '' ? null : Number(auditId);
+    if (!Number.isFinite(aid)) return { error: 'auditId tidak valid.' };
+    if (aid === null) return enqueueFixAll(issue);
+    if (!one('SELECT id FROM audits WHERE id = ?', aid)) return { error: 'Audit tidak ditemukan.' };
+
+    if (issue === 'no_followers') {
+      const r = enqueueProfileVisits(aid, true);
+      return r || { created: 0, empty: true };
+    }
+    if (issue === 'never_scraped') {
+      return enqueueRun(aid, 'manual', false);
+    }
+
+    const cond = {
+      partial: "AND ls.status = 'PARTIAL'",
+      no_views: "AND t.platform = 'tiktok' AND ls.status IS NOT NULL AND ls.views IS NULL",
+      no_username: "AND (t.username IS NULL OR t.username = '')",
+    }[issue];
+    if (!cond) return { error: 'Isu tidak dikenal.' };
+
+    const rows = all(`
+      SELECT t.id
+      FROM targets t
+      LEFT JOIN (
+        SELECT s.target_id, s.status, s.views, ROW_NUMBER() OVER (PARTITION BY s.target_id ORDER BY s.id DESC) AS rn
+        FROM snapshots s
+      ) ls ON ls.target_id = t.id AND ls.rn = 1
+      WHERE t.audit_id = ? AND t.url IS NOT NULL ${cond}
+      ORDER BY t.id ASC`, aid);
+    if (!rows.length) return { created: 0, empty: true };
+    return retryTargets(aid, rows.map((r) => r.id));
+  }
+
+  function enqueueFixAll(issue) {
+    if (issue === 'no_followers') return enqueueProfileVisitsAll();
+    const audits = all('SELECT id FROM audits ORDER BY id ASC');
+    let created = 0;
+    let empty = true;
+    for (const a of audits) {
+      const r = (issue === 'never_scraped') ? enqueueRun(a.id, 'manual', false) : enqueueFix(a.id, issue);
+      if (r && r.created) { created += r.created; empty = false; }
+    }
+    return { created, audits: audits.length, empty };
+  }
+
   function updateAudit(auditId, patch = {}) {
     if (!one('SELECT id FROM audits WHERE id = ?', auditId)) return null;
     exec('BEGIN IMMEDIATE');
@@ -1859,7 +1908,7 @@ function createDatabase(dbPath) {
     inferErrorCode,
     // write
     createAuditWithTasks, appendTargetsToAudit, enqueueRun, retryTargets, retryFailedTargets,
-    enqueueProfileVisits, enqueueProfileVisitsAll, updateAudit, deleteAudit, clearAll, deleteAccount,
+    enqueueProfileVisits, enqueueProfileVisitsAll, enqueueFix, updateAudit, deleteAudit, clearAll, deleteAccount,
     getNextTask, updateTaskResult, recordAccountProfile,
     // read
     getAudits, getAudit, getQueueStats, getDashboardStats, getTargets, getLatest, getTargetHistory, getTargetWithAudit,

@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('sunscrap', {
   retryTargets: (auditId, ids) => invoke('data:retryTargets', { auditId, ids }),
   enqueueProfileVisits: (auditId) => invoke('data:profileVisits', auditId),
   enqueueProfileVisitsAll: () => invoke('data:profileVisitsAll'),
+  fixQuality: (auditId, issue) => invoke('data:fixQuality', { auditId, issue }),
   updateAudit: (auditId, patch) => invoke('data:updateAudit', { auditId, patch }),
   deleteAudit: (auditId) => invoke('data:deleteAudit', auditId),
   clearAll: () => invoke('data:clearAll'),

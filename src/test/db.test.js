@@ -304,3 +304,23 @@ test('backupDatabase + restoreDatabase mengembalikan data', () => {
   db.close();
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('enqueueFix: no_followers -> kunjungan profil, isu tak dikenal -> error', () => {
+  const db = makeDb();
+  const auditId = db.createAuditWithTasks([t1, t2], { name: 'fix' }).audit_id;
+  const f = db.enqueueFix(auditId, 'no_followers');
+  assert.ok(f.created >= 1, 'dua akun belum punya profile -> kunjungan profil diantre');
+  const bad = db.enqueueFix(auditId, 'misterius');
+  assert.ok(bad && bad.error);
+  db.close();
+});
+
+test('enqueueFix partial -> scrape ulang target PARTIAL', () => {
+  const db = makeDb();
+  const aid = db.createAuditWithTasks([t1], { name: 'fix-partial' }).audit_id;
+  const task = db.getNextTask();
+  db.updateTaskResult(task.id, { platform: 'instagram', username: 'aku', likes: 10, comments: 0, views: null, shares: null, followerCount: 9000, status: 'PARTIAL' });
+  const r = db.enqueueFix(aid, 'partial');
+  assert.equal(r.created, 1);
+  db.close();
+});

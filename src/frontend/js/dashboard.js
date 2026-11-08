@@ -214,11 +214,11 @@ function renderPlatformCompare(summary) {
 function renderQuality(summary) {
   const q = (summary && summary.quality) || {};
   const rows = [
-    { n: q.without_followers || 0, label: 'akun tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', action: { label: 'Kunjungi & kumpulkan', act: 'profile', primary: true } },
-    { n: q.partial || 0, label: 'akun sebagian terbaca', hint: 'Metrik tidak lengkap — kemungkinan privat / age-gated', action: { label: 'Lihat', act: 'partial' } },
-    { n: q.missing_views || 0, label: 'TikTok tanpa views', hint: 'Video privat / age-gated, atau post foto', action: { label: 'Lihat', act: 'views' } },
-    { n: q.missing_username || 0, label: 'postingan tanpa handle', hint: 'Username tidak ter-parse dari URL', action: null },
-    { n: q.never_scraped || 0, label: 'akun belum pernah di-scrape', hint: 'Belum ada snapshot sama sekali', action: { label: 'Buka Proses', act: 'proses' } },
+    { n: q.without_followers || 0, label: 'akun tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', issue: 'no_followers', btn: 'Kunjungi & kumpulkan', primary: true },
+    { n: q.partial || 0, label: 'akun sebagian terbaca', hint: 'Metrik tidak lengkap — kemungkinan privat / age-gated', issue: 'partial', btn: 'Scrape ulang' },
+    { n: q.missing_views || 0, label: 'TikTok tanpa views', hint: 'Video privat / age-gated, atau post foto', issue: 'no_views', btn: 'Scrape ulang' },
+    { n: q.missing_username || 0, label: 'postingan tanpa handle', hint: 'Username tidak ter-parse dari URL', issue: 'no_username', btn: 'Scrape ulang' },
+    { n: q.never_scraped || 0, label: 'akun belum pernah di-scrape', hint: 'Belum ada snapshot sama sekali', issue: 'never_scraped', btn: 'Scrape sekarang' },
   ];
   const visible = rows.filter((r) => r.n > 0);
   if (!visible.length) {
@@ -226,7 +226,7 @@ function renderQuality(summary) {
     return;
   }
   $('#quality-list').innerHTML = visible.map((r) => `
-    <div class="check-row"><div class="min-0"><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted text-micro">${esc(r.hint)}</div></div>${r.action ? `<button class="btn ${r.action.primary ? 'btn-primary' : 'btn-ghost'} btn-sm" data-quality-action="${r.action.act}">${esc(r.action.label)}</button>` : ''}</div>`).join('');
+    <div class="check-row"><div class="min-0"><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted text-micro">${esc(r.hint)}</div></div><button class="btn ${r.primary ? 'btn-primary' : 'btn-ghost'} btn-sm" data-quality-action="fix" data-quality-issue="${r.issue}">${esc(r.btn)}</button></div>`).join('');
 }
 
 // ── Perbandingan periode (hanya tampil bila ≥ 2 periode) ───────
@@ -384,33 +384,24 @@ export function bindDashboardEvents() {
     const btn = e.target.closest('[data-quality-action]');
     if (!btn) return;
     const act = btn.dataset.qualityAction;
-    if (act === 'profile') {
+    if (act === 'fix') {
+      const issue = btn.dataset.qualityIssue;
       (async () => {
         try {
-          const r = state.auditId ? await api.enqueueProfileVisits(state.auditId) : await api.enqueueProfileVisitsAll();
-          if (!r) return toast('Gagal menjadwalkan kunjungan profil.', 'error');
+          const r = await api.fixQuality(state.auditId || null, issue);
+          if (!r) return toast('Gagal menjadwalkan perbaikan.', 'error');
           if (r.error) return toast(r.error, 'error');
           const created = r.created || 0;
-          if (!created) return toast(r.empty ? 'Tidak ada akun yang perlu dikunjungi.' : 'Kunjungan profil sudah antre.', 'ok');
-          toast(`Menjadwalkan ${fmt(created)} kunjungan profil…`, 'ok');
+          if (!created) return toast('Tidak ada tugas baru — mungkin sudah dalam antrean.', 'ok');
+          toast(`Menjadwalkan ${fmt(created)} perbaikan…`, 'ok');
           if (!(state.worker && state.worker.active)) {
             document.dispatchEvent(new CustomEvent('sunscrap:toggle-worker'));
-            toast('Worker dimulai — sedang mengumpulkan data profil.', 'ok');
+            toast('Worker dimulai — sedang mengumpulkan data.', 'ok');
           }
         } catch {
-          toast('Gagal menjadwalkan kunjungan profil.', 'error');
+          toast('Gagal menjadwalkan perbaikan.', 'error');
         }
       })();
-    } else if (act === 'views') {
-      state.targets.issue = 'no_views'; state.targets.status = ''; state.targets.offset = 0; state.targets.selected.clear();
-      state.statusFilterActive = null;
-      document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
-    } else if (act === 'partial') {
-      state.targets.issue = ''; state.targets.status = 'partial'; state.targets.offset = 0; state.targets.selected.clear();
-      state.statusFilterActive = 'partial';
-      document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
-    } else if (act === 'proses') {
-      document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'proses' }));
     }
   });
 }

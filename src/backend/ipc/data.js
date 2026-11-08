@@ -172,6 +172,12 @@ function registerDataIpc(ctx) {
     dataChanged();
     return r;
   });
+  ipcMain.handle('data:fixQuality', (event, { auditId, issue } = {}) => {
+    const r = db.enqueueFix(auditId, issue);
+    if (r && r.error) return r;
+    dataChanged();
+    return r;
+  });
   ipcMain.handle('data:updateAudit', (event, { auditId, patch } = {}) => {
     const id = num(auditId);
     if (id === null) return { error: 'auditId tidak valid.' };
