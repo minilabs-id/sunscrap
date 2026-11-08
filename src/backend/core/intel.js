@@ -265,6 +265,8 @@ function findAccountLinks(accounts, postsByAccount) {
   for (const [pair, hits] of Object.entries(pairHits)) {
     if (hits < MIN_SHARED_CAPTION_TOKENS) continue;
     const [first, second] = pair.split('|');
+    // Caption identik sudah tercakup alasan 'template' yang lebih kuat — jangan didobel.
+    if (links[first] && links[first][second] && links[first][second].has('template')) continue;
     ((links[first] ||= {})[second] ||= new Set()).add('caption_mirip');
     ((links[second] ||= {})[first] ||= new Set()).add('caption_mirip');
   }
@@ -467,7 +469,8 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
   // belum sempat dihitung (data unggahan kurang) diberi catatan — bukan vonis, supaya
   // tidak disalahartikan sebagai "bebas risiko".
   const dataComplete = followers !== null && reach !== null && posts.length >= MIN_POSTS_FOR_RATIO;
-  if (flags.length === 0 && inBand && !dataComplete) {
+  const unassessable = inBand && !dataComplete && flags.length === 0;
+  if (unassessable) {
     flag('data_tidak_lengkap', 'Belum bisa dinilai',
       `Baru ${posts.length} unggahan terbaca — sinyal jangkauan/komentar belum dapat dihitung`, 0);
   }
@@ -497,7 +500,7 @@ function analyseAccount(account, posts, historyRows, links, appearance = {}) {
     data_age_minutes: age,
     needs_refresh: age === null || age > (7 * 24 * 60),
     in_ternak_band: inBand,
-    data_incomplete: !dataComplete,
+    unassessable,
     audits_seen: appearance.audits_seen || 0,
     targets_seen: appearance.targets_seen || 0,
     last_verified_at: appearance.last_verified_at || null,

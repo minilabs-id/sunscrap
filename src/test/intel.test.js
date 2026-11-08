@@ -187,7 +187,7 @@ test('akun di band ternak tanpa data unggahan diberi catatan data_tidak_lengkap 
   assert.ok(r.flags.some((f) => f.key === 'data_tidak_lengkap'));
   assert.equal(r.score, 0);
   assert.equal(r.level, 'bersih');
-  assert.equal(r.data_incomplete, true);
+  assert.equal(r.unassessable, true);
 });
 
 test('akun di band ternak yang datanya lengkap tidak dicap data_tidak_lengkap', () => {
@@ -199,5 +199,17 @@ test('akun di band ternak yang datanya lengkap tidak dicap data_tidak_lengkap', 
   ];
   const r = intel.analyseAccount(a, posts, [], {});
   assert.ok(!r.flags.some((f) => f.key === 'data_tidak_lengkap'));
-  assert.equal(r.data_incomplete, false);
+  assert.equal(r.unassessable, false);
+});
+
+test('caption identik hanya memicu template, bukan caption_mirip (anti dobel)', () => {
+  const a1 = account('t1', 10000);
+  const a2 = account('t2', 10000);
+  const cap = 'Promo besar untuk member setia kami, cek sekarang juga ya semuanya';
+  const posts1 = [{ post_ref: 'a', posted_at: t0, likes: 100, comments: 10, views: null, caption: cap }];
+  const posts2 = [{ post_ref: 'b', posted_at: t1, likes: 100, comments: 10, views: null, caption: cap }];
+  const links = intel.findAccountLinks([a1, a2], { 'instagram:t1': posts1, 'instagram:t2': posts2 });
+  const edges = links['instagram:t1'] || {};
+  assert.ok(edges['instagram:t2'] && edges['instagram:t2'].has('template'));
+  assert.ok(!(edges['instagram:t2'] && edges['instagram:t2'].has('caption_mirip')));
 });

@@ -1457,7 +1457,7 @@ function createDatabase(dbPath) {
       if (params.band === 'kecil' && !(item.followers !== null && item.followers < intel.TERNAK_BAND_MIN)) return false;
       if (params.band === 'besar' && !(item.followers !== null && item.followers > intel.TERNAK_BAND_MAX)) return false;
       if (params.level && item.level !== params.level) return false;
-      if (params.incomplete && !item.data_incomplete) return false;
+      if (params.incomplete && !item.unassessable) return false;
       if (params.stale && !item.needs_refresh) return false;
       if (params.q) {
         const needle = String(params.q).trim().toLowerCase();
@@ -1517,7 +1517,7 @@ function createDatabase(dbPath) {
         shown: total,
         flagged: items.filter((i) => i.score >= intel.RISK_FLOORS.amati).length,
         in_band: items.filter((i) => i.in_ternak_band).length,
-        incomplete: items.filter((i) => i.data_incomplete).length,
+        incomplete: items.filter((i) => i.unassessable).length,
         needs_refresh: items.filter((i) => i.needs_refresh).length,
         clusters: clusters.length,
         levels,
