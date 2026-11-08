@@ -1193,11 +1193,13 @@ function createDatabase(dbPath) {
       )
       SELECT t.id AS target_id, t.audit_id, a.name AS audit_name, t.platform, t.username, t.tema, t.url,
         COALESCE(lt.status, 'PENDING') AS status, lt.error_code,
-        ls.likes, ls.comments, ls.views, ls.shares, ls.follower_count, ls.scraped_at
+        ls.likes, ls.comments, ls.views, ls.shares,
+        COALESCE(ls.follower_count, acct.follower_count) AS follower_count, ls.scraped_at
       FROM targets t
       JOIN audits a ON a.id = t.audit_id
       LEFT JOIN latest_tasks lt ON lt.target_id = t.id AND lt.rn = 1
       LEFT JOIN latest_snapshots ls ON ls.target_id = t.id AND ls.rn = 1
+      LEFT JOIN accounts acct ON acct.platform = t.platform AND acct.username = t.username
       ${where}`, ...params);
 
     const statusCounts = { PENDING: 0, RUNNING: 0, OK: 0, PARTIAL: 0, FAILED: 0 };
@@ -1349,9 +1351,12 @@ function createDatabase(dbPath) {
     const ph = periods.map(() => '?').join(',');
     const rows = all(`
       WITH latest AS (SELECT s.*, ROW_NUMBER() OVER (PARTITION BY s.target_id ORDER BY s.id DESC) AS rn FROM snapshots s)
-      SELECT a.period AS period, t.platform, t.username, t.url, ls.likes, ls.comments, ls.views, ls.shares, ls.follower_count
+      SELECT a.period AS period, t.platform, t.username, t.url, ls.likes, ls.comments, ls.views, ls.shares,
+        COALESCE(ls.follower_count, acct.follower_count) AS follower_count
       FROM targets t JOIN audits a ON a.id = t.audit_id
-      LEFT JOIN latest ls ON ls.target_id = t.id AND ls.rn = 1 WHERE a.period IN (${ph})`, ...periods);
+      LEFT JOIN latest ls ON ls.target_id = t.id AND ls.rn = 1
+      LEFT JOIN accounts acct ON acct.platform = t.platform AND acct.username = t.username
+      WHERE a.period IN (${ph})`, ...periods);
     const history = Object.fromEntries(all(`
       SELECT platform, username, month, follower_count, post_count FROM account_history WHERE month IN (${ph})`, ...periods)
       .map((r) => [`${r.platform}|${r.username}|${r.month}`, r]));
