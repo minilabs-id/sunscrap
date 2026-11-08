@@ -336,20 +336,18 @@
         <header class="page-head">
           <div>
             <h1>Proses</h1>
-            <div class="page-sub">Antrean dan aktivitas terbaru</div>
+            <div class="page-sub">Pantau worker &amp; aktivitas terbaru</div>
           </div>
         </header>
-        <div class="card mb-4" aria-label="Antrean">
-          <div class="card-hd"><div><div class="card-title">Antrean</div><div class="card-sub" id="queue-eta">Memuat…</div></div></div>
-          <div class="queue-bar" id="queue-bar" role="img" aria-label="Komposisi antrean"></div>
-          <div class="queue-legend" id="queue-legend"></div>
-          <div class="queue-stats" id="queue-stats"></div>
+        <div class="proses-live" aria-live="polite">
+          <span class="dot" id="proses-dot"></span>
+          <div class="proses-live-text" id="proses-live-text">Memuat…</div>
         </div>
-        <div class="card mb-4" aria-label="Aktivitas terbaru">
-          <div class="card-hd"><div><div class="card-title">Aktivitas terbaru</div><div class="card-sub">Delta vs kunjungan sebelumnya</div></div></div>
+        <div class="card mt-4" aria-label="Aktivitas terbaru">
+          <div class="card-hd"><div><div class="card-title">Aktivitas terbaru</div><div class="card-sub">Feed live · delta vs kunjungan sebelumnya</div></div></div>
           <div class="table-wrap flush"><table class="table" id="latest-table"></table></div>
         </div>
-        <details class="card tech-details" aria-label="Detail teknis worker">
+        <details class="card tech-details mt-4" aria-label="Detail teknis worker">
           <summary><span>Detail teknis</span><span class="muted" id="tech-summary">—</span><span class="tech-chev" aria-hidden="true">▾</span></summary>
           <div class="pace-budget">
             <div class="pace-row"><span class="muted">Jeda antar kunjungan</span><b id="pace-num">—</b></div>

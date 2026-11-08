@@ -10,7 +10,7 @@ export async function loadProcess() {
       api.workerStatus().catch(() => null),
       api.getLatest({ limit: 20 }).catch(() => []),
     ]);
-    renderQueue(queue, w);
+    renderLive(queue, w);
     renderLatest(latest);
     renderPace(w);
   } catch (e) {
@@ -19,42 +19,31 @@ export async function loadProcess() {
   }
 }
 
-function renderQueue(queue, w) {
-  const pending = queue.pending || 0, running = queue.running || 0, ok = queue.ok || 0, partial = queue.partial || 0, failed = queue.failed || 0;
-  const total = Math.max(pending + running + ok + partial + failed, 1);
-  const W = (v) => (v / total * 100).toFixed(2) + '%';
+function renderLive(queue, w) {
+  const dot = $('#proses-dot');
+  const text = $('#proses-live-text');
+  if (!text) return;
+  const active = !!w && !!w.active;
+  const errored = !!w && !active && !!w.lastError;
+  const r = (w && w.rate) || {};
+  const pending = queue.pending || 0, ok = queue.ok || 0, partial = queue.partial || 0, failed = queue.failed || 0;
 
-  const bar = $('#queue-bar');
-  if (bar) {
-    bar.innerHTML = `
-      <span class="q-seg ok" style="width:${W(ok)}" title="OK ${fmt(ok)}">${ok ? `OK ${fmt(ok)}` : ''}</span>
-      <span class="q-seg part" style="width:${W(partial)}" title="Sebagian ${fmt(partial)}">${partial ? fmt(partial) : ''}</span>
-      <span class="q-seg fail" style="width:${W(failed)}" title="Gagal ${fmt(failed)}">${failed ? fmt(failed) : ''}</span>
-      <span class="q-seg wait" style="width:${W(pending)}" title="Menunggu ${fmt(pending)}">${pending ? fmt(pending) : ''}</span>`;
-    bar.setAttribute('aria-label', `Antrean: OK ${ok} · sebagian ${partial} · gagal ${failed} · menunggu ${pending}`);
-  }
-  const legend = $('#queue-legend');
-  if (legend) {
-    legend.innerHTML =
-      `<span><i class="seg-ok"></i>OK — ${fmt(ok)}</span>` +
-      `<span><i class="seg-warn"></i>Sebagian — ${fmt(partial)}</span>` +
-      `<span><i class="seg-err"></i>Gagal — ${fmt(failed)}</span>` +
-      `<span><i class="seg-idle"></i>Menunggu — ${fmt(pending)}</span>`;
-  }
-  const stats = $('#queue-stats');
-  if (stats) {
-    stats.innerHTML = [
-      { label: 'Menunggu', v: pending },
-      { label: 'Berjalan', v: running },
-      { label: 'Selesai', v: ok + partial },
-      { label: 'Gagal', v: failed },
-    ].map((x) => `<div class="queue-stat"><b>${fmt(x.v)}</b><span>${esc(x.label)}</span></div>`).join('');
-  }
-  const etaEl = $('#queue-eta');
-  if (etaEl) {
-    const eta = pending + running;
-    const r = w && w.rate;
-    etaEl.textContent = eta > 0 ? `${fmt(eta)} task tersisa · pace ${(r && r.paceLabel) || '—'}${w && w.eta ? ` · sisa ±${w.eta}` : ''}` : 'Antrean kosong';
+  if (dot) dot.className = 'dot' + (active ? ' active' : errored ? ' error' : '');
+
+  const qsum = `<span class="muted">antrean</span>&nbsp; <b>${fmt(ok)}</b> OK · <b>${fmt(partial)}</b> sebagian · <b>${fmt(failed)}</b> gagal · <b>${fmt(pending)}</b> menunggu`;
+
+  if (active) {
+    const eta = w.eta || null;
+    const plats = w.platforms || {};
+    const paused = [
+      plats.instagram && plats.instagram.paused ? 'IG' : null,
+      plats.tiktok && plats.tiktok.paused ? 'TK' : null,
+    ].filter(Boolean).join(' & ');
+    text.innerHTML = `<b>${w.busy ? 'Sedang memproses' : 'Menunggu antrean'}</b> · jeda ${r.paceLabel || '—'} · siklus ${fmt(r.cycleVisits)}/${fmt(r.visitBudget)}${eta ? ` · sisa ±${eta}` : ''}${paused ? ` · ⏸ ${paused} dijeda` : ''} &nbsp;—&nbsp; ${qsum}`;
+  } else if (errored) {
+    text.innerHTML = `<b>Terhenti</b> — ${esc(w.lastError)} &nbsp;·&nbsp; ${qsum}`;
+  } else {
+    text.innerHTML = `<b>Siaga</b> — klik <b>Mulai worker</b> di sidebar &nbsp;·&nbsp; ${qsum}`;
   }
 }
 
