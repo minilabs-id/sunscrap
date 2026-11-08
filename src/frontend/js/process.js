@@ -1,80 +1,21 @@
-/** sunscrap v2 — Proses (status + antrean + aktivitas + detail teknis). */
+/** sunscrap v2 — Proses (antrean + aktivitas + detail teknis). */
 import { $ } from './dom.js';
 import { api, esc, fmt, fmtWhen, deltaBadge } from './helpers.js';
 import { statusBadge } from './targets.js';
 
-const ERR_LABEL = { AUTH: 'Login', THROTTLED: 'Dibatasi', PERMANENT: 'Permanen', TRANSIENT: 'Sementara' };
-
-function pausedPlatforms(w) {
-  const p = w && w.platforms || {};
-  return [
-    p.instagram && p.instagram.paused ? 'Instagram' : null,
-    p.tiktok && p.tiktok.paused ? 'TikTok' : null,
-  ].filter(Boolean).join(' & ');
-}
-
 export async function loadProcess() {
   try {
-    const [queue, w, latest, activity] = await Promise.all([
+    const [queue, w, latest] = await Promise.all([
       api.getQueueStats().catch(() => ({ pending: 0, running: 0, ok: 0, partial: 0, failed: 0 })),
       api.workerStatus().catch(() => null),
       api.getLatest({ limit: 20 }).catch(() => []),
-      api.workerActivity(50).catch(() => []),
     ]);
-    renderStatusBanner(w, activity);
     renderQueue(queue, w);
     renderLatest(latest);
     renderPace(w);
   } catch (e) {
     console.error('loadProcess gagal:', e);
     const eta = $('#queue-eta'); if (eta) eta.textContent = 'Gagal memuat antrean.';
-  }
-}
-
-/** Satu baris status worker yang tegas + sukses-rate + daftar kegagalan kecil. */
-function renderStatusBanner(w, activity) {
-  if (!w) return;
-  const active = !!w.active;
-  const errored = !active && !!w.lastError;
-  const dot = $('#proses-dot');
-  const label = $('#proses-status-label');
-  const sub = $('#proses-status-sub');
-  const toggle = $('#proses-worker-toggle');
-
-  if (dot) dot.className = 'dot' + (active ? ' active' : errored ? ' error' : '');
-  if (label) label.textContent = active ? 'Worker aktif' : (errored ? 'Worker terhenti' : 'Worker siaga');
-  if (toggle) {
-    toggle.textContent = active ? 'Hentikan worker' : 'Mulai worker';
-    toggle.classList.toggle('btn-primary', !active);
-    toggle.classList.toggle('btn-danger', active);
-  }
-
-  const r = w.rate || {};
-  const ok = activity.filter((e) => e.type === 'task' && e.status === 'OK').length;
-  const rate = activity.filter((e) => e.type === 'task').length ? Math.round((ok / activity.filter((e) => e.type === 'task').length) * 100) : null;
-
-  let subTxt;
-  if (active) {
-    const eta = w.eta || null;
-    const paused = pausedPlatforms(w);
-    subTxt = `${w.busy ? 'Sedang memproses' : 'Menunggu antrean'} · jeda ${r.paceLabel || '—'} · siklus ${fmt(r.cycleVisits)}/${fmt(r.visitBudget)}${rate !== null ? ` · ${rate}% sukses` : ''}${eta ? ` · sisa ±${eta}` : ''}${paused ? ` · ⏸ ${paused} dijeda` : ''}`;
-  } else if (errored) {
-    subTxt = w.lastError;
-  } else {
-    subTxt = 'Belum berjalan — klik "Mulai worker" untuk memulai scraping.';
-  }
-  if (sub) sub.textContent = subTxt;
-
-  // Daftar kegagalan terkini (hanya muncul bila ada).
-  const failed = activity.filter((e) => e.type === 'task' && e.status === 'FAILED');
-  const line = $('#worker-health-line');
-  if (line) {
-    if (!failed.length) { line.hidden = true; line.innerHTML = ''; return; }
-    const codes = {};
-    failed.forEach((e) => { const c = e.errorCode || 'UNKNOWN'; codes[c] = (codes[c] || 0) + 1; });
-    const top = Object.entries(codes).sort((a, b) => b[1] - a[1]).slice(0, 5);
-    line.hidden = false;
-    line.innerHTML = `<span class="muted">Kegagalan:</span> ${top.map(([c, n]) => `<span class="pill warn">${esc(ERR_LABEL[c] || c)} ${fmt(n)}</span>`).join(' ')}`;
   }
 }
 
