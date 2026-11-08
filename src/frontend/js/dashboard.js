@@ -213,17 +213,21 @@ function renderPlatformCompare(summary) {
 // ── Kualitas data (setiap baris = aksi) ────────────────────────
 function renderQuality(summary) {
   const q = (summary && summary.quality) || {};
-  const k = (summary && summary.kpi) || {};
   const auditId = state.auditId;
   const rows = [
-    { n: q.without_followers || 0, label: 'postingan tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', action: auditId ? { label: 'Kunjungi profil', act: 'profile', primary: true } : null },
-    { n: q.missing_views || 0, label: 'video TikTok tanpa views', hint: 'Kemungkinan privat / age-gated', action: { label: 'Lihat', act: 'views' } },
-    { n: k.failed || 0, label: 'postingan gagal', hint: 'Didominasi throttle — coba ulang setelah jeda', action: auditId ? { label: 'Ulangi yang gagal', act: 'retry', primary: true } : null },
+    { n: q.without_followers || 0, label: 'akun tanpa data followers', hint: 'Kunjungi profil untuk mengisi profil & follower', action: auditId ? { label: 'Kunjungi profil', act: 'profile', primary: true } : null },
+    { n: q.partial || 0, label: 'akun sebagian terbaca', hint: 'Metrik tidak lengkap — kemungkinan privat / age-gated', action: { label: 'Lihat', act: 'partial' } },
+    { n: q.missing_views || 0, label: 'TikTok tanpa views', hint: 'Video privat / age-gated, atau post foto', action: { label: 'Lihat', act: 'views' } },
     { n: q.missing_username || 0, label: 'postingan tanpa handle', hint: 'Username tidak ter-parse dari URL', action: null },
-    { n: q.never_scraped || 0, label: 'postingan belum diproses', hint: 'Menunggu giliran worker', action: { label: 'Buka Proses', act: 'proses' } },
+    { n: q.never_scraped || 0, label: 'akun belum pernah di-scrape', hint: 'Belum ada snapshot sama sekali', action: { label: 'Buka Proses', act: 'proses' } },
   ];
-  $('#quality-list').innerHTML = rows.map((r) => `
-    <div class="check-row"><div><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted text-micro">${esc(r.hint)}</div></div>${r.action ? `<button class="btn ${r.action.primary ? 'btn-primary' : 'btn-ghost'} btn-sm" data-quality-action="${r.action.act}">${esc(r.action.label)}</button>` : '<span class="muted">—</span>'}</div>`).join('');
+  const visible = rows.filter((r) => r.n > 0);
+  if (!visible.length) {
+    $('#quality-list').innerHTML = emptyState('Semua sehat', 'Tidak ada masalah kualitas data yang terdeteksi.');
+    return;
+  }
+  $('#quality-list').innerHTML = visible.map((r) => `
+    <div class="check-row"><div class="min-0"><strong>${fmt(r.n)} ${esc(r.label)}</strong><div class="muted text-micro">${esc(r.hint)}</div></div>${r.action ? `<button class="btn ${r.action.primary ? 'btn-primary' : 'btn-ghost'} btn-sm" data-quality-action="${r.action.act}">${esc(r.action.label)}</button>` : ''}</div>`).join('');
 }
 
 // ── Perbandingan periode (hanya tampil bila ≥ 2 periode) ───────
@@ -391,9 +395,10 @@ export function bindDashboardEvents() {
       state.targets.issue = 'no_views'; state.targets.status = ''; state.targets.offset = 0; state.targets.selected.clear();
       state.statusFilterActive = null;
       document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
-    } else if (act === 'retry') {
-      if (!state.auditId) return;
-      api.retryFailed(state.auditId).then((r) => toast((r && r.error) || `Dijadwalkan ulang ${fmt(r && r.created)} gagal.`, r && r.error ? 'error' : 'ok')).catch(() => toast('Gagal menjadwalkan ulang.', 'error'));
+    } else if (act === 'partial') {
+      state.targets.issue = ''; state.targets.status = 'partial'; state.targets.offset = 0; state.targets.selected.clear();
+      state.statusFilterActive = 'partial';
+      document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'targets' }));
     } else if (act === 'proses') {
       document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'proses' }));
     }
