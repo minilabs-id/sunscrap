@@ -22,9 +22,21 @@ export function renderWorker() {
   }
   const r = w.rate || {};
 
-  // Statusbar
+  // Statusbar — ringkas tapi informatif
   const sb = $('#sb-worker');
-  if (sb) sb.innerHTML = `<span class="sb-dot ${active ? 'ok' : errored ? 'err' : ''}"></span>${active ? 'Aktif' : errored ? 'Terhenti' : 'Siaga'}`;
+  if (sb) {
+    const plats = w.platforms || {};
+    const paused = [
+      plats.instagram && plats.instagram.paused ? 'IG' : null,
+      plats.tiktok && plats.tiktok.paused ? 'TK' : null,
+    ].filter(Boolean);
+    const label = active ? (w.busy ? 'Memproses' : 'Menunggu') : (errored ? 'Terhenti' : 'Siaga');
+    const progress = active && r.visitBudget ? `${r.cycleVisits || 0}/${r.visitBudget}` : '';
+    const pauseNote = paused.length ? ` · ⏸ ${paused.join('')}` : '';
+    sb.innerHTML = `<span class="sb-dot ${active ? 'ok' : errored ? 'err' : ''}"></span>${label}${progress ? ' ' + progress : ''}${pauseNote}`;
+    if (errored && w.lastError) sb.title = w.lastError;
+    else sb.title = '';
+  }
   const sbPace = $('#sb-pace');
   if (sbPace) sbPace.textContent = `Pace ${(r && r.paceLabel) || '—'}`;
 

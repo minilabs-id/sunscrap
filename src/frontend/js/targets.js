@@ -133,6 +133,18 @@ function closeColumnsPop() {
   if (btn) btn.setAttribute('aria-expanded', 'false');
 }
 
+// Sidik-jari data yang memengaruhi render tabel: bila sama, JANGAN render ulang (anti flicker).
+function targetsSignature(res) {
+  const q = $('#target-q');
+  const p = $('#target-platform');
+  return JSON.stringify([
+    state.auditId, q && q.value, p && p.value,
+    state.targets.sort, state.targets.dir, state.targets.limit, state.targets.offset,
+    state.targets.status, state.targets.issue, res.total, res.total_all,
+    (res.items || []).map((r) => [r.target_id, r.status, r.snapshot_at, r.likes, r.views, r.comments, r.follower_count, r.delta_likes, r.delta_views, r.engagement_rate, r.username, r.tema]),
+  ]);
+}
+
 export async function loadTargets() {
   const params = {
     auditId: state.auditId || undefined,
@@ -151,11 +163,15 @@ export async function loadTargets() {
   } catch {
     toast('Gagal memuat postingan.', 'error');
   }
+  // Async: data diambil lewat IPC (non-blocking). Render hanya bila benar-benar berubah.
+  const sig = targetsSignature(res);
   state.targets.items = res.items || [];
   state.targets.total = res.total || 0;
+  state.targets.total_all = res.total_all != null ? res.total_all : res.total;
+  if (sig === state.targets.sig) { updateFilterUi(); return; }
+  state.targets.sig = sig;
   const filtered = hasActiveFilter();
-  const totalAll = res.total_all != null ? res.total_all : res.total;
-  $('#targets-total').textContent = filtered ? `${fmt(res.total)} dari ${fmt(totalAll)} postingan` : `${fmt(res.total)} postingan`;
+  $('#targets-total').textContent = filtered ? `${fmt(res.total)} dari ${fmt(state.targets.total_all)} postingan` : `${fmt(res.total)} postingan`;
   setNavTargetCount(res.total);
   $('#targets-page').textContent = pageLabel(state.targets.offset, state.targets.limit, res.total);
   renderTargetsTable(state.targets.items);
@@ -199,7 +215,7 @@ export function updateRetrySelected() {
   if (!btn) return;
   const n = state.targets.selected.size;
   btn.disabled = n === 0;
-  btn.textContent = n ? `Ulangi terpilih (${n})` : 'Ulangi terpilih';
+  btn.textContent = n ? `Scrape ulang terpilih (${n})` : 'Scrape ulang terpilih';
   const sel = $('#targets-selected');
   if (sel) {
     sel.hidden = n === 0;

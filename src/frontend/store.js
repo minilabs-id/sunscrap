@@ -14,7 +14,7 @@
       summary: null,
       timeseries: null,
       timeseriesKey: null,
-      targets: { items: [], total: 0, limit: 50, offset: 0, selected: new Set(), status: '', issue: '', sort: 'recent', dir: 'desc' },
+      targets: { items: [], total: 0, total_all: 0, limit: 50, offset: 0, selected: new Set(), status: '', issue: '', sort: 'recent', dir: 'desc', sig: null },
       accounts: { items: [], total: 0, limit: 50, offset: 0, reviewOnly: false, incompleteOnly: false, staleOnly: false },
       accountsSummary: null,
       temaSort: 'views', // konsisten: dibaca/ditulis sebagai `temaSort` di seluruh app.js
