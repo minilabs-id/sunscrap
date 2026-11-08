@@ -61,7 +61,7 @@ function renderWorst(summary) {
   const row = (p, i) => `
     <div class="leader-row${i < 3 ? ' is-top' : ''}">
       <span class="rank">${i + 1}</span>
-      <span class="leader-main"><b>@${esc(p.handle || p.username || '—')}</b><span class="muted"> · ${fmtCompact(p.followers || 0)} followers · ${fmt(p.posts || 0)} post</span></span>
+      <span class="leader-main"><b>@${esc(p.handle || p.username || '—')}</b><span class="muted"> · ${fmtCompact(p.followers || 0)} followers · ${fmt(p.er_rows || 0)} post diukur</span></span>
       <span class="leader-num"><b>${p.median_er !== null && p.median_er !== undefined ? fmtPct(p.median_er) : '—'}</b><span class="muted">ER</span></span>
     </div>`;
   $('#worst-ig').innerHTML = ig.length ? ig.map(row).join('') : emptyState('Belum ada data Instagram', 'Import data, lalu jalankan worker.');

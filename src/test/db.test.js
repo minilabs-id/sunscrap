@@ -325,20 +325,23 @@ test('enqueueFix partial -> scrape ulang target PARTIAL', () => {
   db.close();
 });
 
-test('getSummary worst_instagram urut median ER terendah', () => {
+test('getSummary worst_instagram urut median ER terendah (butuh >=2 post terukur)', () => {
   const db = makeDb();
   db.createAuditWithTasks([
     { url: 'https://www.instagram.com/aaa/p/A1/', platform: 'instagram', username: 'aaa', tema: null },
+    { url: 'https://www.instagram.com/aaa/p/A2/', platform: 'instagram', username: 'aaa', tema: null },
+    { url: 'https://www.instagram.com/bbb/p/B1/', platform: 'instagram', username: 'bbb', tema: null },
     { url: 'https://www.instagram.com/bbb/p/B2/', platform: 'instagram', username: 'bbb', tema: null },
   ], { name: 'worst' });
-  let task = db.getNextTask();
-  db.updateTaskResult(task.id, { platform: 'instagram', username: task.username, likes: task.username === 'aaa' ? 50 : 800, comments: 0, views: null, shares: null, followerCount: 10000, status: 'OK' });
-  task = db.getNextTask();
-  db.updateTaskResult(task.id, { platform: 'instagram', username: task.username, likes: task.username === 'aaa' ? 50 : 800, comments: 0, views: null, shares: null, followerCount: 10000, status: 'OK' });
+  for (let i = 0; i < 4; i++) {
+    const task = db.getNextTask();
+    db.updateTaskResult(task.id, { platform: 'instagram', username: task.username, likes: task.username === 'aaa' ? 50 : 800, comments: 0, views: null, shares: null, followerCount: 10000, status: 'OK' });
+  }
 
   const worst = db.getSummary(null).worst_instagram;
   assert.ok(worst.length >= 2);
   assert.equal(worst[0].username, 'aaa', 'ER 0.5% lebih buruk dari 8%');
+  assert.equal(worst[0].er_rows, 2, '2 post terukur');
   assert.ok(worst[0].median_er < worst[1].median_er);
   db.close();
 });

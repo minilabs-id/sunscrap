@@ -1375,9 +1375,11 @@ function createDatabase(dbPath) {
     const scraped = platforms.reduce((s, p) => s + p.scraped, 0);
     const verified = statusCounts.OK + statusCounts.PARTIAL;
 
-    // Akun dengan performa TERBURUK per platform — median ER terendah (punya followers & ER).
+    // Akun dengan performa TERBURUK per platform — median ER terendah.
+// Butuh minimal 2 post terukur supaya mediannya nyata (bukan satu titik data).
+const MIN_POSTS_FOR_WORST = 2;
     const worstBy = (platform) => accounts
-      .filter((a) => a.platform === platform && a.median_er !== null && a.followers)
+      .filter((a) => a.platform === platform && a.median_er !== null && a.followers && a.er_rows >= MIN_POSTS_FOR_WORST)
       .sort((a, b) => a.median_er - b.median_er)
       .slice(0, 6);
     const worstIg = worstBy('instagram');
