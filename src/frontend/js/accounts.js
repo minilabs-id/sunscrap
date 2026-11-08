@@ -80,6 +80,8 @@ export async function loadAccounts() {
     level: $('#account-level').value || undefined,
     band: $('#account-band').value || undefined,
     platform: $('#account-platform').value || undefined,
+    incomplete: state.accounts.incompleteOnly ? true : undefined,
+    stale: state.accounts.staleOnly ? true : undefined,
     sort: 'risk',
     limit: state.accounts.limit,
     offset: state.accounts.offset,
@@ -89,7 +91,12 @@ export async function loadAccounts() {
   state.accounts.items = res.items || [];
   state.accounts.total = res.total || 0;
   state.accountsSummary = res.summary || {};
-  $('#accounts-total').textContent = `${fmt(res.total)} akun · ${fmt((res.summary || {}).flagged)} terindikasi · ${fmt((res.summary || {}).clusters)} klaster${(res.summary || {}).incomplete ? ` · ${fmt(res.summary.incomplete)} belum bisa dinilai` : ''}`;
+  const sm = res.summary || {};
+  const tail = [
+    sm.incomplete ? `${fmt(sm.incomplete)} belum bisa dinilai` : '',
+    sm.needs_refresh ? `${fmt(sm.needs_refresh)} data basi` : '',
+  ].filter(Boolean).join(' · ');
+  $('#accounts-total').textContent = `${fmt(res.total)} akun · ${fmt(sm.flagged)} terindikasi · ${fmt(sm.clusters)} klaster${tail ? ` · ${tail}` : ''}`;
   $('#accounts-page').textContent = pageLabel(state.accounts.offset, state.accounts.limit, res.total);
   renderAccountsTable(state.accounts.items);
 }
@@ -107,9 +114,18 @@ export function setReviewOnly(on) {
   state.accounts.reviewOnly = !!on;
   const chip = $('#account-review-only');
   if (chip) chip.setAttribute('aria-pressed', String(state.accounts.reviewOnly));
-  ['#account-q', '#account-level', '#account-band', '#account-platform'].forEach((s) => {
+  ['#account-q', '#account-level', '#account-band', '#account-platform', '#account-incomplete-only', '#account-stale-only'].forEach((s) => {
     const el = $(s); if (el) el.disabled = state.accounts.reviewOnly;
   });
+  state.accounts.offset = 0;
+  loadAccounts();
+}
+
+/** Toggle filter chip boolean (belum bisa dinilai / data basi). */
+function toggleFlag(flag, sel) {
+  state.accounts[flag] = !state.accounts[flag];
+  const chip = $(sel);
+  if (chip) chip.setAttribute('aria-pressed', String(state.accounts[flag]));
   state.accounts.offset = 0;
   loadAccounts();
 }
@@ -119,6 +135,8 @@ export function bindAccountEvents() {
   $('#account-q').addEventListener('input', debounce(resetAccounts, 300));
   ['#account-level', '#account-band', '#account-platform'].forEach((s) => $(s).addEventListener('change', resetAccounts));
   $('#account-review-only').addEventListener('click', () => setReviewOnly(!state.accounts.reviewOnly));
+  $('#account-incomplete-only').addEventListener('click', () => toggleFlag('incompleteOnly', '#account-incomplete-only'));
+  $('#account-stale-only').addEventListener('click', () => toggleFlag('staleOnly', '#account-stale-only'));
   $('#accounts-prev').addEventListener('click', () => { if (state.accounts.reviewOnly) return; state.accounts.offset = prevOffset(state.accounts.offset, state.accounts.limit); loadAccounts(); });
   $('#accounts-next').addEventListener('click', () => { if (state.accounts.reviewOnly) return; state.accounts.offset = nextOffset(state.accounts.offset, state.accounts.limit, state.accounts.total); loadAccounts(); });
   $('#score-help-btn').addEventListener('click', showScoreHelp);
