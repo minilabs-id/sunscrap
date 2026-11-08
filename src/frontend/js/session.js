@@ -76,3 +76,12 @@ export function bindSessionEvents() {
   $('#browser-ig').addEventListener('click', () => { ensureBrowser(); wv.loadURL('https://www.instagram.com/'); });
   $('#browser-tk').addEventListener('click', () => { ensureBrowser(); wv.loadURL('https://www.tiktok.com/'); });
 }
+
+// Buka akun/postingan di browser sesi (dari kartu Ringkasan) lalu pindah ke tab Sesi.
+document.addEventListener('sunscrap:open-browser', (e) => {
+  const url = e.detail && e.detail.url;
+  if (!url) return;
+  document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: 'browser' }));
+  ensureBrowser();
+  browserNavigate(url);
+});

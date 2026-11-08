@@ -58,8 +58,14 @@ function renderKpis(summary, ts) {
 function renderWorst(summary) {
   const ig = (summary && summary.worst_instagram) || [];
   const tk = (summary && summary.worst_tiktok) || [];
+  const profileUrl = (p) => {
+    const handle = String(p.username || p.handle || '').replace(/^@/, '');
+    return p.platform === 'instagram'
+      ? `https://www.instagram.com/${encodeURIComponent(handle)}/`
+      : `https://www.tiktok.com/@${encodeURIComponent(handle)}`;
+  };
   const row = (p, i) => `
-    <div class="leader-row${i < 3 ? ' is-top' : ''}">
+    <div class="leader-row${i < 3 ? ' is-top' : ''} clickable" role="button" tabindex="0" data-open-url="${esc(profileUrl(p))}" aria-label="Buka profil @${esc(p.handle || p.username || '')}">
       <span class="rank">${i + 1}</span>
       <span class="leader-main"><b>@${esc(p.handle || p.username || '—')}</b><span class="muted"> · ${fmtCompact(p.followers || 0)} followers · ${fmt(p.er_rows || 0)} post diukur</span></span>
       <span class="leader-num"><b>${p.median_er !== null && p.median_er !== undefined ? fmtPct(p.median_er) : '—'}</b><span class="muted">ER</span></span>
@@ -78,7 +84,7 @@ function renderTopPosts(summary) {
     const value = showViews ? (p.views ?? 0) : (p.likes ?? 0);
     const unit = showViews ? 'views' : 'likes';
     return `
-    <div class="leader-row${i < 3 ? ' is-top' : ''}">
+    <div class="leader-row${i < 3 ? ' is-top' : ''} clickable" role="button" tabindex="0" data-open-url="${esc(p.url || '')}" aria-label="Buka postingan ${esc(p.handle || '')}">
       <span class="rank">${i + 1}</span>
       <span class="leader-main"><b>${esc(p.handle || '—')}</b>${p.scraped_at ? `<span class="muted"> · ${esc(relTime(p.scraped_at))}</span>` : ''}</span>
       <span class="leader-num"><b>${esc(fmtCompact(value))}</b><span class="muted">${unit}</span></span>
@@ -246,6 +252,20 @@ export function bindDashboardEvents() {
     if (kpi && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       document.dispatchEvent(new CustomEvent('sunscrap:activate-tab', { detail: kpi.dataset.kpiAction }));
+    }
+  });
+
+  // Baris akun/postingan (Performa terburuk & Top konten) → buka di browser sesi.
+  const openUrl = (url) => { if (url) document.dispatchEvent(new CustomEvent('sunscrap:open-browser', { detail: { url } })); };
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('[data-open-url]');
+    if (row) openUrl(row.dataset.openUrl);
+  });
+  document.addEventListener('keydown', (e) => {
+    const row = e.target.closest ? e.target.closest('[data-open-url]') : null;
+    if (row && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      openUrl(row.dataset.openUrl);
     }
   });
 
