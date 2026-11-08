@@ -126,7 +126,13 @@ export function renderProsesStatus(w) {
   const r = w.rate || {};
   if (active) {
     const eta = w.eta || null;
-    sub.textContent = `${w.busy ? 'Sedang memproses' : 'Menunggu antrean'} · jeda ${r.paceLabel || '—'} · siklus ${fmt(r.cycleVisits)}/${fmt(r.visitBudget)}${eta ? ` · sisa ±${eta}` : ''}`;
+    const plat = w.platforms || {};
+    const paused = [
+      plat.instagram && plat.instagram.paused ? 'Instagram' : null,
+      plat.tiktok && plat.tiktok.paused ? 'TikTok' : null,
+    ].filter(Boolean).join(' & ');
+    const pauseNote = paused ? ` · ⏸ ${paused} dijeda sementara` : '';
+    sub.textContent = `${w.busy ? 'Sedang memproses' : 'Menunggu antrean'} · jeda ${r.paceLabel || '—'} · siklus ${fmt(r.cycleVisits)}/${fmt(r.visitBudget)}${eta ? ` · sisa ±${eta}` : ''}${pauseNote}`;
   } else if (errored) {
     sub.textContent = w.lastError;
   } else {

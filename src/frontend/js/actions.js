@@ -65,7 +65,7 @@ export function openNewAudit() {
     closeModal();
     if (res.canceled) return;
     if (res.error) toast(res.error, 'error');
-    else toast(`Import ${fmt(res.inserted)} postingan (${fmt(res.duplicates)} duplikat, ${fmt(res.skipped)} dilewati).`, 'ok');
+    else toast(`Import ${fmt(res.inserted)} postingan baru (${fmt(res.duplicates)} sudah ada, ${fmt(res.skipped)} dilewati) — masuk antrean.`, 'ok');
     document.dispatchEvent(new CustomEvent('sunscrap:data-changed'));
   });
 
@@ -77,7 +77,7 @@ export function openNewAudit() {
     try { res = await api.importLinks({ text, name: opts.name, repeat_days: opts.repeat_days, auditId: opts.auditId }); } catch { toast('Import gagal.', 'error'); return; }
     closeModal();
     if (res.error) toast(res.error, 'error');
-    else toast(`Import ${fmt(res.inserted)} postingan (${fmt(res.duplicates)} duplikat, ${fmt(res.skipped)} dilewati).`, 'ok');
+    else toast(`Import ${fmt(res.inserted)} postingan baru (${fmt(res.duplicates)} sudah ada, ${fmt(res.skipped)} dilewati) — masuk antrean.`, 'ok');
     document.dispatchEvent(new CustomEvent('sunscrap:data-changed'));
   });
 }
