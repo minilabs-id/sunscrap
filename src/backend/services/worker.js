@@ -171,7 +171,8 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
     }
     try {
       if ((task.kind || 'POST').toUpperCase() === 'PROFILE') {
-        limiter.recordAuxiliaryVisit();
+        // Kunjungan profil adalah task itu sendiri → jangan dihitung dua kali;
+        // biaya kunjungannya sudah dipakai via outcome -> reportSuccess/reportError.
         const profile = await scraper.scrapeProfile(task.username, task.platform);
         if (!profile) {
           return { status: 'FAILED', kind: 'PROFILE', platform: task.platform, username: task.username, error: 'Kunjungan profil tidak menghasilkan data', errorCode: 'TRANSIENT' };
