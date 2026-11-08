@@ -2,6 +2,7 @@
 import { $ } from './dom.js';
 import { api, esc, fmt, fmtWhen, deltaBadge } from './helpers.js';
 import { statusBadge } from './targets.js';
+import { state } from './state.js';
 
 // Estimasi % "loading" per akun (scraper tak melapor progres sub-task, jadi ini perkiraan visual).
 let liveTimer = null;
@@ -20,6 +21,7 @@ function startLive(key) {
   liveKey = key;
   livePct = 0;
   liveTimer = setInterval(() => {
+    if (document.hidden || state.tab !== 'proses') return; // jangan update saat tab tak aktif
     if (livePct < 97) livePct += 1 + Math.random() * 2; // mendekati 100% secara bertahap
     const meter = $('#proses-meter');
     const pct = $('#proses-pct');

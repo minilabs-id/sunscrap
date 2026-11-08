@@ -38,7 +38,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
 
   const state = {
     active: false, busy: false, timer: null,
-    cycleId: null, lastPlatform: null, lastUsername: null, blockedInARow: 0,
+    cycleId: null, lastPlatform: null, current: { platform: null, username: null }, blockedInARow: 0,
     lastError: null, lastTaskId: null, lastEta: null,
     harvested: new Set(), followerAttempts: new Set(),
     platformErrors: { instagram: 0, tiktok: 0 },
@@ -68,7 +68,7 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
     return {
       active: state.active, busy: state.busy, label,
       cycleId: state.cycleId, lastError: state.lastError, lastTaskId: state.lastTaskId, eta: state.lastEta,
-      current: { platform: state.lastPlatform, username: state.lastUsername || null },
+      current: state.current,
       rate: limiter.getStatus(),
       platforms: {
         instagram: { paused: (state.platformPauseUntil.instagram || 0) > Date.now(), errors: state.platformErrors.instagram },
@@ -237,6 +237,9 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
       if (!task) { schedule(IDLE_POLL_MS); return; }
       if (paused(task.platform)) { schedule(IDLE_POLL_MS); return; }
       taskWithCache(task);
+      // Tandai task yang sedang dikerjakan SEKARANG (untuk indikator live), lalu siarkan.
+      state.current = { platform: task.platform, username: task.username || null };
+      changed();
 
       const cycleId = task.run_id ? `${task.audit_id || 0}:${task.run_id}` : null;
       if (limiter.beginCycle(cycleId)) {
@@ -255,7 +258,6 @@ function createWorker({ db, scraper, limiter, notify, log, onChange, timers, ava
       const result = await processTask(task);
       state.lastTaskId = task.id;
       state.lastPlatform = task.platform;
-      state.lastUsername = task.username || null;
 
       const outcome = outcomeOf(result, state.blockedInARow);
       state.blockedInARow = outcome.blockedInARow;
