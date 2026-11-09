@@ -1400,6 +1400,23 @@ body.modal-open { overflow: hidden; }
   border-top: 1px solid var(--line);
   margin-top: 4px;
 }
+.menu-pop .menu-item {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--fs-meta);
+  font-weight: 500;
+  text-align: left;
+  color: var(--ink);
+}
+.menu-pop .menu-item:hover { background: var(--accent-wash); }
+.menu-pop .menu-item.danger { color: var(--err); }
+.menu-pop .menu-item.danger:hover { background: var(--err-soft); }
+.btn-more { width: 30px; padding: 0; font-size: 16px; justify-content: center; }
 
 /* ============================================================
    Banner sesi (auth) — muncul hanya saat bermasalah

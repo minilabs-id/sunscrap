@@ -6,6 +6,76 @@ import { api, esc, fmt } from './helpers.js';
 import { state } from './state.js';
 
 // ── audits ─────────────────────────────────────────────────────
+let currentAudit = null;
+
+function closeAuditMenu() {
+  const pop = $('#audit-menu');
+  if (pop) pop.hidden = true;
+}
+
+function openAuditMenu(btn) {
+  const id = Number(btn.dataset.more);
+  const audit = (state.audits || []).find((a) => a.id === id);
+  const pop = $('#audit-menu');
+  if (!audit || !pop) return;
+  currentAudit = audit;
+  pop.innerHTML = `
+    <div class="menu-head">${esc(audit.name)}</div>
+    <button class="menu-item" data-act2="profile">Kunjungi profil</button>
+    <button class="menu-item" data-act2="edit">Edit</button>
+    <button class="menu-item danger" data-act2="delete">Hapus</button>`;
+  pop.hidden = false;
+  const rect = btn.getBoundingClientRect();
+  let left = rect.right - 208; if (left < 8) left = rect.left;
+  let top = rect.bottom + 6;
+  const popH = pop.scrollHeight;
+  if (top + popH > window.innerHeight - 8) top = Math.max(8, rect.top - popH - 6);
+  pop.style.left = Math.round(left) + 'px';
+  pop.style.top = Math.round(top) + 'px';
+  pop.querySelectorAll('[data-act2]').forEach((b) => b.addEventListener('click', () => {
+    closeAuditMenu();
+    handleAuditAction(b.dataset.act2, currentAudit);
+  }));
+}
+
+function handleAuditAction(act, audit) {
+  if (!audit) return;
+  const id = audit.id;
+  if (act === 'rerun') {
+    api.rerunAudit(id, true).then((r) => toast((r && r.error) || 'Dijadwalkan ulang.')).catch(() => toast('Gagal menjadwalkan ulang.', 'error'));
+  } else if (act === 'profile') {
+    api.enqueueProfileVisits(id).then((r) => {
+      if (!r) return toast('Gagal menjadwalkan kunjungan profil.', 'error');
+      toast(r.error || (r.pending ? 'Kunjungan profil sudah antre.' : `Menjadwalkan ${fmt(r.created)} kunjungan profil.`), r.error ? 'error' : 'ok');
+    }).catch(() => toast('Gagal menjadwalkan kunjungan profil.', 'error'));
+  } else if (act === 'delete') {
+    openModal(modalShell({
+      title: 'Hapus audit?',
+      body: `<p>Audit <b>${esc(audit.name)}</b> dan seluruh postingan &amp; riwayatnya akan dihapus <b>permanen</b>.</p>`,
+      foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger-solid" id="confirm-del">Hapus</button>`,
+    }));
+    $('#confirm-del').addEventListener('click', async () => {
+      try { await api.deleteAudit(id); } catch { toast('Gagal menghapus audit.', 'error'); }
+      closeModal();
+      document.dispatchEvent(new CustomEvent('sunscrap:data-changed'));
+    });
+  } else if (act === 'edit') {
+    openModal(modalShell({
+      title: 'Edit audit',
+      body: `<div class="field"><label for="edit-name">Nama</label><input id="edit-name" class="input" value="${esc(audit.name)}"></div>
+            <div class="field field--flush"><label for="edit-repeat">Ulang (hari, 0 = manual)</label><input id="edit-repeat" class="input" type="number" min="0" max="365" value="${audit.repeat_days}"></div>`,
+      foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" id="confirm-edit">Simpan</button>`,
+    }));
+    $('#confirm-edit').addEventListener('click', async () => {
+      try {
+        await api.updateAudit(id, { name: $('#edit-name').value, repeat_days: Number($('#edit-repeat').value) });
+        closeModal();
+        document.dispatchEvent(new CustomEvent('sunscrap:data-changed'));
+      } catch { toast('Gagal menyimpan perubahan.', 'error'); }
+    });
+  }
+}
+
 export function renderAudits() {
   $('#audits-table').innerHTML = `
     <thead><tr><th scope="col">Nama</th><th scope="col">Periode</th><th scope="col" class="num">Postingan</th><th scope="col" class="num">Terverifikasi</th><th scope="col" class="num">Ulang (hari)</th><th scope="col"><span class="sr-only">Aksi</span></th></tr></thead>
@@ -17,50 +87,14 @@ export function renderAudits() {
         <td class="num">${fmt(a.repeat_days)}</td>
         <td><div class="row-gap end">
           <button class="btn btn-ghost btn-sm" data-act="rerun" data-id="${a.id}">Audit ulang</button>
-          <button class="btn btn-ghost btn-sm" data-act="profile" data-id="${a.id}" title="Kunjungi profil akun yang datanya belum ada">Kunjungi profil</button>
-          <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${a.id}" data-name="${esc(a.name)}" data-repeat="${a.repeat_days}">Edit</button>
-          <button class="btn btn-danger btn-sm" data-act="delete" data-id="${a.id}">Hapus</button>
+          <button class="btn btn-ghost btn-sm btn-more" data-more="${a.id}" aria-label="Aksi lain untuk ${esc(a.name)}" title="Aksi lain">⋯</button>
         </div></td>
       </tr>`).join('') || `<tr><td colspan="6" class="muted">Belum ada audit. Klik <b>Import data</b> di Ringkasan.</td></tr>`}</tbody>`;
 
-  $$('#audits-table [data-act]').forEach((btn) => btn.addEventListener('click', () => {
-    const id = Number(btn.dataset.id);
-    const act = btn.dataset.act;
-    if (act === 'rerun') {
-      api.rerunAudit(id, true).then((r) => toast((r && r.error) || 'Dijadwalkan ulang.')).catch(() => toast('Gagal menjadwalkan ulang.', 'error'));
-    } else if (act === 'profile') {
-      api.enqueueProfileVisits(id).then((r) => {
-        if (!r) return toast('Gagal menjadwalkan kunjungan profil.', 'error');
-        toast(r.error || (r.pending ? 'Kunjungan profil sudah antre.' : `Menjadwalkan ${fmt(r.created)} kunjungan profil.`), r.error ? 'error' : 'ok');
-      }).catch(() => toast('Gagal menjadwalkan kunjungan profil.', 'error'));
-    } else if (act === 'delete') {
-      const audit = (state.audits || []).find((a) => a.id === id);
-      openModal(modalShell({
-        title: 'Hapus audit?',
-        body: `<p>Audit <b>${esc(audit ? audit.name : id)}</b> dan seluruh postingan &amp; riwayatnya akan dihapus <b>permanen</b>.</p>`,
-        foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-danger-solid" id="confirm-del">Hapus</button>`,
-      }));
-      $('#confirm-del').addEventListener('click', async () => {
-        try { await api.deleteAudit(id); } catch { toast('Gagal menghapus audit.', 'error'); }
-        closeModal();
-        document.dispatchEvent(new CustomEvent('sunscrap:data-changed'));
-      });
-    } else if (act === 'edit') {
-      openModal(modalShell({
-        title: 'Edit audit',
-        body: `<div class="field"><label for="edit-name">Nama</label><input id="edit-name" class="input" value="${esc(btn.dataset.name)}"></div>
-              <div class="field field--flush"><label for="edit-repeat">Ulang (hari, 0 = manual)</label><input id="edit-repeat" class="input" type="number" min="0" max="365" value="${btn.dataset.repeat}"></div>`,
-        foot: `<button class="btn btn-ghost" data-close>Batal</button><button class="btn btn-primary" id="confirm-edit">Simpan</button>`,
-      }));
-      $('#confirm-edit').addEventListener('click', async () => {
-        try {
-          await api.updateAudit(id, { name: $('#edit-name').value, repeat_days: Number($('#edit-repeat').value) });
-          closeModal();
-          document.dispatchEvent(new CustomEvent('sunscrap:data-changed'));
-        } catch { toast('Gagal menyimpan perubahan.', 'error'); }
-      });
-    }
+  $$('#audits-table [data-act="rerun"]').forEach((btn) => btn.addEventListener('click', () => {
+    handleAuditAction('rerun', (state.audits || []).find((a) => a.id === Number(btn.dataset.id)));
   }));
+  $$('#audits-table [data-more]').forEach((btn) => btn.addEventListener('click', (e) => { e.stopPropagation(); openAuditMenu(btn); }));
 }
 
 // ── pembaruan (GitHub Releases) ────────────────────────────────
@@ -101,10 +135,10 @@ export async function loadDbInfo() {
     const counts = info.counts || {};
     const chip = (label, value) => `<div class="db-chip"><span>${esc(label)}</span><b>${esc(String(value))}</b></div>`;
     $('#db-info').innerHTML = [
-      chip('File', info.filename || 'sunscrap.db'),
       chip('Ukuran', `${fmt(Math.round((info.size_bytes || 0) / 1024))} KB`),
       chip('Audit', fmt(counts.audits)),
       chip('Postingan', fmt(counts.targets)),
+      chip('Akun', fmt(counts.accounts)),
       chip('Snapshot', fmt(counts.snapshots)),
     ].join('');
     if (!state.dbInfoCache) { state.dbInfoCache = info; const sb = $('#sb-db'); if (sb) sb.textContent = `DB ${Math.round((info.size_bytes || 0) / 1024)} KB`; }
@@ -198,6 +232,12 @@ export function bindSettingsEvents() {
   $('#btn-restore').addEventListener('click', handleRestore);
   $('#btn-clear-session').addEventListener('click', handleClearSession);
   $('#btn-clear').addEventListener('click', handleClearAll);
+  // Tutup menu audit saat klik di luar / Escape.
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#audit-menu') || e.target.closest('[data-more]')) return;
+    closeAuditMenu();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAuditMenu(); });
   $('#btn-check-update').addEventListener('click', async () => {
     const btn = $('#btn-check-update');
     btn.disabled = true;
