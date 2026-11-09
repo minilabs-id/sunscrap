@@ -2,6 +2,34 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/id-ID/) · SemVer.
 
+## [Unreleased]
+
+### Ditambahkan
+- **Performa terburuk** Instagram & TikTok di Ringkasan — akun dengan median ER terendah (≥ 2 post terukur).
+- **Indikator live collect** di Proses — nama akun yang sedang diproses + estimasi % + bar progres.
+- Mesin intel: deteksi **caption mirip** lintas akun (selain caption identik), `median_shares`,
+  catatan **"belum bisa dinilai"** (data tak lengkap), stopword dagang/CTA untuk menekan derau.
+- Filter "Tanpa handle" & "Belum diproses" serta **jumlah baris per halaman (50/100/300)** di Postingan.
+- Retry lintas audit: "Scrape ulang gagal/terpilih" & perbaikan Kualitas data di mode "Semua audit".
+- Tombol eksekusi untuk **setiap** kasus Kualitas data (kunjungi profil / scrape ulang).
+- "Buka di browser" untuk baris akun & postingan (Ringkasan & Postingan) + modal riwayat.
+
+### Diubah
+- **Terminologi:** "Target" → **"Postingan"** di seluruh UI (bukan kode/ID/SQL).
+- Ringkasan: hapus "Tema teratas" & "Tren 30 hari"; Top konten dipecah IG/TikTok; Kualitas data
+  disandingkan Per platform; KPI jadi klik-able (deep-link); relabel "Akun terpantau" → "Jumlah akun".
+- Postingan: kolom default ringkas, filter berlabel + "Hapus filter" + "X dari Y", export ikut filter.
+- Proses: dirombak minimal — antrean diringkas, aktivitas utama, detail teknis dilipat.
+- Sesi: browser webview memenuhi tinggi & lebar jendela.
+- Pengaturan: grid 4 kartu + menu kebab untuk aksi audit.
+
+### Diperbaiki
+- ER postingan IG memakai fallback follower akun (getSummary/getTargets/export).
+- Invalidasi memo summary/intel saat task diantrekan (retry/repeat/reclaim).
+- Kunjungan profil tidak lagi di-charge ganda ke budget kunjungan.
+- `enqueueFix(null)` (mode "Semua audit") sebelumnya error "auditId tidak valid".
+- `current` worker menunjuk task yang sedang jalan (bukan yang selesai).
+
 ## [2.0.0] — 2026-11-06
 
 **Interface baru total** ("Matahari di atas Mica", Fluent-modern/Windows 11) + **pemisahan
