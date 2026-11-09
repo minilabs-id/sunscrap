@@ -460,6 +460,10 @@ button { font: inherit; color: inherit; }
 #tab-targets .page-head, #tab-targets .toolbar, #tab-targets .pager { flex: none; }
 #tab-targets .toolbar-filters { flex: none; margin-bottom: var(--sp-2); }
 #tab-targets .table-wrap { flex: 1 1 auto; min-height: 0; max-height: none; }
+/* Sesi & Login: browser memenuhi sisa tinggi & lebar jendela. */
+#tab-browser.active { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+#tab-browser .page-head, #tab-browser .browser-bar { flex: none; }
+#tab-browser .browser-wrap { flex: 1 1 auto; min-height: 0; }
 @keyframes tabIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 .page-head {
@@ -1494,7 +1498,7 @@ body.modal-open { overflow: hidden; }
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   overflow: hidden;
-  height: min(560px, 62vh);
+  min-height: 240px;
   background: var(--sunken);
   box-shadow: var(--sh-sm);
 }
