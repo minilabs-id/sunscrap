@@ -2,6 +2,12 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/id-ID/) · SemVer.
 
+## [2.1.2] — 2026-11-09
+
+### Diubah
+- Matikan `differentialPackage` agar rilis GitHub tidak terpecah jadi entri duplikat (`.exe` + `latest.yml` saja, tanpa `.blockmap`).
+- Pembaruan kini **memasang otomatis + membuka ulang** (auto-patch) setelah terunduh, tanpa klik "Muat ulang & perbarui".
+
 ## [2.1.1] — 2026-11-09
 
 ### Ditambahkan

@@ -47,7 +47,7 @@ function initUpdater({ log, broadcast, isPackaged }) {
     if (!enabled) { say('Updater nonaktif (bukan build terpasang).'); return { enabled, state }; }
 
     autoUpdater.autoDownload = true;          // unduh di background; pengguna tidak perlu klik apa pun
-    autoUpdater.autoInstallEvent = 'onNextLaunch'; // install saat peluncuran berikutnya (hindari kill saat shutdown)
+    autoUpdater.autoInstallEvent = 'onQuit';     // fallback: pasang saat aplikasi ditutup (bila auto-install gagal)
     autoUpdater.logger = {
       info: (m) => say(`updater: ${m}`),
       warn: (m) => say(`updater: ${m}`),
@@ -63,8 +63,14 @@ function initUpdater({ log, broadcast, isPackaged }) {
     autoUpdater.on('update-not-available', () => setStatus('uptodate', { availableVersion: null, percent: null, error: null }));
     autoUpdater.on('download-progress', (p) => setStatus('downloading', { percent: Math.round((p && p.percent) || 0) }));
     autoUpdater.on('update-downloaded', (info) => {
-      say(`Pembaruan ${info && info.version ? info.version : ''} terunduh — akan dipasang saat aplikasi dibuka berikutnya.`);
-      setStatus('downloaded', { availableVersion: (info && info.version) || state.availableVersion, percent: 100, downloadUrl: installerUrl((info && info.version) || state.availableVersion) });
+      const v = (info && info.version) || state.availableVersion;
+      say(`Pembaruan ${v} terunduh — memasang otomatis...`);
+      setStatus('downloaded', { availableVersion: v, percent: 100, downloadUrl: installerUrl(v) });
+      // Auto-pasang: jeda singkat agar UI sempat menampilkan status, lalu install + buka ulang otomatis.
+      setTimeout(() => {
+        try { autoUpdater.quitAndInstall({ isSilent: true, isForceRunAfter: true }); }
+        catch (e) { say(`auto-install gagal: ${e.message}`); }
+      }, 4000);
     });
     autoUpdater.on('error', (e) => {
       const message = e && e.message ? e.message : String(e);

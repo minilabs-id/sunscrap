@@ -105,7 +105,7 @@ const UPDATE_STATUS_TEXT = (s) => ({
   uptodate: 'Anda memakai versi terbaru.',
   available: `Versi ${s.availableVersion || ''} tersedia — mengunduh…`,
   downloading: `Mengunduh… ${Math.round(s.percent || 0)}%`,
-  downloaded: `Versi ${s.availableVersion || ''} terunduh — klik "Muat ulang & perbarui". Jika diblokir Windows, gunakan "Unduh installer".`,
+  downloaded: `Versi ${s.availableVersion || ''} terunduh — memasang otomatis… Jika diblokir Windows, gunakan "Unduh installer".`,
   error: `Gagal memeriksa pembaruan${s.error ? `: ${s.error}` : ''} — coba lagi nanti.`,
 }[s.status] || s.status);
 
