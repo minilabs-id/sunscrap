@@ -12,6 +12,13 @@ const { autoUpdater } = require('electron-updater');
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 jam
 const FIRST_CHECK_DELAY_MS = 5000;
 
+const REPO_RELEASES = 'https://github.com/startupmini/sunscrap/releases';
+
+// Tautan unduhan langsung installer (.exe) untuk versi tertentu.
+function installerUrl(version) {
+  return version ? `${REPO_RELEASES}/download/v${version}/sunscrap-setup-${version}.exe` : `${REPO_RELEASES}/latest`;
+}
+
 function initUpdater({ log, broadcast, isPackaged }) {
   const say = typeof log === 'function' ? log : () => {};
   const push = typeof broadcast === 'function' ? broadcast : () => {};
@@ -26,7 +33,8 @@ function initUpdater({ log, broadcast, isPackaged }) {
     percent: null,
     lastCheckedAt: null,
     error: null,
-    releaseUrl: 'https://github.com/startupmini/sunscrap/releases',
+    releaseUrl: REPO_RELEASES,
+    downloadUrl: installerUrl(null),
   };
 
   function setStatus(status, patch = {}) {
@@ -50,13 +58,13 @@ function initUpdater({ log, broadcast, isPackaged }) {
     autoUpdater.on('checking-for-update', () => { state.lastCheckedAt = new Date().toISOString(); setStatus('checking', { error: null }); });
     autoUpdater.on('update-available', (info) => {
       say(`Pembaruan tersedia: ${info.version}`);
-      setStatus('available', { availableVersion: info.version || null, percent: 0 });
+      setStatus('available', { availableVersion: info.version || null, percent: 0, downloadUrl: installerUrl(info.version) });
     });
     autoUpdater.on('update-not-available', () => setStatus('uptodate', { availableVersion: null, percent: null, error: null }));
     autoUpdater.on('download-progress', (p) => setStatus('downloading', { percent: Math.round((p && p.percent) || 0) }));
     autoUpdater.on('update-downloaded', (info) => {
       say(`Pembaruan ${info && info.version ? info.version : ''} terunduh — akan dipasang saat aplikasi dibuka berikutnya.`);
-      setStatus('downloaded', { availableVersion: (info && info.version) || state.availableVersion, percent: 100 });
+      setStatus('downloaded', { availableVersion: (info && info.version) || state.availableVersion, percent: 100, downloadUrl: installerUrl((info && info.version) || state.availableVersion) });
     });
     autoUpdater.on('error', (e) => {
       const message = e && e.message ? e.message : String(e);

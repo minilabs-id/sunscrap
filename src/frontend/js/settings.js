@@ -99,18 +99,21 @@ export function renderAudits() {
 
 // ── pembaruan (GitHub Releases) ────────────────────────────────
 const UPDATE_STATUS_TEXT = (s) => ({
-  dev: 'Mode pengembangan — pembaruan nonaktif.',
+  dev: 'Mode pengembangan — pembaruan otomatis nonaktif. Gunakan "Unduh installer".',
   idle: 'Belum ada informasi pembaruan.',
   checking: 'Memeriksa pembaruan…',
   uptodate: 'Anda memakai versi terbaru.',
   available: `Versi ${s.availableVersion || ''} tersedia — mengunduh…`,
   downloading: `Mengunduh… ${Math.round(s.percent || 0)}%`,
-  downloaded: `Versi ${s.availableVersion || ''} terunduh — klik "Muat ulang & perbarui".`,
+  downloaded: `Versi ${s.availableVersion || ''} terunduh — klik "Muat ulang & perbarui". Jika diblokir Windows, gunakan "Unduh installer".`,
   error: `Gagal memeriksa pembaruan${s.error ? `: ${s.error}` : ''} — coba lagi nanti.`,
 }[s.status] || s.status);
 
+let updateDownloadUrl = 'https://github.com/startupmini/sunscrap/releases/latest';
+
 export function renderUpdate(s) {
   if (!s) return;
+  if (s.downloadUrl || s.releaseUrl) updateDownloadUrl = s.downloadUrl || s.releaseUrl;
   const v = $('#update-version'); if (v) v.textContent = s.version || '—';
   const st = $('#update-status'); if (st) st.textContent = UPDATE_STATUS_TEXT(s);
   const prog = $('#update-progress');
@@ -244,6 +247,7 @@ export function bindSettingsEvents() {
     try { renderUpdate(await api.checkForUpdates()); } catch { toast('Gagal memeriksa pembaruan.', 'error'); } finally { btn.disabled = false; }
   });
   $('#btn-install-update').addEventListener('click', () => { api.installUpdate(); });
+  $('#btn-download').addEventListener('click', () => api.openExternal(updateDownloadUrl));
   $('#btn-open-releases').addEventListener('click', () => api.openExternal('https://github.com/startupmini/sunscrap/releases'));
   $('#btn-diag').addEventListener('click', async () => { try { await api.copyDiagnostics(); toast('Info diagnostik disalin ke clipboard.', 'ok'); } catch { toast('Gagal menyalin info diagnostik.', 'error'); } });
   $('#btn-open-data').addEventListener('click', () => api.openDataFolder().catch(() => { /* abaikan */ }));
