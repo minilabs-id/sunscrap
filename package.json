@@ -1,7 +1,7 @@
 {
   "name": "sunscrap",
   "productName": "sunscrap",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Audit engagement Instagram & TikTok berulang — aplikasi desktop lokal, tanpa API berbayar.",
   "main": "src/backend/main.js",
   "author": "sunscrap",

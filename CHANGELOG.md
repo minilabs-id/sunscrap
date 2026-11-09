@@ -2,6 +2,12 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/id-ID/) · SemVer.
 
+## [2.1.1] — 2026-11-09
+
+### Ditambahkan
+- Tombol **"Unduh installer"** di Pengaturan → Pembaruan (tautan unduhan langsung ke `.exe` di GitHub Releases).
+- Catatan keamanan Windows (Smart App Control / SmartScreen) agar pengguna tahu cara mengizinkan aplikasi unsigned.
+
 ## [2.1.0] — 2026-11-09
 
 ### Ditambahkan
