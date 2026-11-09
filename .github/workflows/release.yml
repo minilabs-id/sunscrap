@@ -32,6 +32,18 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Cache binary Electron & toolchain (NSIS/winCodeSign) agar tidak mengunduh ulang
+      # setiap run — mengurangi risiko 504/timeout saat server GitHub sibuk.
+      - name: Cache Electron & electron-builder binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
       - run: npm ci
 
       - run: npm test # gagal → tidak rilis
@@ -45,10 +57,23 @@ jobs:
       #     signing-policy-slug: release-signing
       #     github-artifact-id: ...   # lihat docs SignPath untuk integrasi CI
 
-      - run: npx electron-builder --win nsis --publish always
+      - name: Build & publish installer (dengan retry)
         if: github.event_name == 'push'
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for attempt in 1 2 3; do
+            echo ">> electron-builder attempt $attempt/3"
+            if npx electron-builder --win nsis --publish always; then
+              echo ">> build & publish sukses"
+              exit 0
+            fi
+            echo ">> attempt $attempt gagal — menunggu 15 detik sebelum coba lagi"
+            sleep 15
+          done
+          echo ">> gagal setelah 3 percobaan"
+          exit 1
 
       - run: npx electron-builder --win nsis --publish never
         if: github.event_name == 'workflow_dispatch'
