@@ -2,7 +2,7 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/id-ID/) · SemVer.
 
-## [Unreleased]
+## [2.1.0] — 2026-11-09
 
 ### Ditambahkan
 - **Performa terburuk** Instagram & TikTok di Ringkasan — akun dengan median ER terendah (≥ 2 post terukur).

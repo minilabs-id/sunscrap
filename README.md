@@ -6,7 +6,11 @@ metrik, lalu menyajikannya sebagai **alat kerja**: apa yang harus dikerjakan sek
 mencurigakan, dan apa yang berubah sejak kunjungan terakhir.
 
 **v2.0.0 — interface baru total** (“Matahari di atas Mica”) dengan arsitektur **backend/frontend
-terpisah** secara bersih. Lihat [CHANGELOG.md](CHANGELOG.md) dan [docs/DESIGN.md](docs/DESIGN.md).
+terpisah** secara bersih.
+
+📖 **Dokumentasi**: [CHANGELOG.md](CHANGELOG.md) · [Panduan pemakaian](docs/PANDUAN.md) ·
+[docs/DESIGN.md](docs/DESIGN.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
+[docs/SESSION-BRIDGE.md](docs/SESSION-BRIDGE.md).
 
 ## Fitur utama
 
